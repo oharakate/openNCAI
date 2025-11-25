@@ -93,7 +93,7 @@ use_test("load_shape")
 test_file("tests/testthat/test-load_shape.R")
 
 
-# Remember to:
+# At the end of session, emember to:
 # Do Code > Insert roxygen skeleton inside the function
 # And edit it
 
