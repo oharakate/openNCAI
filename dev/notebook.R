@@ -13,6 +13,13 @@
 # I previously worked through this:
 # https://r-pkgs.org/whole-game.html
 
+# use_this docs:
+# https://usethis.r-lib.org/
+# test_that docs:
+# https://testthat.r-lib.org/
+# roxygen docs:
+# https://roxygen2.r-lib.org/
+
 #### SETUP ####
 # Install packages
 # install.packages("devtools")
@@ -21,7 +28,7 @@
 # package?devtools
 # We're looking for 2.4.6 to match the website guide.
 
-# Load packages
+# Load packages for development
 library(devtools)
 library(gitcreds)
 library(dplyr)
@@ -29,16 +36,16 @@ library(tidyr)
 library(terra)
 library(sf)
 
-# Declare these dependencies
-use_package("sf")
-use_package("terra")
-use_package("tidyr")
-use_package("dplyr")
 
-
-#### ONE-TIME PACKAGE SETUP THINGS ####
+#### ONE-TIME PACKAGE SETUP TASKS ####
 # Create the package
 # create_package("~/habitats/habcounter")
+
+# Declare these dependencies
+# use_package("sf")
+# use_package("terra")
+# use_package("tidyr")
+# use_package("dplyr")
 
 # Use Git
 # usethis::use_git_config(
@@ -48,8 +55,8 @@ use_package("dplyr")
 # use_git()
 
 # Use Github
-create_github_token()
-gitcreds_set()
+# create_github_token()
+# gitcreds_set()
 
 # use_github()
 
@@ -57,14 +64,18 @@ gitcreds_set()
 # usethis::use_build_ignore("dev/")
 
 # Use MIT licence
-# use_mit_license()
+# use_mit_license("Kate O'Hara")
 # Also manually update the description at this point.
 
 # Edit DESCRIPTION
 
 # Generate documentation
-document()
+# document()
+
+# Use testthat()
+# use_testthat()
 ####
+
 
 
 
@@ -78,11 +89,16 @@ load_shape("inst/extdata/test_data.shp")
 load_shape("inst/extdata/test_aoi.shp")
 # Looks OK.
 
+use_test("load_shape")
+test_file("tests/testthat/test-load_shape.R")
+
+
 # Remember to:
 # Do Code > Insert roxygen skeleton inside the function
 # And edit it
 
 # Also, to get update the manual
+test()
 document()
 
 # Check the package:
