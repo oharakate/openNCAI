@@ -20,6 +20,18 @@ test_that("load_shape() errors if nothing found at path", {
 
 })
 
+test_that("load_shape() errors if file at path is not a shapefile", {
+
+  # Make an erroneous path
+  not_shape_file_path <- file.path("test_data", "text.txt")
+
+  # Check that an error is generated when running file with bad path:
+  expect_error(load_shape(not_shape_file_path))
+
+})
+
+# load_shape(file.path("tests", "testthat", "test_data", "text.txt"))
+
 # Examples for me to work from...
 # test_that("multiplication works", {
 #   expect_equal(2 * 2, 4)
