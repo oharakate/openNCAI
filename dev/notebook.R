@@ -23,6 +23,7 @@
 #### SETUP ####
 # Install packages
 # install.packages("devtools")
+# install.packages("covr")
 
 # Check devtools version
 # package?devtools
@@ -31,6 +32,7 @@
 # Load packages for development
 library(devtools)
 library(gitcreds)
+library(covr)
 library(dplyr)
 library(tidyr)
 library(terra)
@@ -91,9 +93,9 @@ load_shape("inst/extdata/test_aoi.shp")
 
 use_test("load_shape")
 test_file("tests/testthat/test-load_shape.R")
+package_coverage()
 
-
-# At the end of session, emember to:
+# At the end of session, remember to:
 # Do Code > Insert roxygen skeleton inside the function
 # And edit it
 
