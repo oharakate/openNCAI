@@ -1,4 +1,4 @@
-test_that("load_shape_works", {
+test_that("load_shape() returns a spatial object", {
 
   # Identify the path to a valid file
   test_file_path <- file.path("test_data", "test_data.shp")
@@ -8,6 +8,16 @@ test_that("load_shape_works", {
 
   # We check it's of "sf", the expected class
   expect_s3_class(shape_obj, "sf")
+})
+
+test_that("load_shape() errors if nothing found at path", {
+
+  # Make an erroneous path
+  bad_file_path <- file.path("test_data", "no_file_here.shp")
+
+  # Check that an error is generated when running file with bad path:
+  expect_error(load_shape(bad_file_path))
+
 })
 
 # Examples for me to work from...
