@@ -100,13 +100,13 @@ package_coverage()
 # And edit it
 
 # Also, to get update the manual
-test()
+
 document()
 
 # Check the package:
 check()
 
-# To use the test data it was necessary to specify its location in
+# To use the test data in an example it was necessary to specify its location in
 # inst/testdata in the example in man/ like this:
 shapefile_path <- system.file(
   "extdata",
@@ -114,20 +114,34 @@ shapefile_path <- system.file(
   package = "habcounter"
 )
 load_shape(shapefile_path)
+# I don't think it looks nice in the example but it does work. I'll ask Chris
+# what he thinks.
 
 
 ## harmonise_crs()
 
 use_r("harmonise_crs")
 # Remember to put in the roxygen skeleton
+load_all()
+document()
+
+# Tests
+use_test("harmonise_crs")
+load_all()
+test_file("tests/testthat/test-harmonise_crs.R")
 document()
 
 load_all()
+check()
+# Commit and push here.
 
-# Let's make a file with the wrong CRS to use.
-data_to_break <- sf::read_sf("inst/extdata/test_data.shp", quiet = TRUE)
-wrong_crs_data <- sf::st_set_crs(data_to_break, 4326)
-st_write(wrong_crs_data, "inst/extdata/wrong_crs_data.shp", append = FALSE)
-
+##
 
 
+
+# End things
+# We can install the package with
+install()
+library(habcounter)
+# And then get rid to continue developing with
+remove.packages("habcounter")
