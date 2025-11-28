@@ -106,17 +106,6 @@ document()
 # Check the package:
 check()
 
-# To use the test data in an example it was necessary to specify its location in
-# inst/testdata in the example in man/ like this:
-shapefile_path <- system.file(
-  "extdata",
-  "test_data.shp", # Use the name of your test shapefile
-  package = "openNCAI"
-)
-load_shape(shapefile_path)
-# I don't think it looks nice in the example but it does work. I'll ask Chris
-# what he thinks.
-
 
 ## harmonise_crs()
 
@@ -139,6 +128,14 @@ check()
 use_r("crop_to_aoi")
 load_all()
 document()
+
+# tests
+use_test("crop_to_aoi")
+load_all()
+test_file("tests/testthat/test-crop_to_aoi.R")
+
+document()
+check()
 
 
 # End things

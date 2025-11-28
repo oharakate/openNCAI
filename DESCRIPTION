@@ -1,6 +1,6 @@
 Package: openNCAI
 Type: Package
-Title: Calculates a Natural Capital Assets Indicator for a particular area of interest. 
+Title: Calculates a Natural Capital Assets Indicator for a particular area of interest
 Version: 0.1.0
 Author: Kate O'Hara
 Maintainer: Kate O'Hara <k.a.ohara@stir.ac.uk>

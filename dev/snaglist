@@ -1,3 +1,6 @@
+DO FIRST Update the shapemaking in test-harmonise_crs.R to match the OS grid
+examples used in test-crop_to_aoi.R
+
 Is the example in load_shape() OK? It works but looks messy as it generates the
 data.
 
