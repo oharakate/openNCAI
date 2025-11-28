@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(habcounter)
+library(openNCAI)
 
-test_check("habcounter")
+test_check("openNCAI")

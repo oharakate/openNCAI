@@ -14,7 +14,7 @@
 #'
 #' @examples
 #' shapefile_path <- system.file(
-#' "extdata","test_data.shp", package = "habcounter")
+#' "extdata","test_data.shp", package = "openNCAI")
 #' load_shape(shapefile_path)
 #'
 load_shape <- function(file_path) {

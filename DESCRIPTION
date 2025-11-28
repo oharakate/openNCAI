@@ -8,8 +8,8 @@ Description: This package is a translation of the NCAI procedure from Excel into
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/oharakate/habcounter
-BugReports: https://github.com/oharakate/habcounter/issues
+URL: https://github.com/oharakate/openNCAI
+BugReports: https://github.com/oharakate/openNCAI/issues
 Imports: 
     dplyr,
     sf,

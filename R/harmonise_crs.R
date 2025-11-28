@@ -12,10 +12,10 @@
 #' @examples
 #'
 #' wrong_crs_input <- sf::st_read(
-#'   system.file("extdata", "wrong_crs_data.shp", package = "habcounter"),
+#'   system.file("extdata", "wrong_crs_data.shp", package = "openNCAI"),
 #'     quiet = TRUE)
 #' aoi <- sf::st_read(
-#'   system.file("extdata", "test_aoi.shp", package = "habcounter"),
+#'   system.file("extdata", "test_aoi.shp", package = "openNCAI"),
 #'     quiet = TRUE)
 #'
 #' crs_harmonised_output <- harmonise_crs(wrong_crs_input, aoi)

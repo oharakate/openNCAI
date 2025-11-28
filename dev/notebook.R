@@ -41,7 +41,7 @@ library(sf)
 
 #### ONE-TIME PACKAGE SETUP TASKS ####
 # Create the package
-# create_package("~/habitats/habcounter")
+# create_package("~/habitats/openNCAI")
 
 # Declare these dependencies
 # use_package("sf")
@@ -111,7 +111,7 @@ check()
 shapefile_path <- system.file(
   "extdata",
   "test_data.shp", # Use the name of your test shapefile
-  package = "habcounter"
+  package = "openNCAI"
 )
 load_shape(shapefile_path)
 # I don't think it looks nice in the example but it does work. I'll ask Chris
@@ -142,6 +142,6 @@ check()
 # End things
 # We can install the package with
 install()
-library(habcounter)
+library(openNCAI)
 # And then get rid to continue developing with
-remove.packages("habcounter")
+remove.packages("openNCAI")
