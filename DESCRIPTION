@@ -1,11 +1,10 @@
-Package: habcounter
+Package: openNCAI
 Type: Package
-Title: Processes Habitats Data
+Title: Calculates a Natural Capital Assets Indicator for a particular area of interest. 
 Version: 0.1.0
 Author: Kate O'Hara
 Maintainer: Kate O'Hara <k.a.ohara@stir.ac.uk>
-Description: This package processes and cleans habitats datasets, as well as 
-  preparing them for mapping on the Forth2O explore tool. 
+Description: This package is a translation of the NCAI procedure from Excel into R. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
