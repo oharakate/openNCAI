@@ -135,8 +135,10 @@ load_all()
 check()
 # Commit and push here.
 
-##
-
+## crop_to_aoi()
+use_r("crop_to_aoi")
+load_all()
+document()
 
 
 # End things

@@ -1,7 +1,9 @@
-Is the exampe in load_shape() OK? It works but looks messy as it generates the
+Is the example in load_shape() OK? It works but looks messy as it generates the
 data.
 
-Rename the package.
-
 Swap in better testing data, particularly for the inst/extdata stuff.
+I think it makes sense manually create small data objects in the example and
+test scripts most of the time actually (for the bit functions at least).
+
+Check in which individual functions get @export in roxygen.
 

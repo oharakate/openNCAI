@@ -18,16 +18,16 @@
 # to know what Chris Littleboy thinks.
 
 # MAKE SPATIAL OBJECTS
-# load_shape <- function(file_path) {
-#
-#   if (!file.exists(file_path)) {
-#     stop(paste("File not found at path:", file_path))
-#   }
-#
-#   spatial_object <-  sf::read_sf(file_path, quiet = TRUE)
-#   #  ^ quiet = TRUE is Gemini suggstion. I'm not sure if appropriate.
-#   return(spatial_object)
-# }
+load_shape <- function(file_path) {
+
+  if (!file.exists(file_path)) {
+    stop(paste("File not found at path:", file_path))
+  }
+
+  spatial_object <-  sf::read_sf(file_path, quiet = TRUE)
+  #  ^ quiet = TRUE is Gemini suggstion. I'm not sure if appropriate.
+  return(spatial_object)
+}
 
 # CHECK CRS MATCH - should prob add fn to convert if not
 harmonise_crs <- function(input_object, aoi_object) {
