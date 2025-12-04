@@ -1,19 +1,6 @@
 ## DEVELOP CALCULATION PROCESS FOR openNCAI
-
-# Things in use
-# VECTOR of EA Ecosystem Area
-# gets multiplied by
-# ESPU Ecosystem service potential per unit/hectare
-# to make
-# MATRIX ESPB Ecosystem service potential base
-
-# ESPB cell proportion of column
-# gets multiplied by
-# VECTOR ESPW Ecosystem service potential weighting
-# to give
-# WBB Wellbeing base
-
-#
+# Kate O'Hara, Chris Littleboy
+# 03-12-2025
 
 
 # Data
@@ -21,6 +8,7 @@
 wb   <- read.csv("dev/wellbeing_base.csv", header = FALSE)
 espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
 espu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
+eds  <- read.csv("dev/extent_data_scotland_fixed.csv")
 
 # Labels for data:
 
@@ -57,6 +45,7 @@ cultural_labels <- c("physical_experience",
                      "aesthetic_entertainment",
                      "symbolic_sacred_religious",
                      "existence_bequest")
+
 spu_labels <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "e1", "e2", "e4","e5", "e7",
                 "f2","f3","f4","f9",
@@ -64,11 +53,16 @@ spu_labels <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "h2", "h3","i1","i2",
                 "j1","j2","j3","j4","k")
 
+eds_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
+                "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015",
+                "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023")
+
 # Apply labels
 
 colnames(espb) <- colnames(espu) <- colnames(wb) <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
-rownames(espb) <- rownames(espu) <-rownames(wb) <- spu_labels
+rownames(espb) <- rownames(espu) <-rownames(wb) <- rownames(eds) <-  spu_labels
 
+colnames(eds) <- eds_labels
 
-lapply(names(wb))
+#### CALCULATING NCAI ####
