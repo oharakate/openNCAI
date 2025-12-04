@@ -3,12 +3,16 @@
 # 03-12-2025
 
 
+# SETUP ####
+library(dplyr)
+
 # Data
 
 wb   <- read.csv("dev/wellbeing_base.csv", header = FALSE)
 espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
-espu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
-eds  <- read.csv("dev/extent_data_scotland_fixed.csv")
+esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
+eds_w_totals  <- read.csv("dev/ecosystem_area.csv", header = TRUE)
+eds <- eds_w_totals[-nrow(eds_w_totals),]
 
 # Labels for data:
 
@@ -53,16 +57,64 @@ spu_labels <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "h2", "h3","i1","i2",
                 "j1","j2","j3","j4","k")
 
-eds_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
+# The range of years in the Scotland 23 extent data:
+eds_year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
                 "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015",
                 "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023")
 
 # Apply labels
 
-colnames(espb) <- colnames(espu) <- colnames(wb) <-
+colnames(espb) <- colnames(esppu) <- colnames(wb) <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
-rownames(espb) <- rownames(espu) <-rownames(wb) <- rownames(eds) <-  spu_labels
-
-colnames(eds) <- eds_labels
+rownames(espb) <- rownames(esppu) <-rownames(wb)  <-  spu_labels
+# View(eds)
+colnames(eds) <- eds_year_labels
+# View(eds)
 
 #### CALCULATING NCAI ####
+# Things in use
+# MATRIX EDS: VECTOR per year of EA Ecosystem Area
+# which we think gets multiplied by
+# ESPU Ecosystem service potential per unit/hectare
+# to make
+# MATRIX E
+
+# Define extent data
+ed <- eds
+# Set a year:
+yeartocalc <- "2000"
+
+# espu as weight - Looks like we need to take the value in the ESPPU sheet and
+# treat it as a score out of 5. So divide everything in that by 5 to get a
+# weight:
+esppu_mat <- as.matrix(esppu)
+esppu_aw  <- esppu_mat / 5
+esppu_aw <- esppu_aw %>%
+  as.data.frame()
+# View(esppu_aw)
+
+# Pull the vector for that year:
+extyearvec <- ed %>%
+  pull(yeartocalc)
+made_espb <- sweep(
+  x = esppu_aw,
+  MARGIN = 1,
+  STATS = extyearvec,
+  FUN = "*"
+)
+# Does the calculated espb match the published one?
+# No:
+all.equal(espb, made_espb)
+# And I'm not sure why.
+# Many of the errors are small and could maybe be rounding but I doubt it.
+View(made_espb)
+View(espb)
+
+
+
+#  We think...
+# ESPB cell proportion of column
+# gets multiplied by
+# VECTOR ESPW Ecosystem service potential weighting
+# to give
+# WBB Wellbeing base
