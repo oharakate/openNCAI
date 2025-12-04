@@ -5,6 +5,7 @@
 
 # SETUP ####
 library(dplyr)
+library(tidyr)
 
 # Data
 
@@ -66,10 +67,65 @@ eds_year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "20
 
 colnames(espb) <- colnames(esppu) <- colnames(wb) <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
+
+all_service_labels
+
 rownames(espb) <- rownames(esppu) <-rownames(wb)  <-  spu_labels
 # View(eds)
 colnames(eds) <- eds_year_labels
 # View(eds)
+
+# Make a matrix of colnames and rownames:
+
+snum_labels <- data.frame(c("1.1",
+                "1.2",
+                "1.3",
+                "1.4",
+                "1.5",
+                "1.6",
+                "1.7",
+                "1.8",
+                "1.9",
+                "1.10",
+                "1.11",
+                "1.12",
+                "2.1",
+                "2.2",
+                "2.3",
+                "2.4",
+                "2.5",
+                "2.6",
+                "2.7",
+                "2.8",
+                "2.9",
+                "2.10",
+                "2.11",
+                "3.1",
+                "3.2",
+                "3.3",
+                "3.4",
+                "3.5"))
+
+s_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
+
+
+column_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
+label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
+head(label_mat)
+
+list_labels <- list(
+  c(
+    provisioning_labels,
+    regulationandmaintenance_labels,
+    cultural_labels
+    )
+  )
+column_labels <-  do.call(c, list_labels)
+print(length(column_labels))
+label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
+
+head(label_mat)
+tail(label_mat)
 
 #### CALCULATING NCAI ####
 # Things in use
@@ -82,39 +138,70 @@ colnames(eds) <- eds_year_labels
 # Define extent data
 ed <- eds
 # Set a year:
-yeartocalc <- "2000"
+origin_year <- "2000"
 
 # espu as weight - Looks like we need to take the value in the ESPPU sheet and
 # treat it as a score out of 5. So divide everything in that by 5 to get a
-# weight:
+# weight
+# EXCEPT in the case of the read cells, which are multiplied by 5.
+# So we will make a matrix which records the divisor (will be 1 instead of 5
+# for these adjusted ones).
+
+# From Chris:
+# Make a grid with all combinations of habitat and service.
+t1 <- expand.grid(spu_labels, s_labels)
+head(t1)
+# Make a df which records all the cells to be adjusted:
+t2 <- data.frame(spu = c(rep("b1",7),rep("b2",5), rep("b3",5),
+                         "d1",
+                         rep("i2",6),
+                         rep("j1",5),
+                         rep("j2",5)),
+                 service_potential = c("erosion_mediation", "soil_formation_composition",
+                                       cultural_labels,
+                                       cultural_labels,
+                                       cultural_labels,
+                                       "climate",
+                                       "climate",
+                                       cultural_labels,
+                                       cultural_labels,
+                                       cultural_labels),
+                 constant = 1)
+# t2
+# Label combinations df cols
+colnames(t1) <- c("spu", "service_potential")
+# Merge in the to-be-adjusted. Non-matches will get NA.
+t <- merge(t1,t2, all = TRUE)
+# Replace NA with 5 as this is the correct divisor.
+# Adjustees get 1., the constant we specified.
+t$constant[is.na(t$constant)] <- 5
+# Pivot wider to get the same dimension df as esppu matrix.
+twide <- pivot_wider(t, id_cols = spu,
+                     names_from = service_potential,
+                     values_from = constant)[,2:29]
+
+# Now onto building espb from esppu & year 1 habitat extent data:
+# Make into matrix
 esppu_mat <- as.matrix(esppu)
-esppu_aw  <- esppu_mat / 5
+# Divide by the same sized matrix we made above, holding the divisors.
+esppu_aw  <- esppu_mat / twide
+# Back to df.
 esppu_aw <- esppu_aw %>%
   as.data.frame()
 # View(esppu_aw)
 
-# Pull the vector for that year:
-extyearvec <- ed %>%
-  pull(yeartocalc)
+# Pull the vector for original year:
+originyearvec <- ed %>%
+  pull(origin_year)
 made_espb <- sweep(
   x = esppu_aw,
   MARGIN = 1,
-  STATS = extyearvec,
+  STATS = originyearvec,
   FUN = "*"
 )
+rownames(made_espb) <- spu_labels
 # Does the calculated espb match the published one?
-# No:
+# Yes:
 all.equal(espb, made_espb)
-# And I'm not sure why.
-# Many of the errors are small and could maybe be rounding but I doubt it.
-View(made_espb)
-View(espb)
 
 
-
-#  We think...
-# ESPB cell proportion of column
-# gets multiplied by
-# VECTOR ESPW Ecosystem service potential weighting
-# to give
-# WBB Wellbeing base
