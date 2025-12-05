@@ -7,17 +7,27 @@
 library(dplyr)
 library(tidyr)
 
-# Data
-
+# Scotland data for replication:
+# Existing bases (Scotland)
 wb   <- read.csv("dev/wellbeing_base.csv", header = FALSE)
 espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
+# Ecosystem service providing potential per SPU matrix:
 esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
+# Extent data all years (Scotland)
 eds_w_totals  <- read.csv("dev/ecosystem_area.csv", header = TRUE)
+# R/m totals
 eds <- eds_w_totals[-nrow(eds_w_totals),]
+# ES Potential ('Scotland weights')
+# Chris has typed these manually below, but here they are as csv:
+esw_scot_sections <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
+esw_scot_prov <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
+esw_scot_regu <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
+esw_scot_cult <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
+
 
 # Labels for data:
-
 main_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
+short_main_labels <- c("prov", "regu", "cult")
 main_weights <- c(10,20,10)
 provisioning_weights <- c(20,15,9,9,20,13,13,7,11,12,1,0)
 provisioning_labels <- c("cultivated_crops",
@@ -64,68 +74,69 @@ eds_year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "20
                 "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023")
 
 # Apply labels
-
 colnames(espb) <- colnames(esppu) <- colnames(wb) <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 
-all_service_labels
-
 rownames(espb) <- rownames(esppu) <-rownames(wb)  <-  spu_labels
-# View(eds)
+rownames(esw_scot_prov) <- provisioning_labels
+rownames(esw_scot_regu) <- regulationandmaintenance_labels
+rownames(esw_scot_cult) <- cultural_labels
+
 colnames(eds) <- eds_year_labels
-# View(eds)
 
-# Make a matrix of colnames and rownames:
+# EXCLUDE think not needed? Make a matrix of colnames and rownames: ####
+# snum_labels <- data.frame(c("1.1",
+#                 "1.2",
+#                 "1.3",
+#                 "1.4",
+#                 "1.5",
+#                 "1.6",
+#                 "1.7",
+#                 "1.8",
+#                 "1.9",
+#                 "1.10",
+#                 "1.11",
+#                 "1.12",
+#                 "2.1",
+#                 "2.2",
+#                 "2.3",
+#                 "2.4",
+#                 "2.5",
+#                 "2.6",
+#                 "2.7",
+#                 "2.8",
+#                 "2.9",
+#                 "2.10",
+#                 "2.11",
+#                 "3.1",
+#                 "3.2",
+#                 "3.3",
+#                 "3.4",
+#                 "3.5"))
+#
+# s_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
+#
+#
+# column_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
+# label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
+# head(label_mat)
+#
+# list_labels <- list(
+#   c(
+#     provisioning_labels,
+#     regulationandmaintenance_labels,
+#     cultural_labels
+#     )
+#   )
+# column_labels <-  do.call(c, list_labels)
+# print(length(column_labels))
+# label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
+#
+# head(label_mat)
+# tail(label_mat)
+####
 
-snum_labels <- data.frame(c("1.1",
-                "1.2",
-                "1.3",
-                "1.4",
-                "1.5",
-                "1.6",
-                "1.7",
-                "1.8",
-                "1.9",
-                "1.10",
-                "1.11",
-                "1.12",
-                "2.1",
-                "2.2",
-                "2.3",
-                "2.4",
-                "2.5",
-                "2.6",
-                "2.7",
-                "2.8",
-                "2.9",
-                "2.10",
-                "2.11",
-                "3.1",
-                "3.2",
-                "3.3",
-                "3.4",
-                "3.5"))
 
-s_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
-
-
-column_labels <- c(provisioning_labels, regulationandmaintenance_labels, cultural_labels)
-label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
-head(label_mat)
-
-list_labels <- list(
-  c(
-    provisioning_labels,
-    regulationandmaintenance_labels,
-    cultural_labels
-    )
-  )
-column_labels <-  do.call(c, list_labels)
-print(length(column_labels))
-label_mat <- expand.grid(Row = spu_labels, Column = column_labels)
-
-head(label_mat)
-tail(label_mat)
 
 #### CALCULATING NCAI ####
 # Things in use
@@ -204,4 +215,88 @@ rownames(made_espb) <- spu_labels
 # Yes:
 all.equal(espb, made_espb)
 
+
+## Next step is to recreate the wellbeing base.
+
+# # FUNCTION imp_rtw_between()
+# Gets between-service-provision-type IMPORTANCE weights from a df of raw scores:
+
+# Convert sections of raw ratings to actual weights:
+# Guidance from excel sheet:
+# Get service section weights from a vector of scores
+# ("Step 1: ecosystem service section. The most important of the <list> is
+# assigned a value of 20, and the other <remainder> are assigned a value
+# (between 0 and 20) in terms of their relative importance.
+# 1. Provisioning (1.1 thru 1.12)
+# 2. Regulation and maintenance (2.1 thru 2.11)
+# 3. Cultural services (3.1 through 3.5
+imp_rtw_between <- function(between_scores) {
+  # Scores is a vector of scores 1,2 3
+  between_weights <- between_scores / sum(between_scores) * 100
+  # Return a df which can be indexed [,1] [,2] [,3]
+  return(between_weights)
+}
+
+
+## FUNCTION imp_rtw_within()
+# Gets within-service-type IMPORTANCE weights from a df of raw scores, using
+# between weights outputted from imp_rtw_between()
+imp_rtw_within <- function(scores, between_weights, index) {
+  # Takes index 1-3 for the appropriate section.
+  # Should improve this to make that list of indices soft maybe.
+  within_weights  <- scores / sum(scores) * between_weights[index,]
+
+  return(within_weights)
+}
+
+# Calculate Scotland's importance weights:
+scot_between_scores <- imp_rtw_between(raw_esw_sect)
+iw_prov <- imp_rtw_within(eswr_prov, scot_between_scores, 1)
+iw_regu <- imp_rtw_within(eswr_regu, scot_between_scores, 2)
+iw_cult <- imp_rtw_within(eswr_cult, scot_between_scores, 3)
+
+# Join these into one vector
+scot_iw_within <- rbind(iw_prov, iw_regu, iw_cult)
+rownames(scot_iw_within) <- (c(provisioning_labels,
+                   regulationandmaintenance_labels,
+                   cultural_labels))
+colnames(scot_iw_within) <- ("weight")
+scot_iw_within <- scot_iw_within %>%
+  rownames_to_column(var = "service") %>%
+  pivot_wider(
+    names_from = service,
+    values_from = weight
+  )
+
+
+# Calculate Scotland's Well-being Base:
+espb_totals <- colSums(espb)
+espb_as_prop <- sweep(
+  x = espb,
+  MARGIN = 2,
+  STATS = espb_totals,
+  FUN = "/"
+)
+head(espb_as_prop)
+
+scot_wb <- sweep(
+  x = espb_as_prop,
+  MARGIN = 2,
+  STATS = as.numeric(scot_iw_within),
+  FUN = "*"
+)
+scot_wb <- scot_wb * 100
+# head(scot_wb)
+# head(wb)
+all.equal(wb, round(scot_wb, digits = 0))
+# TRUE!
+
+# OK, so up to here we have been able to recreate the potential base and the
+# wellbeing base from year 1 (2000) Scotland extent data and the two sheets
+# which contain the ecosystem service potential per SPU (sheet 3) and the
+# between and within service type 'importance to Scotland' weights (sheet 4).
+
+
+
+# Pull sections of weights into one df:
 
