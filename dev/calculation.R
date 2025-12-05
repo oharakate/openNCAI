@@ -244,6 +244,8 @@ imp_rtw_between <- function(between_scores) {
 imp_rtw_within <- function(scores, between_weights, index) {
   # Takes index 1-3 for the appropriate section.
   # Should improve this to make that list of indices soft maybe.
+  # Maybe could add a section index column to the df holding the sets of
+  # within weights?
   within_weights  <- scores / sum(scores) * between_weights[index,]
 
   return(within_weights)
