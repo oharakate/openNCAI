@@ -19,10 +19,10 @@ eds_w_totals  <- read.csv("dev/ecosystem_area.csv", header = TRUE)
 eds <- eds_w_totals[-nrow(eds_w_totals),]
 # ES Potential ('Scotland weights')
 # Chris has typed these manually below, but here they are as csv:
-esw_scot_sections <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
-esw_scot_prov <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
-esw_scot_regu <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
-esw_scot_cult <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
+eswr_scot_sections <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
+eswr_prov <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
+eswr_regu <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
+eswr_cult <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
 
 
 # Labels for data:
@@ -252,7 +252,7 @@ imp_rtw_within <- function(scores, between_weights, index) {
 }
 
 # Calculate Scotland's importance weights:
-scot_between_scores <- imp_rtw_between(raw_esw_sect)
+scot_between_scores <- imp_rtw_between(eswr_scot_sections)
 iw_prov <- imp_rtw_within(eswr_prov, scot_between_scores, 1)
 iw_regu <- imp_rtw_within(eswr_regu, scot_between_scores, 2)
 iw_cult <- imp_rtw_within(eswr_cult, scot_between_scores, 3)
