@@ -282,9 +282,8 @@ all.equal(wb, round(scot_wb, digits = 0))
 # cirm1_3 (type 1 (prov) relevance matrix of service type 3)
 # Let's get cirm1 (added code to read above)...
 head(scot_cirm1)
-cirm1_labels <- c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 cirm1 <- scot_cirm1
-names(cirm1) <- cirm1_labels
+names(cirm1) <- all_service_labels
 cirm1[is.na(cirm1)] <- 0
   # Replaces any NA with 0.
 head(cirm1)
@@ -344,18 +343,80 @@ all.equal(scot_ciwm1, ciwm1)
 
 # That has to happen for all the CIs.
 # So let's work out how to loop through all CIs doing that...
-n_cis <- length(indd)
+# Will make a short version of the indicator directory
+indd_short <- indd[1:3, ]
 
-for (i in 1:n_cis) {
-  print(1)
+# This should become a function to read in a batch of CIRM csvs.
+cirm1 <- read.csv("dev/scot_cirm1.csv", header = FALSE)
+names(cirm1) <- all_service_labels
+cirm1[is.na(cirm1)] <- 0
+
+cirm2 <- read.csv("dev/scot_cirm2.csv", header = FALSE)
+names(cirm2) <- all_service_labels
+cirm2[is.na(cirm2)] <- 0
+
+cirm3 <- read.csv("dev/scot_cirm3.csv", header = FALSE)
+names(cirm3) <- all_service_labels
+cirm3[is.na(cirm3)] <- 0
+
+st1_labels <- provisioning_labels
+st2_labels <- regulationandmaintenance_labels
+st3_labels <- cultural_labels
+
+n_cis <- nrow(indd_short)
+
+for (j in 1:n_cis) {
+  # We will need the numbered name of the cirm:
+  cirm_name <- paste0("cirm", j)
+  # And the numbered name of the ciwm we will make:
+  ciwm_name <- paste0("ciwm", j)
+
+  n_st <- nrow(st) # where st is the service types list
+  for (i in 1:n_st) {
+
+    labels_name <- paste0("st", i, "_labels")
+    subrm_name  <- paste0(cirm_name, "_", i)
+    wcol_name   <- paste0("st", i, "_weight")
+    subwm_name  <- paste0(ciwm_name, i)
+
+    assign(subrm_name, get(cirm_name)[ ,get(labels_name)], envir = .GlobalEnv)
+    weight <- indd[j, wcol_name]
+
+    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
+
+  }
+  ciwm_names_to_bind <- paste0(ciwm_name, 1:n_st)
+  ciwm_list <- mget(ciwm_names_to_bind)
+  assign(ciwm_name, Reduce(cbind, ciwm_list))
 }
 
+scot_ciwm2 <- read.csv("dev/scot_ciwm2.csv", header = FALSE)
+scot_ciwm2[is.na(scot_ciwm2)] <- 0
+names(scot_ciwm2) <- all_service_labels
+scot_ciwm3 <- read.csv("dev/scot_ciwm3.csv", header = FALSE)
+scot_ciwm3[is.na(scot_ciwm3)] <- 0
+names(scot_ciwm3) <- all_service_labels
+
+all.equal(ciwm1, scot_ciwm1)
+all.equal(ciwm2, scot_ciwm2)
+all.equal(ciwm3, scot_ciwm3)
+
+# CHECKPOINT
+# So now we have reproduced a short set of the first 3 Condition Indicator
+# Relevance Weight sets, by building from a matrix of binary is/not applicable
+# entries, and the indicator directory which records the weight to be applied
+# for each indicator, for each service type.
 
 
 
 # And then I think these will be layered, added element-wise, on top of one
 # another.
 n_cis <- length(ci_dir)
+
+
+cirm2 <- read.csv("dev/scot_cirm2.csv", header = FALSE)
+names(cirm2) <- all_service_labels
+cirm2[is.na(cirm2)] <- 0
 
 ciwm <- ciwm1
 for (i in 1:n_cis) {
