@@ -4,9 +4,13 @@
 
 
 # SETUP ####
+# install.packages("slider")
+
 library(dplyr)
 library(tidyr)
 library(tibble)
+library(zoo)
+library(slider)
 
 # Scotland data for replication:
 # Existing bases (Scotland)
@@ -407,32 +411,84 @@ all.equal(ciwm3, scot_ciwm3)
 # entries, and the indicator directory which records the weight to be applied
 # for each indicator, for each service type.
 
-
-
 # And then I think these will be layered, added element-wise, on top of one
-# another.
-n_cis <- length(ci_dir)
+# another, to recreate the sheet 'Total Indicator Relevances'.
+# We will use 'element-wise summation'
+
+# Create a character vector of all the CI weight matrix names:
+n_cis <- nrow(indd_short)
+ciwm_names <- paste0("ciwm", 1:n_cis)
+# Get a list of the actual objects
+ciwm_list <- mget(ciwm_names)
+# Use Reduce() to add all df in the list element wise.
+ciwm_total <- Reduce("+", ciwm_list)
+View(ciwm_total)
+
+# CHECKPOINT
+# Now we can replicate in ciwm_total the Total Indicator Relevances sheet.
+# NOTE THAT for now we've just done this with SHORT SET OF THREE indicator
+# relevance matrices and the weights from the indicator directory.
+# Next we will need actual condition indicator scores.
+# Once this is all working we can get the full set for all scot CIs of:
+# - CI relevance matrix (binary)
+# - Yearly condition score vector
+# - And possibly the bits to make that vector - see next comment...
 
 
-cirm2 <- read.csv("dev/scot_cirm2.csv", header = FALSE)
-names(cirm2) <- all_service_labels
-cirm2[is.na(cirm2)] <- 0
+## INDIVIDUAL CONDITION INDICATOR INDEXING
+# In general this is how it works:
+# 1. We have a value of some indicator for each year.
+# 2. We calculate a smoothed value for year x like this:
+#    xsmoothed = (x + (x-1) + (x-2) + (x-3) + (x-4)) / 5
+# 3. We index the value against the initial year's value:
+#    yearx index = xsmoothed / year1x * 100
+#    Note year 1 is indexed as 100.
+# 4. Something we need to watch out for is that score to be indexed (STBI)
+#    comes in in different ways. E.g. sheet "4" uses the sum of two scores.
+#    They are added to give the STBI. Do we want to recreate that for Scotland?
+#    If other countries use openNCAI, the work of calculating the STBI is
+#    probably for them to do.
+#    For now I will code with the STBI. And maybe we write
+#    custom functions for the Scottish index ultimately? Or, and we can think
+#    about publishing support resources here, we provide an Excel workbook with
+#    guidance in it from which users can easily extract csvs after doing their
+#    own calculations. I feel we will need to provide guidance for things like
+#    the esppu and esp within-between between weights, and the indicator
+#    directory.
 
-ciwm <- ciwm1
-for (i in 1:n_cis) {
-  current_ciwm_name <- paste0("ciwm", i)
-  current_ciwm <- get(current_ciwm_name, 1)
+# For the first 3 Scottish CIs I am taking the vector of scores, before
+# smoothing and before indexing. This often means filling forwards or backwards.
+# E.g. in Sheet 2, CI1, there is data to 2018, so the 2018 value is pasted in
+# for the following years up to 2022. The finished vector should be 23 long in
+# each case.
 
-  ciwm <- ciwm + current_ciwm
-}
+# Loading zoo package to handle the rolling average operations.
+# Slider is a more tidyverse alternative we could use.
 
-# The matrices need to be put back together into one big one
+# NOTE that not all indicators get the rolling average.
+# I think the best place to record whether or not would be in the indicator
+# directory indd.
+# In the short indd for now:
+indd_short$smooth <- c(1, 1, 0)
+# There is also the small question of 'updated for 2015'.
 
-
-# Assume here we will use a loop or list apply to go through them all.
-# How to get the number from the name?
-# my_list <- list()
-# for (i in 1:10) {
-#   my_list[[i]] <- get(paste0("cirm", i))
-# }
-# And use assign() to assign data to an object and use that number in the name
+# Let's try smoothing condition indicator scores (CIRS) 1 (sheet '2')
+cirs1 <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
+names(cirs1) <- c("raw1")
+# Potentially we should require a matrix of scores in shape year/CI number.
+# Pull year 1 score - index will be based on this.
+y1score1 <- cirs1[1,1]
+# Smooth each value by averaging the last (up to) 5 years' data.
+# E.g. in year 2 the average will just be of year2 and year1.
+# Loading slider package
+cirs1 <- cirs1 %>%
+  mutate(
+    smooth1 = slide_dbl(
+      .x = raw1,              # The vector to operate on
+      .f = mean,               # The function to apply (mean)
+      .before = 4,             # Include the 4 previous values
+      .after = 0,
+      .complete = FALSE        # Allows partial windows at the start
+    )
+  )
+# Slider command works well.
