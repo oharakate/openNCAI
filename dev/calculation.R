@@ -508,4 +508,48 @@ cis <- cis %>%
   )
 
 
-C
+## OK, GOING TO JUST WORK WITH THE VECTOR OF NON-INDEXED SCORES
+# Proceeding on the basis that any smoothing and inter/extrapolation is done
+# by the user as the expert.
+n_cis <- nrow(indd_short)
+
+stbi1 <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
+stbi2 <- read.csv("dev/scot_ci2_stbi.csv", header = FALSE)
+stbi3 <- read.csv("dev/scot_ci3_stbi.csv", header = FALSE)
+
+# Get a list of these (names, then objects)
+stbi_names <- paste0("stbi", 1:n_cis)
+stbi_list <- mget(stbi_names)
+# Put them into a matrix (can require a matrix in future but do this for now):
+stbi <- data.frame(sapply(stbi_list, function(df) df[[1]])) %>%
+  setNames(stbi_names)
+
+## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
+## indexed scores
+index_scores <- function(score_matrix, n_cis) {
+
+  scorecol_names <- paste0("stbi", 1:n_cis)
+  working_matrix <- score_matrix
+
+  for (i in 1:n_cis) {
+    score_name <- paste0("stbi", i)
+    indic_name <- paste0("ind", i)
+
+    y1score <- score_matrix %>%
+      pull(!!score_name) %>%
+      .[1]
+
+    working_matrix <- working_matrix %>%
+      mutate(!!indic_name := (!!sym(score_name) / y1score) * 100)
+    # I'm not really familiar with the !! := and !!sym() operators.
+    # LLM recommendation!
+  }
+  index_matrix <- working_matrix %>%
+    select(-c(scorecol_names))
+
+  return(index_matrix)
+}
+
+cis <- index_scores(stbi, nrow(indd_short))
+head(cis)
+View(cis)
