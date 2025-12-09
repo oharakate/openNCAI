@@ -10,12 +10,10 @@ library(dplyr)
 library(tidyr)
 library(tibble)
 library(readr)
-# library(zoo) # Not need these if we don't smooth
-# library(slider)
 
 # Scotland data for replication:
 # Existing bases (Scotland)
-wb   <- read.csv("dev/wellbeing_base.csv", header = FALSE)
+wb <- read.csv("dev/wellbeing_base.csv", header = FALSE)
 espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
 # Ecosystem service providing potential per SPU matrix:
 esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
@@ -90,10 +88,7 @@ eds_year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "20
 colnames(espb) <- colnames(esppu) <- colnames(wb) <- all_service_labels <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 
-rownames(espb) <- rownames(esppu) <- rownames(wb)
-rownames(esw_scot_prov) <- provisioning_labels
-rownames(esw_scot_regu) <- regulationandmaintenance_labels
-rownames(esw_scot_cult) <- cultural_labels
+rownames(espb) <- rownames(esppu) <- rownames(wb) <- spu_labels
 
 colnames(eds) <- eds_year_labels
 
@@ -436,7 +431,7 @@ View(ciwm_total)
 # - And possibly the bits to make that vector - see next comment...
 
 
-## INDIVIDUAL CONDITION INDICATOR INDEXING
+##### not doing the smoothing INDIVIDUAL CONDITION INDICATOR INDEXING ####
 # In general this is how it works:
 # 1. We have a value of some indicator for each year.
 # 2. We calculate a smoothed value for year x like this:
@@ -584,7 +579,7 @@ ciwm_to_cirm <- function(filepath, #path to cirm
 }
 
 # Get num rows from indd and list 1:that.
-n_cis <- nrow(indd)
+n_cis <- nrow(indd_short)
 ci_list <- 1:n_cis
 # Loop through, processing each file:
 for (i in ci_list) {
@@ -596,4 +591,17 @@ for (i in ci_list) {
 
   assign(output_object_name, binary_df, envir = .GlobalEnv)
 
+}
+
+# Going at this point to bring_in_cirms.R to batch process the cirm matrices
+# from the NCAI sheet.
+
+# Here is a function to bring all the cirms into the environment:
+
+n_cis <- nrow(indd)
+for (i in n_cis) {
+  object_name <- paste0("cirm", i)
+  csv_to_read <- file.path("dev", paste0("cirm", i, ".csv"))
+  df <- read.csv(csv_to_read, header = TRUE)
+  assign(object_name, df, envir = .GlobalEnv)
 }
