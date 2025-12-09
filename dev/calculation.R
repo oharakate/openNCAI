@@ -9,6 +9,7 @@
 library(dplyr)
 library(tidyr)
 library(tibble)
+library(readr)
 # library(zoo) # Not need these if we don't smooth
 # library(slider)
 
@@ -552,4 +553,47 @@ index_scores <- function(score_matrix, n_cis) {
 
 cis <- index_scores(stbi, nrow(indd_short))
 head(cis)
-View(cis)
+# View(cis)
+# This works, subject to the unrounded values being used! Careful!
+
+# Here is the matrix of years 2000-2022, all CIs (scores), for Scotland:
+cis_full_scot <- read.csv("dev/scot_year_ci_matrix.csv", header = TRUE)
+
+
+
+## FUNCTION ciwm_to_cirm will load a bunch of regularly named CIRMs
+# and replace all non-zero and non-missing values with 1, and replace all NAs
+# with 0.
+ciwm_to_cirm <- function(filepath, #path to cirm
+                                has_header = TRUE #false if no header row
+                                ) {
+  # Read in the file assuming header if not otherwise argued
+  df <- read.csv(filepath, header = has_header)
+  # Replace NA with 0, non-0 with 1, leave 0 alone.
+  df_binary <- df %>%
+    mutate(across(everything(), ~ {
+      case_when(
+        is.na(.x) ~ 0,
+        .x != 0   ~ 1,
+        TRUE      ~ 0
+      )
+    }))
+
+  return(df_binary)
+
+}
+
+# Get num rows from indd and list 1:that.
+n_cis <- nrow(indd)
+ci_list <- 1:n_cis
+# Loop through, processing each file:
+for (i in ci_list) {
+
+  input_file_path <- paste0("dev/scot_cirm", i, ".csv")
+  output_object_name <- paste0("cirm", i)
+
+  binary_df <- ciwm_to_cirm(input_file_path, TRUE)
+
+  assign(output_object_name, binary_df, envir = .GlobalEnv)
+
+}
