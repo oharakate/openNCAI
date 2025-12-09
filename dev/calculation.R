@@ -472,16 +472,14 @@ View(ciwm_total)
 indd_short$smooth <- c(1, 1, 0)
 # There is also the small question of 'updated for 2015'.
 
-# Let's try smoothing condition indicator scores (CIRS) 1 (sheet '2')
-cirs1 <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
-names(cirs1) <- c("raw1")
+# Let's try smoothing condition indicator scores (CIS) 1 (sheet '2')
+cis <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
+names(cis) <- c("raw1")
 # Potentially we should require a matrix of scores in shape year/CI number.
-# Pull year 1 score - index will be based on this.
-y1score1 <- cirs1[1,1]
 # Smooth each value by averaging the last (up to) 5 years' data.
 # E.g. in year 2 the average will just be of year2 and year1.
 # Loading slider package
-cirs1 <- cirs1 %>%
+cis <- cis %>%
   mutate(
     smooth1 = slide_dbl(
       .x = raw1,              # The vector to operate on
@@ -492,3 +490,20 @@ cirs1 <- cirs1 %>%
     )
   )
 # Slider command works well.
+# NOPE the last few values are wrong because extrapolated (filled forward) data
+# don't get smoothed. Real data smoothed up to when it exists and then filled
+# forward.
+
+# STOPPING to think
+
+# Once we have the smoothed values, we can index them.
+# This is just the current year, divided by year 1, * 100.
+# Pull year 1 score - index will be based on this.
+y1score1 <- cis[1, "smooth1"]
+# Actually let's use y1 smooth, because potentially a user could provide data
+# predating the index start year. This function could take start and end year.
+# Add later.
+cis <- cis %>%
+  mutate(
+    index1 = (smooth1 / y1score1) * 100
+  )
