@@ -9,8 +9,8 @@
 library(dplyr)
 library(tidyr)
 library(tibble)
-library(zoo)
-library(slider)
+# library(zoo) # Not need these if we don't smooth
+# library(slider)
 
 # Scotland data for replication:
 # Existing bases (Scotland)
@@ -462,8 +462,8 @@ View(ciwm_total)
 # for the following years up to 2022. The finished vector should be 23 long in
 # each case.
 
-# Loading zoo package to handle the rolling average operations.
-# Slider is a more tidyverse alternative we could use.
+
+#### TAKING OUT - smoothing calculation (leaving to user) ####
 
 # NOTE that not all indicators get the rolling average.
 # I think the best place to record whether or not would be in the indicator
@@ -471,30 +471,29 @@ View(ciwm_total)
 # In the short indd for now:
 indd_short$smooth <- c(1, 1, 0)
 # There is also the small question of 'updated for 2015'.
-
 # Let's try smoothing condition indicator scores (CIS) 1 (sheet '2')
-cis <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
-names(cis) <- c("raw1")
+# cis <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
+# names(cis) <- c("raw1")
 # Potentially we should require a matrix of scores in shape year/CI number.
 # Smooth each value by averaging the last (up to) 5 years' data.
 # E.g. in year 2 the average will just be of year2 and year1.
 # Loading slider package
-cis <- cis %>%
-  mutate(
-    smooth1 = slide_dbl(
-      .x = raw1,              # The vector to operate on
-      .f = mean,               # The function to apply (mean)
-      .before = 4,             # Include the 4 previous values
-      .after = 0,
-      .complete = FALSE        # Allows partial windows at the start
-    )
-  )
+# cis <- cis %>%
+#   mutate(
+#     smooth1 = slide_dbl(
+#       .x = raw1,              # The vector to operate on
+#       .f = mean,               # The function to apply (mean)
+#       .before = 4,             # Include the 4 previous values
+#       .after = 0,
+#       .complete = FALSE        # Allows partial windows at the start
+#     )
+#   )
 # Slider command works well.
 # NOPE the last few values are wrong because extrapolated (filled forward) data
 # don't get smoothed. Real data smoothed up to when it exists and then filled
 # forward.
 
-# STOPPING to think
+#### STOPPING to think
 
 # Once we have the smoothed values, we can index them.
 # This is just the current year, divided by year 1, * 100.
@@ -507,3 +506,6 @@ cis <- cis %>%
   mutate(
     index1 = (smooth1 / y1score1) * 100
   )
+
+
+C
