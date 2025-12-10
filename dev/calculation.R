@@ -184,7 +184,8 @@ all.equal(espb, scot_espb)
 
 # # FUNCTION imp_rtw_between()
 # Gets between-service-provision-type IMPORTANCE weights from a df of raw
-# scores:
+# scores.
+# Output is used in imp_rtw_within.
 
 # Convert sections of raw ratings to actual weights:
 # Guidance from excel sheet:
@@ -206,34 +207,93 @@ imp_rtw_between <- function(between_scores) {
 ## FUNCTION imp_rtw_within()
 # Gets within-service-type IMPORTANCE weights from a df of raw scores, using
 # between weights output from imp_rtw_between()
+# Used in calc_imp_weights() below
 imp_rtw_within <- function(scores, between_weights, index) {
   # Takes index 1-3 for the appropriate section.
   # Should improve this to make that list of indices soft maybe.
   # Maybe could add a section index column to the df holding the sets of
   # within weights?
-  within_weights  <- scores / sum(scores) * between_weights[index,]
+  within_weights  <- scores / sum(scores) * between_weights[index, 1]
 
   return(within_weights)
 }
 
-# Calculate Scotland's importance weights:
-scot_between_scores <- imp_rtw_between(eswr_scot_sections)
-iw_prov <- imp_rtw_within(eswr_prov, scot_between_scores, 1)
-iw_regu <- imp_rtw_within(eswr_regu, scot_between_scores, 2)
-iw_cult <- imp_rtw_within(eswr_cult, scot_between_scores, 3)
 
-# Join these into one vector
-scot_iw_within <- rbind(iw_prov, iw_regu, iw_cult)
-rownames(scot_iw_within) <- (c(provisioning_labels,
-                   regulationandmaintenance_labels,
-                   cultural_labels))
-colnames(scot_iw_within) <- ("weight")
-scot_iw_within <- scot_iw_within %>%
-  rownames_to_column(var = "service") %>%
-  pivot_wider(
-    names_from = service,
-    values_from = weight
-  )
+## FUNCTION calc_imp_weights()
+# Loops through the list of ecosystem service types, calculating importance
+# weights and returning a list of weight subset objects.
+
+# Requires the vector of between-service-type scores, and a list of the
+# within-service-type-score objects.
+calc_imp_weights <- function (between_scores, within_scores_list) {
+
+  # Calculate the between weights
+  b_weights <- imp_rtw_between(between_scores)
+
+  # Initialise service type group number
+  st_num <- 0
+
+  # Initialise list of weight subsets
+  ww_subset_list <- list()
+
+  for (i in within_scores_list) {
+
+    # Increment service type group number
+    st_num <-  st_num + 1
+    ww_subset_name <- paste0("ww_subset_", st_num)
+
+    # Calculate within weights for service type
+    ww_subset <- imp_rtw_within(scores = within_scores_list[[st_num]],
+                                between_weights = b_weights,
+                                index = st_num)
+    assign(ww_subset_name, ww_subset, envir = .GlobalEnv)
+
+    # Add the ww subset to the list thereof
+    ww_subset_list[[ww_subset_name]] <- ww_subset
+
+  }
+
+  return(ww_subset_list)
+
+}
+
+# eswr_scot_sections are the scottish between-ecosystem-service-type raw scores
+# Make a list of the within-ecosystem_service_type scores
+scot_within_score_list <- list(eswr_prov, eswr_regu, eswr_cult)
+
+scot_ww_list <- calc_imp_weights(eswr_scot_sections, scot_within_score_list)
+
+## FUNCTION bind_imp_weights()
+# Rejoins within-service-type weights back into one weight vector, applying
+# between-service-type weights.
+
+# Require list of importance within weight vectors, output from imp_rtw_within()
+# and list of all the service labels
+
+bind_imp_weights <- function(ww_list, all_service_label_list) {
+
+  # Row bind the subsets of weights
+  long_weights <- dplyr::bind_rows(ww_list)
+
+  if(nrow(long_weights) != length(all_service_label_list)) {
+    stop("The number of rows in the weights (", nrow(long_weights),
+         ") does not match the number of labels (", length(all_service_label_list), ").")
+  }
+
+  # Label rows with the service type subsets of service labels
+  rownames(long_weights) <- all_service_label_list
+  colnames(long_weights) <- ("weight")
+
+  # Pivot wider to make one row df, services as cols
+  wide_joined_weights <- as.data.frame(t(long_weights))
+
+  return(wide_joined_weights)
+
+}
+
+# Rejoin the within-weight objects and pivot wide:
+scot_iw_within <- bind_imp_weights(ww_list = scot_ww_list,
+                                   all_service_label_list = all_service_labels)
 
 
 # Calculate Scotland's Well-being Base:
@@ -266,8 +326,6 @@ all.equal(wb, round(scot_wb, digits = 0))
 
 #### How to get the Condition Indicators (CIs) ####
 # OK, for each of the condition indicators...
-# And I was expecting 38 but it seems like there are 39 entries marked 'yes'
-# for 'used' in the indicator directory sheet...
 # We will need a matrix of habitat * service, recording a binary value to
 # denote for which combinations that indicator is relevant.
 # Let's call these relevance matrices and number them cirm1
@@ -277,16 +335,31 @@ all.equal(wb, round(scot_wb, digits = 0))
 # subtypes. (Should perhaps require a csv with service per row and a column for
 # service type it belongs to, and draw numbered lists from that.)
 # So...
-# cirm1_1 (type 1 (prov) relevance matrix of service type 1)
-# cirm1_2 (type 1 (prov) relevance matrix of service type 2)
-# cirm1_3 (type 1 (prov) relevance matrix of service type 3)
 # Let's get cirm1 (added code to read above)...
-head(scot_cirm1)
-cirm1 <- scot_cirm1
-names(cirm1) <- all_service_labels
-cirm1[is.na(cirm1)] <- 0
-  # Replaces any NA with 0.
-head(cirm1)
+
+# REPLACED WITH FUNCTION BELOW
+# head(scot_cirm1)
+# the_cirm1 <- scot_cirm1
+# names(the_cirm1) <- all_service_labels
+# the_cirm1[is.na(the_cirm1)] <- 0
+# Replaces any NA with 0.
+#
+# n_st <- nrow(st) # where st is the service types list
+# for (i in 1:n_st) {
+#
+#    labels_name <- paste0("st", i, "_labels")
+#    subrm_name  <- paste0("cirm1_", i)
+#    wcol_name   <- paste0("st", i, "_weight")
+#    subwm_name  <- paste0("ciwm1_", i)
+#
+#    assign(subrm_name, cirm1[ ,get(labels_name)], envir = .GlobalEnv)
+#    weight <- indd[1, wcol_name]
+#
+#    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
+#
+# }
+#
+# head(the_cirm1)
 
 # We will need a df which is a simplified version of the indicator directory
 # sheet. Call it indd. It needs only rows with 'yes' for 'used'. It needs
@@ -327,14 +400,15 @@ ciwm_names_to_bind <- paste0("ciwm1_", 1:n_st)
 ciwm_list <- mget(ciwm_names_to_bind)
 ciwm1 <- Reduce(cbind, ciwm_list)
 
-# Check if that works to recreate table insheet "2" of the scotNCAI spreadsheet.
+View(ciwm1)
+# Check if that works to recreate table in sheet "2" of the scotNCAI spreadsheet.
 scot_ciwm1 <- read.csv("dev/orig_scot_cirm1_weights.csv", header = FALSE)
 scot_ciwm1[is.na(scot_ciwm1)] <- 0
 names(scot_ciwm1) <- c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 all.equal(scot_ciwm1, ciwm1)
 
 ## CHECKPOINT
-# To this point we have replicated the indicator relevance weight matrix for
+# To this point we have replicated the indicator relevance weighted matrix for
 # one of the numbered sheets ("2", pollution orthophosphate). We did this
 # by indexing the correct cell in the directory of Condition Indicators /
 # Ecosystem Service Type weights and multiplying that by a habitat/ES matrix
@@ -350,14 +424,17 @@ indd_short <- indd[1:3, ]
 cirm1 <- read.csv("dev/scot_cirm1.csv", header = FALSE)
 names(cirm1) <- all_service_labels
 cirm1[is.na(cirm1)] <- 0
+cirm1 <- cirm1 %>% mutate(across(everything(), as.numeric))
 
 cirm2 <- read.csv("dev/scot_cirm2.csv", header = FALSE)
 names(cirm2) <- all_service_labels
 cirm2[is.na(cirm2)] <- 0
+cirm2 <- cirm2 %>% mutate(across(everything(), as.numeric))
 
 cirm3 <- read.csv("dev/scot_cirm3.csv", header = FALSE)
 names(cirm3) <- all_service_labels
 cirm3[is.na(cirm3)] <- 0
+cirm3 <- cirm3 %>% mutate(across(everything(), as.numeric))
 
 st1_labels <- provisioning_labels
 st2_labels <- regulationandmaintenance_labels
@@ -380,7 +457,7 @@ for (j in 1:n_cis) {
     subwm_name  <- paste0(ciwm_name, i)
 
     assign(subrm_name, get(cirm_name)[ ,get(labels_name)], envir = .GlobalEnv)
-    weight <- indd[j, wcol_name]
+    weight <- indd_short[j, wcol_name] # make sure change back to indd
 
     assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
 
@@ -459,51 +536,6 @@ View(ciwm_total)
 # each case.
 
 
-#### TAKING OUT - smoothing calculation (leaving to user) ####
-
-# NOTE that not all indicators get the rolling average.
-# I think the best place to record whether or not would be in the indicator
-# directory indd.
-# In the short indd for now:
-indd_short$smooth <- c(1, 1, 0)
-# There is also the small question of 'updated for 2015'.
-# Let's try smoothing condition indicator scores (CIS) 1 (sheet '2')
-# cis <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
-# names(cis) <- c("raw1")
-# Potentially we should require a matrix of scores in shape year/CI number.
-# Smooth each value by averaging the last (up to) 5 years' data.
-# E.g. in year 2 the average will just be of year2 and year1.
-# Loading slider package
-# cis <- cis %>%
-#   mutate(
-#     smooth1 = slide_dbl(
-#       .x = raw1,              # The vector to operate on
-#       .f = mean,               # The function to apply (mean)
-#       .before = 4,             # Include the 4 previous values
-#       .after = 0,
-#       .complete = FALSE        # Allows partial windows at the start
-#     )
-#   )
-# Slider command works well.
-# NOPE the last few values are wrong because extrapolated (filled forward) data
-# don't get smoothed. Real data smoothed up to when it exists and then filled
-# forward.
-
-#### STOPPING to think
-
-# Once we have the smoothed values, we can index them.
-# This is just the current year, divided by year 1, * 100.
-# Pull year 1 score - index will be based on this.
-y1score1 <- cis[1, "smooth1"]
-# Actually let's use y1 smooth, because potentially a user could provide data
-# predating the index start year. This function could take start and end year.
-# Add later.
-cis <- cis %>%
-  mutate(
-    index1 = (smooth1 / y1score1) * 100
-  )
-
-
 ## OK, GOING TO JUST WORK WITH THE VECTOR OF NON-INDEXED SCORES
 # Proceeding on the basis that any smoothing and inter/extrapolation is done
 # by the user as the expert.
@@ -525,6 +557,7 @@ stbi <- data.frame(sapply(stbi_list, function(df) df[[1]])) %>%
 index_scores <- function(score_matrix, n_cis) {
 
   scorecol_names <- paste0("stbi", 1:n_cis)
+  names(score_matrix) <- scorecol_names
   working_matrix <- score_matrix
 
   for (i in 1:n_cis) {
@@ -541,67 +574,163 @@ index_scores <- function(score_matrix, n_cis) {
     # LLM recommendation!
   }
   index_matrix <- working_matrix %>%
-    select(-c(scorecol_names))
+    select(-all_of(scorecol_names))
 
   return(index_matrix)
 }
 
-cis <- index_scores(stbi, nrow(indd_short))
-head(cis)
+
+
+# cis_short <- index_scores(stbi, nrow(indd_short))
+# head(cis_short)
 # View(cis)
 # This works, subject to the unrounded values being used! Careful!
 
 # Here is the matrix of years 2000-2022, all CIs (scores), for Scotland:
 cis_full_scot <- read.csv("dev/scot_year_ci_matrix.csv", header = TRUE)
 
-
+cis <- index_scores(cis_full_scot, nrow(indd))
+head(cis)
 
 ## FUNCTION ciwm_to_cirm will load a bunch of regularly named CIRMs
 # and replace all non-zero and non-missing values with 1, and replace all NAs
 # with 0.
-ciwm_to_cirm <- function(filepath, #path to cirm
-                                has_header = TRUE #false if no header row
-                                ) {
-  # Read in the file assuming header if not otherwise argued
-  df <- read.csv(filepath, header = has_header)
-  # Replace NA with 0, non-0 with 1, leave 0 alone.
-  df_binary <- df %>%
-    mutate(across(everything(), ~ {
-      case_when(
-        is.na(.x) ~ 0,
-        .x != 0   ~ 1,
-        TRUE      ~ 0
-      )
-    }))
+# Don't need this here because it's done in bring_in_cirms.R.
+# Get the function from there later.
+# ciwm_to_cirm <- function(filepath, #path to cirm
+#                                 has_header = TRUE #false if no header row
+#                                 ) {
+#   # Read in the file assuming header if not otherwise argued
+#   df <- read.csv(filepath, header = has_header)
+#   # Replace NA with 0, non-0 with 1, leave 0 alone.
+#   df_binary <- df %>%
+#     mutate(across(everything(), ~ {
+#       case_when(
+#         is.na(.x) ~ 0,
+#         .x != 0   ~ 1,
+#         TRUE      ~ 0
+#       )
+#     }))
+#
+#   return(df_binary)
+#
+# }
 
-  return(df_binary)
-
-}
-
-# Get num rows from indd and list 1:that.
-n_cis <- nrow(indd_short)
-ci_list <- 1:n_cis
-# Loop through, processing each file:
-for (i in ci_list) {
-
-  input_file_path <- paste0("dev/scot_cirm", i, ".csv")
-  output_object_name <- paste0("cirm", i)
-
-  binary_df <- ciwm_to_cirm(input_file_path, TRUE)
-
-  assign(output_object_name, binary_df, envir = .GlobalEnv)
-
-}
+# # Get num rows from indd and list 1:that.
+# n_cis <- nrow(indd_short)
+# ci_list <- 1:n_cis
+# # Loop through, processing each file:
+# for (i in ci_list) {
+#
+#   input_file_path <- paste0("dev/scot_cirm", i, ".csv")
+#   output_object_name <- paste0("cirm", i)
+#
+#   binary_df <- ciwm_to_cirm(input_file_path, TRUE)
+#
+#   assign(output_object_name, binary_df, envir = .GlobalEnv)
+#
+# }
 
 # Going at this point to bring_in_cirms.R to batch process the cirm matrices
 # from the NCAI sheet.
 
 # Here is a function to bring all the cirms into the environment:
 
+
+
 n_cis <- nrow(indd)
+n_cis
 for (i in n_cis) {
   object_name <- paste0("cirm", i)
-  csv_to_read <- file.path("dev", paste0("cirm", i, ".csv"))
+  csv_to_read <- file.path("dev", paste0("scot_cirm", i, ".csv"))
   df <- read.csv(csv_to_read, header = TRUE)
   assign(object_name, df, envir = .GlobalEnv)
 }
+
+
+# So now we can loop through all 38 CIs, multiplying binary relevance matrix by
+# weights from indd, and then adding all together.
+
+
+# FUNCTIONISE THIS:
+# This should become a function to read in a batch of CIRM csvs.
+
+
+st1_labels <- provisioning_labels
+st2_labels <- regulationandmaintenance_labels
+st3_labels <- cultural_labels
+
+n_cis <- nrow(indd_short)
+
+
+
+build_ciwm <- function(ci_num) {
+  # ci_num is the number of the CI to work with
+  # CIRM objects named cirm1, cirm2, etc. are expected.
+
+  # Build the numbered name of the cirm object
+  cirm_name <- paste0("cirm", ci_num)
+  # Build the numbered name of the ciwm to be built
+  ciwm_name <- paste0("ciwm", ci_num)
+
+  n_st <- nrow(st) # where st is the list of service
+
+  # Initialise list of temp object to clean up later
+  temp_objects_to_remove <- c()
+
+  # Iterate through service types, applying weights to CIRMs.
+  for (i in 1:n_st) {
+    labels_name <- paste0("st", i, "_labels")
+    subrm_name  <- paste0(cirm_name, "_", i)
+    wcol_name   <- paste0("st", i, "_weight")
+    subwm_name  <- paste0(ciwm_name, "_", i)
+
+    # Construct list of temp objects to remove.
+    temp_objects_to_remove <- c(temp_objects_to_remove, subrm_name, subwm_name)
+
+    # select subset of the CIRM
+    assign(subrm_name, get(cirm_name)[ ,get(labels_name)], envir = .GlobalEnv)
+    # select correct weight
+    weight <- indd[ci_num, wcol_name]
+    # create subset of weight matrix by multiplying together <-
+    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
+
+  }
+
+  # Join the service type subsets back together:
+  ciwm_names_to_bind <- paste0(ciwm_name, "_", 1:n_st)
+  ciwm_list <- mget(ciwm_names_to_bind, envir = .GlobalEnv)
+  assign(ciwm_name, Reduce(cbind, ciwm_list), envir = .GlobalEnv)
+
+  # Remove temp objects
+  rm(list = temp_objects_to_remove, envir = .GlobalEnv)
+}
+
+# This would loop through, creating the ciwm object in the environment.
+# However, this is going to create an awful lot of objects.
+# Work towards including the layering step and then rm-ing all the extraneous
+# things. That could iteratively add the layers to the matrix.
+n_cis <- nrow(indd)
+for (ci_num in 1:n_cis) {
+  build_ciwm(ci_num)
+}
+
+
+# CHECKPOINT
+# So now we have reproduced a short set of the first 3 Condition Indicator
+# Relevance Weight sets, by building from a matrix of binary is/not applicable
+# entries, and the indicator directory which records the weight to be applied
+# for each indicator, for each service type.
+
+# And then I think these will be layered, added element-wise, on top of one
+# another, to recreate the sheet 'Total Indicator Relevances'.
+# We will use 'element-wise summation'
+
+# Create a character vector of all the CI weight matrix names:
+n_cis <- nrow(indd_short)
+ciwm_names <- paste0("ciwm", 1:n_cis)
+# Get a list of the actual objects
+ciwm_list <- mget(ciwm_names)
+# Use Reduce() to add all df in the list element wise.
+ciwm_total <- Reduce("+", ciwm_list)
+View(ciwm_total)

@@ -6,6 +6,7 @@
 # install.packages("readxl")
 library(readxl)
 library(dplyr)
+library(readr)
 
 
 excel_sheets("dev/ncai.xlsx")
@@ -36,7 +37,7 @@ counter <- 0
 for (i in sheet_list) {
   counter <-  counter + 1
   sheet_to_read <- i
-  output_object_name <- paste0("cirm", counter)
+  output_object_name <- paste0("scot_cirm", counter)
   save_path <- file.path("dev", paste0(output_object_name, ".csv"))
 
   cirm_df <- read_the_cirms(sheet_to_read)
@@ -49,8 +50,8 @@ for (i in sheet_list) {
       )
     }))
 
-  assign(output_object_name, binarised, envir = .GlobalEnv)
+  # assign(output_object_name, binarised, envir = .GlobalEnv)
 
-  write.csv(binarised, save_path, row.names = FALSE)
+  readr::write_csv(binarised, save_path, col_names = FALSE)
 
 }
