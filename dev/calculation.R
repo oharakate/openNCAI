@@ -97,9 +97,12 @@ colnames(eds) <- eds_year_labels
 
 
 #### CALCULATING NCAI ####
+
+# RECREATING THE ES POTENTIAL BASE
+# This section needs function-ised.
 # Define extent data
 ed <- eds
-# Set a year:
+# Set a year (prob not necessary)
 origin_year <- "2000"
 
 # espu as weight - ESPPU contains scores out of 5 on the potential of a
@@ -164,6 +167,7 @@ esppu_aw <- esppu_aw %>%
 # To get an ecosystem service potential base for Scotland, we need Scotland's
 # year one data.
 # Pull the vector for original year:
+#
 originyearvec <- ed %>%
   pull(origin_year)
 # These habitat extent values are multiplied by their esppu weightings:
@@ -174,12 +178,14 @@ scot_espb <- sweep(
   FUN = "*"
 )
 rownames(scot_espb) <- spu_labels
+# View(espb)
 # scot_espb is a matrix dims habitats * services.
 # Does the calculated espb match the published one?
 # Yes:
 all.equal(espb, scot_espb)
 
 
+## RECREATING THE WELLBEING BASE
 ## Next step is to recreate the wellbeing base.
 
 # # FUNCTION imp_rtw_between()
@@ -220,6 +226,7 @@ imp_rtw_within <- function(scores, between_weights, index) {
 
 
 ## FUNCTION calc_imp_weights()
+# Calculates importance weights, using within and between weights.
 # Loops through the list of ecosystem service types, calculating importance
 # weights and returning a list of weight subset objects.
 
@@ -552,8 +559,14 @@ stbi_list <- mget(stbi_names)
 stbi <- data.frame(sapply(stbi_list, function(df) df[[1]])) %>%
   setNames(stbi_names)
 
+# Now we have the whole Scottish matrix of raw scores:
+scot_stbi <- read_csv(
+  file.path("dev", "scot_year_ci_matrix.csv"),
+  col_names = TRUE
+  )
+
 ## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
-## indexed scores
+## indexed scores. Returns matrix of indices.
 index_scores <- function(score_matrix, n_cis) {
 
   scorecol_names <- paste0("stbi", 1:n_cis)
@@ -579,64 +592,23 @@ index_scores <- function(score_matrix, n_cis) {
   return(index_matrix)
 }
 
+# Convert matrix of Scottish year / raw CI scores to indexed values:
+# Number of CIs is the rows in the indicator directory.
+scot_cis <- index_scores(scot_stbi, nrow(scot_indd))
+head(scot_cis)
+# Remember it's important that the unrounded values of raw scores went in.
 
-
-# cis_short <- index_scores(stbi, nrow(indd_short))
-# head(cis_short)
-# View(cis)
-# This works, subject to the unrounded values being used! Careful!
-
-# Here is the matrix of years 2000-2022, all CIs (scores), for Scotland:
-cis_full_scot <- read.csv("dev/scot_year_ci_matrix.csv", header = TRUE)
-
-cis <- index_scores(cis_full_scot, nrow(indd))
-head(cis)
 
 ## FUNCTION ciwm_to_cirm will load a bunch of regularly named CIRMs
 # and replace all non-zero and non-missing values with 1, and replace all NAs
 # with 0.
 # Don't need this here because it's done in bring_in_cirms.R.
-# Get the function from there later.
-# ciwm_to_cirm <- function(filepath, #path to cirm
-#                                 has_header = TRUE #false if no header row
-#                                 ) {
-#   # Read in the file assuming header if not otherwise argued
-#   df <- read.csv(filepath, header = has_header)
-#   # Replace NA with 0, non-0 with 1, leave 0 alone.
-#   df_binary <- df %>%
-#     mutate(across(everything(), ~ {
-#       case_when(
-#         is.na(.x) ~ 0,
-#         .x != 0   ~ 1,
-#         TRUE      ~ 0
-#       )
-#     }))
-#
-#   return(df_binary)
-#
-# }
 
-# # Get num rows from indd and list 1:that.
-# n_cis <- nrow(indd_short)
-# ci_list <- 1:n_cis
-# # Loop through, processing each file:
-# for (i in ci_list) {
-#
-#   input_file_path <- paste0("dev/scot_cirm", i, ".csv")
-#   output_object_name <- paste0("cirm", i)
-#
-#   binary_df <- ciwm_to_cirm(input_file_path, TRUE)
-#
-#   assign(output_object_name, binary_df, envir = .GlobalEnv)
-#
-# }
-
-# Going at this point to bring_in_cirms.R to batch process the cirm matrices
+# Used bring_in_cirms.R to batch process the cirm matrices
 # from the NCAI sheet.
 
 # Here is a function to bring all the cirms into the environment:
-
-
+# But this tends to break R.
 
 n_cis <- nrow(indd)
 n_cis
@@ -716,11 +688,14 @@ for (ci_num in 1:n_cis) {
 }
 
 
+
+
+
+
+
+
 # CHECKPOINT
-# So now we have reproduced a short set of the first 3 Condition Indicator
-# Relevance Weight sets, by building from a matrix of binary is/not applicable
-# entries, and the indicator directory which records the weight to be applied
-# for each indicator, for each service type.
+
 
 # And then I think these will be layered, added element-wise, on top of one
 # another, to recreate the sheet 'Total Indicator Relevances'.

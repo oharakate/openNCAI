@@ -1,5 +1,5 @@
 # Script to harvest condition indicator relevance matrices from the NCAI
-# spreadsheet
+# spreadsheet (NatureScot)
 # Chris Littleboy & Kate O'Hara
  # 09-12-2025
 

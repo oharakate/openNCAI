@@ -1,7 +1,7 @@
 # # FUNCTION imp_rtw_between()
 # Gets between-service-provision-type IMPORTANCE weights from a df of raw
 # scores.
-# Expect ecosystem service relative scores between service types.
+# Expect ecosystem service relative scores between service types, as a vector.
 
 # Convert sections of raw ratings to actual weights:
 # Guidance from excel sheet:
