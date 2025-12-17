@@ -72,7 +72,7 @@ cultural_labels <- c("physical_experience",
                      "symbolic_sacred_religious",
                      "existence_bequest")
 
-spu_labels <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
+spu_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "e1", "e2", "e4","e5", "e7",
                 "f2","f3","f4","f9",
                 "g1","g3","g4","g5","g6",
@@ -108,64 +108,87 @@ origin_year <- "2000"
 # espu as weight - ESPPU contains scores out of 5 on the potential of a
 # service-providing unit to deliver its potential. So divide everything in
 # that by 5 to get a weight.
+
+
 # EXCEPT in the case of the red cells, which are multiplied by 5.
 # So we will make a matrix which records the divisor (will be 1 instead of 5
 # for these adjusted ones).
 
-# From Chris:
-# Make a grid with all combinations of habitat and service.
-t1 <- expand.grid(spu_labels, all_service_labels)
-head(t1)
-# Make a df which records all the cells to be adjusted:
-# (Potentially, we would in time produce a workbook with sheets to be filled
-# in by new users of openNCAI. We could
-# provide labelled twide below. )
-# t2 is like t1, but only contains the combinations where we want an ajuster.
-# In this case, the adjuster is always 1, but it could vary in other
-# applications.
-t2 <- data.frame(spu = c(rep("b1",7),rep("b2",5), rep("b3",5),
-                         "d1",
-                         rep("i2",6),
-                         rep("j1",5),
-                         rep("j2",5)),
-                 service_potential = c("erosion_mediation", "soil_formation_composition",
-                                       cultural_labels,
-                                       cultural_labels,
-                                       cultural_labels,
-                                       "climate",
-                                       "climate",
-                                       cultural_labels,
-                                       cultural_labels,
-                                       cultural_labels),
-                 constant = 1)
-# t2
-# Label combinations df cols
-colnames(t1) <- c("spu", "service_potential")
-# Merge in the to-be-adjusted. Non-matches will get NA.
-t <- merge(t1,t2, all = TRUE)
-# Replace NA with 5 as this is the correct divisor.
-# Adjustees get 1., the constant we specified.
-t$constant[is.na(t$constant)] <- 5
-# Pivot wider to get the same dimension df as esppu matrix.
-twide <- pivot_wider(t, id_cols = spu,
-                     names_from = service_potential,
-                     values_from = constant)[,2:29]
+## So let's make a NatureScot function, which will hard code in this
+# adjustment in the first instance...
+# This is in fns_ajust_esppu_weights.R
 
-# Divide esppu potential/unit scores by 5, unless adjustment specified, by
-# dividing esppu by twide, to get pottential per unit weights.
-# Now onto building espb from esppu & year 1 habitat extent data:
-# Make into matrix
-esppu_mat <- as.matrix(esppu)
-# Divide by the same sized matrix we made above, holding the divisors.
-esppu_aw  <- esppu_mat / twide
-# Back to df.
-esppu_aw <- esppu_aw %>%
-  as.data.frame()
-# View(esppu_aw)
+adjust_esppu_weights <- function(spu_codes,
+                                 all_service_labels,
+                                 cultural_labels) {
+
+  # Make a grid with all combinations of habitat and service.
+  htst1 <- expand.grid(spu = spu_codes,
+                       service_potential = all_service_labels,
+                       stringsAsFactors = FALSE)
+
+  # Make a df which records all the cells to be adjusted:
+  # htst2 is like htst1, but only contains the combinations where we want an
+  # adjuster.
+  # In this case, the adjuster is always 1, but it could vary in other
+  # applications.
+  # This section is hard coded and would need manually adjusted if any changes.
+  htst2 <- data.frame(
+    spu = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
+            rep("i2",6), rep("j1",5), rep("j2",5)),
+    service_potential = c("erosion_mediation", "soil_formation_composition",
+                          cultural_labels,
+                          cultural_labels,
+                          cultural_labels,
+                          "climate",
+                          "climate",
+                          cultural_labels,
+                          cultural_labels,
+                          cultural_labels),
+    constant = 1,
+    stringsAsFactors = FALSE
+  )
+
+  # Merge in the custom adjusters, fill NAs with 5
+  # We use left_join to keep everything in htst1 and bring in htst2
+  htst <- htst1 %>%
+    left_join(htst2, by = c("spu", "service_potential")) %>%
+    mutate(constant = replace_na(constant, 5))
+
+  # Pivot wider to get the same dimension df as esppu matrix.
+  htst_wide <- htst %>%
+    pivot_wider(names_from = service_potential,
+                values_from = constant)
+
+  return(htst_wide %>% select(-spu))
+
+}
 
 
-# To get an ecosystem service potential base for Scotland, we need Scotland's
-# year one data.
+# Make the matrix of ScotNCAI adjustments to the weights:
+htst_wide <- adjust_esppu_weights(spu_codes, all_service_labels, cultural_labels)
+
+# And then use this in this function, which converts scores to weights,
+# by default by dividing by 5, unless something like that ^ is passed to the
+# custom_weight_matrix argument:
+
+## FUNCTION esppu_scores_to_weights()
+# Takes matrix of ESSPU scores and converts it to weights
+esppu_scores_to_weights <- function(esppu, custom_weight_matrix = 5) {
+
+  esppu_mat <- as.matrix(esppu)
+  esppu_aw  <- (esppu_mat / as.matrix(custom_weight_matrix)) %>%
+    as.data.frame()
+
+  return(esppu_aw)
+}
+
+# For the Scottish data:
+esppu_aw <- esppu_scores_to_weights(esppu, htst_wide)
+
+
+# To calculate ESPB (ecosystem service potential base) for Scotland,
+# we need Scotland's year one data.
 # Pull the vector for original year:
 #
 originyearvec <- ed %>%

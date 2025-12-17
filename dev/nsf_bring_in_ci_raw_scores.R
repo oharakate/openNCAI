@@ -7,13 +7,10 @@ library(readxl)
 library(dplyr)
 library(readr)
 
-ncai_sheet_path <- file.path("dev", "working_excel2.xlsx")
-
-excel_sheets(ncai_sheet_path)
-
-ncai_sheet_list <- 10:47
-ncai_common_range <- "I36:I58"
-
+## FUNCTION read_the_ci_scores()
+# Takes NatureScot's spreadsheet and extracts the vector of raw condition
+# indicator scores for each CI and joins these into a matrix with numbered
+# columns.
 read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
                                sheet_list, # list of sheets containing CI scores
                                vector_range # SINGLE-COLUMN range where scores
