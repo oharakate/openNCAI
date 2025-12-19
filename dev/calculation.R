@@ -663,11 +663,20 @@ calc_ncai_yearly_matrix <- function(tyc, wb, ed, year) {
   ch_year = as.character(year)
   origin_year <- colnames(ed)[1]
 
-  ed_this_year <- ed[, ch_year]
-  ed_origin_year <- ed[, origin_year]
+  ed_this_year <- ed[[ch_year]]
+  ed_origin_year <- ed[[origin_year]]
+
+  # Calculate this year extent data as an index relative to year one
   ed_index <- (ed_this_year / ed_origin_year) * 100
 
-  ncai_yearly_matrix <- as.matrix(tyc) * as.matrix(wb) * ed_index
+  tyc_wb <- as.matrix(tyc) * as.matrix(wb)
+
+  ncai_yearly_matrix <- sweep(tyc_wb,
+                              MARGIN = 1,
+                              STATS = ed_index,
+                              FUN = "*")
+
+  return(ncai_yearly_matrix)
 
 }
 
@@ -678,7 +687,8 @@ scot_ncai_matrix_2000 <- calc_ncai_yearly_matrix(scot_tyc_2000, scot_wb, ed, 200
 # Probably the indexing of the ED?
 scot_tyc_2022 <- build_tycm(scot_cis_indexed, 2022, all_ciwms_list)
 scot_ncai_matrix_2022 <- calc_ncai_yearly_matrix(scot_tyc_2022, scot_wb, ed, 2022)
-
+# Something still not right.
+# Check that no rounded data is being used in the data we brought in at the start.
 
 
 
