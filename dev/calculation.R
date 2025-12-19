@@ -420,6 +420,42 @@ scot_stbi_matrix <- read_csv(
   file.path("dev", "scot_year_ci_matrix_automated.csv")
   )
 
+# We use this function to convert the raw scores to indexed values (around 100):
+
+## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
+## indexed scores. Returns matrix of indices. Requires the indd to get the
+# number of CIs we are working with.
+index_scores <- function(score_matrix, indd, year_list) {
+
+  n_cis <- nrow(indd)
+
+  scorecol_names <- paste0("stbi", 1:n_cis)
+  names(score_matrix) <- scorecol_names
+
+  working_matrix <- score_matrix
+
+  for (i in 1:n_cis) {
+    score_name <- paste0("stbi", i)
+    indic_name <- paste0("ind", i)
+
+    y1score <- score_matrix[[score_name]][1]
+
+    working_matrix[[indic_name]] <- (working_matrix[[score_name]] / y1score) * 100
+
+  }
+  index_matrix <- working_matrix %>%
+    select(starts_with("ind")) %>%
+    mutate(year = year_list) %>%  # Add the years here
+    relocate(year)
+
+  return(index_matrix)
+}
+
+# Convert matrix of Scottish year / raw CI scores to indexed values:
+# Number of CIs is the rows in the indicator directory.
+scot_cis_indexed <- index_scores(scot_stbi_matrix, scot_indd, scot_year_list)
+head(scot_cis_indexed)
+
 # 2. fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
 # shape habitat/ecosystem service for each CI and save these as csv in the
 # folder 'cirms'. They are regularly named to facilitate processing with
@@ -544,374 +580,104 @@ all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
                   indd = scot_indd)
 
 
+# For any year, the yearly condition matrix YCM can be generated
+# by multiplying the CIWM (condition indicator weights matrix) by the year's
+# indexed condition scores ICC (around 100).
 
-## FUNCTION to add all the ciwms together; it will loop through a list of CIs .
-# Put it here.
+## FUNCTION get_yearly_condition()
+get_yearly_condition <- function(indexed_cis, year_to_get, ci_num) {
 
+  # Construct column name
+  col_name <- paste0("ind", ci_num)
 
-#  Stuff below this I am transforming into more rational functions above.
+  # Pull column value for correct year:
+  indexed_cond_score <- indexed_cis %>%
+    filter(year == as.character(year_to_get)) %>%
+    pull(!!sym(col_name))
 
-#### How to get the Condition Indicators (CIs) ####
-# OK, for each of the condition indicators...
-# We will need a matrix of habitat * service, recording a binary value to
-# denote for which combinations that indicator is relevant.
-# Let's call these relevance matrices and number them cirm1
+  return(indexed_cond_score)
 
-# We will split these into three matrices, one per ES type so.
-# Instead of using prov, regu and cult, we should get numbers from a list of
-# subtypes. (Should perhaps require a csv with service per row and a column for
-# service type it belongs to, and draw numbered lists from that.)
-# So...
-# Let's get cirm1 (added code to read above)...
+}
 
-# REPLACED WITH FUNCTION BELOW
-# head(scot_cirm1)
-# the_cirm1 <- scot_cirm1
-# names(the_cirm1) <- all_service_labels
-# the_cirm1[is.na(the_cirm1)] <- 0
-# Replaces any NA with 0.
-#
-# n_st <- nrow(st) # where st is the service types list
-# for (i in 1:n_st) {
-#
-#    labels_name <- paste0("st", i, "_labels")
-#    subrm_name  <- paste0("cirm1_", i)
-#    wcol_name   <- paste0("st", i, "_weight")
-#    subwm_name  <- paste0("ciwm1_", i)
-#
-#    assign(subrm_name, cirm1[ ,get(labels_name)], envir = .GlobalEnv)
-#    weight <- indd[1, wcol_name]
-#
-#    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
-#
-# }
-#
-# head(the_cirm1)
-
-# We will need a df which is a simplified version of the indicator directory
-# sheet. Call it indd. It needs only rows with 'yes' for 'used'. It needs
-# columns:
-# ci_id
-# st1_weight (service type 1 weight (provision for scotNCAI))
-# st2_weight
-# st3_weight
-# And will keep the 'updated' field for now until we know if needed.
-indd <- scot_indd # (was read in above)
-head(indd)
-# There is a weight column per service type and we will need to think about how
-# we will index them. Perhaps we ask for the column numbers containing the
-# weights? Hard code for now.
-st1_labels <- provisioning_labels
-st2_labels <- regulationandmaintenance_labels
-st3_labels <- cultural_labels
-# For each CI/ES service type relevance matrix (e.g. cirm1_prov), the cirm will
-# be multiplied by the matching weight vector using sweep().
 # E.g.
+# testit <- get_yearly_condition(scot_cis_indexed, 2003, 1)
+# testit
+# remove(testit)
+# View(scot_cis_indexed)
 
-n_st <- nrow(st) # where st is the service types list
-for (i in 1:n_st) {
+# Next we build a Yearly Weighted CI contribution YWCCM
+## FUNCTION
+build_ywccm <- function(indexed_cis, year, ciwms_list, ci_num) {
 
-  labels_name <- paste0("st", i, "_labels")
-  subrm_name  <- paste0("cirm1_", i)
-  wcol_name   <- paste0("st", i, "_weight")
-  subwm_name  <- paste0("ciwm1_", i)
+  ci_this_year <- get_yearly_condition(indexed_cis, year, ci_num)
 
-  assign(subrm_name, cirm1[ ,get(labels_name)], envir = .GlobalEnv)
-  weight <- indd[1, wcol_name]
+  ciwm_to_multiply <- ciwms_list[[ci_num]]
+  ywccm <- ciwm_to_multiply * ci_this_year
 
-  assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
+  return(ywccm)
 
 }
 
-ciwm_names_to_bind <- paste0("ciwm1_", 1:n_st)
-ciwm_list <- mget(ciwm_names_to_bind)
-ciwm1 <- Reduce(cbind, ciwm_list)
+# And ultimately these values are all added together to create a Total Yearly
+# Condition matrix (tyc)
+## FUNCTION build_tycm adds all the CI matrices for that year on top of each
+# other.
+build_tyc <- function(indexed_cis, target_year, ciwms_list) {
 
-View(ciwm1)
-# Check if that works to recreate table in sheet "2" of the scotNCAI spreadsheet.
-scot_ciwm1 <- read.csv("dev/orig_scot_cirm1_weights.csv", header = FALSE)
-scot_ciwm1[is.na(scot_ciwm1)] <- 0
-names(scot_ciwm1) <- c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
-all.equal(scot_ciwm1, ciwm1)
+  # Create indices
+  ci_indices <- seq_along(ciwms_list)
 
-## CHECKPOINT
-# To this point we have replicated the indicator relevance weighted matrix for
-# one of the numbered sheets ("2", pollution orthophosphate). We did this
-# by indexing the correct cell in the directory of Condition Indicators /
-# Ecosystem Service Type weights and multiplying that by a habitat/ES matrix
-# indicating (binary) in which combinations that indicator is relevant.
-
-
-# That has to happen for all the CIs.
-# So let's work out how to loop through all CIs doing that...
-# Will make a short version of the indicator directory
-indd_short <- indd[1:3, ]
-
-# This should become a function to read in a batch of CIRM csvs.
-cirm1 <- read.csv("dev/scot_cirm1.csv", header = FALSE)
-names(cirm1) <- all_service_labels
-cirm1[is.na(cirm1)] <- 0
-cirm1 <- cirm1 %>% mutate(across(everything(), as.numeric))
-
-cirm2 <- read.csv("dev/scot_cirm2.csv", header = FALSE)
-names(cirm2) <- all_service_labels
-cirm2[is.na(cirm2)] <- 0
-cirm2 <- cirm2 %>% mutate(across(everything(), as.numeric))
-
-cirm3 <- read.csv("dev/scot_cirm3.csv", header = FALSE)
-names(cirm3) <- all_service_labels
-cirm3[is.na(cirm3)] <- 0
-cirm3 <- cirm3 %>% mutate(across(everything(), as.numeric))
-
-st1_labels <- provisioning_labels
-st2_labels <- regulationandmaintenance_labels
-st3_labels <- cultural_labels
-
-n_cis <- nrow(indd_short)
-
-for (j in 1:n_cis) {
-  # We will need the numbered name of the cirm:
-  cirm_name <- paste0("cirm", j)
-  # And the numbered name of the ciwm we will make:
-  ciwm_name <- paste0("ciwm", j)
-
-  n_st <- nrow(st) # where st is the service types list
-  for (i in 1:n_st) {
-
-    labels_name <- paste0("st", i, "_labels")
-    subrm_name  <- paste0(cirm_name, "_", i)
-    wcol_name   <- paste0("st", i, "_weight")
-    subwm_name  <- paste0(ciwm_name, i)
-
-    assign(subrm_name, get(cirm_name)[ ,get(labels_name)], envir = .GlobalEnv)
-    weight <- indd_short[j, wcol_name] # make sure change back to indd
-
-    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
-
-  }
-  ciwm_names_to_bind <- paste0(ciwm_name, 1:n_st)
-  ciwm_list <- mget(ciwm_names_to_bind)
-  assign(ciwm_name, Reduce(cbind, ciwm_list))
-}
-
-scot_ciwm2 <- read.csv("dev/scot_ciwm2.csv", header = FALSE)
-scot_ciwm2[is.na(scot_ciwm2)] <- 0
-names(scot_ciwm2) <- all_service_labels
-scot_ciwm3 <- read.csv("dev/scot_ciwm3.csv", header = FALSE)
-scot_ciwm3[is.na(scot_ciwm3)] <- 0
-names(scot_ciwm3) <- all_service_labels
-
-all.equal(ciwm1, scot_ciwm1)
-all.equal(ciwm2, scot_ciwm2)
-all.equal(ciwm3, scot_ciwm3)
-
-# CHECKPOINT
-# So now we have reproduced a short set of the first 3 Condition Indicator
-# Relevance Weight sets, by building from a matrix of binary is/not applicable
-# entries, and the indicator directory which records the weight to be applied
-# for each indicator, for each service type.
-
-# And then I think these will be layered, added element-wise, on top of one
-# another, to recreate the sheet 'Total Indicator Relevances'.
-# We will use 'element-wise summation'
-
-# Create a character vector of all the CI weight matrix names:
-n_cis <- nrow(indd_short)
-ciwm_names <- paste0("ciwm", 1:n_cis)
-# Get a list of the actual objects
-ciwm_list <- mget(ciwm_names)
-# Use Reduce() to add all df in the list element wise.
-ciwm_total <- Reduce("+", ciwm_list)
-View(ciwm_total)
-
-# CHECKPOINT
-# Now we can replicate in ciwm_total the Total Indicator Relevances sheet.
-# NOTE THAT for now we've just done this with SHORT SET OF THREE indicator
-# relevance matrices and the weights from the indicator directory.
-# Next we will need actual condition indicator scores.
-# Once this is all working we can get the full set for all scot CIs of:
-# - CI relevance matrix (binary)
-# - Yearly condition score vector
-# - And possibly the bits to make that vector - see next comment...
-
-
-##### not doing the smoothing INDIVIDUAL CONDITION INDICATOR INDEXING ####
-# In general this is how it works:
-# 1. We have a value of some indicator for each year.
-# 2. We calculate a smoothed value for year x like this:
-#    xsmoothed = (x + (x-1) + (x-2) + (x-3) + (x-4)) / 5
-# 3. We index the value against the initial year's value:
-#    yearx index = xsmoothed / year1x * 100
-#    Note year 1 is indexed as 100.
-# 4. Something we need to watch out for is that score to be indexed (STBI)
-#    comes in in different ways. E.g. sheet "4" uses the sum of two scores.
-#    They are added to give the STBI. Do we want to recreate that for Scotland?
-#    If other countries use openNCAI, the work of calculating the STBI is
-#    probably for them to do.
-#    For now I will code with the STBI. And maybe we write
-#    custom functions for the Scottish index ultimately? Or, and we can think
-#    about publishing support resources here, we provide an Excel workbook with
-#    guidance in it from which users can easily extract csvs after doing their
-#    own calculations. I feel we will need to provide guidance for things like
-#    the esppu and esp within-between between weights, and the indicator
-#    directory.
-
-# For the first 3 Scottish CIs I am taking the vector of scores, before
-# smoothing and before indexing. This often means filling forwards or backwards.
-# E.g. in Sheet 2, CI1, there is data to 2018, so the 2018 value is pasted in
-# for the following years up to 2022. The finished vector should be 23 long in
-# each case.
-####
-
-
-
-
-#### OK, GOING TO JUST WORK WITH THE VECTOR OF NON-INDEXED SCORES ####
-# Proceeding on the basis that any smoothing and inter/extrapolation is done
-# by the user as the expert.
-n_cis <- nrow(indd_short)
-
-stbi1 <- read.csv("dev/scot_ci1_stbi.csv", header = FALSE)
-stbi2 <- read.csv("dev/scot_ci2_stbi.csv", header = FALSE)
-stbi3 <- read.csv("dev/scot_ci3_stbi.csv", header = FALSE)
-
-# Get a list of these (names, then objects)
-stbi_names <- paste0("stbi", 1:n_cis)
-stbi_list <- mget(stbi_names)
-# Put them into a matrix (can require a matrix in future but do this for now):
-stbi <- data.frame(sapply(stbi_list, function(df) df[[1]])) %>%
-  setNames(stbi_names)
-
-# Now we have the whole Scottish matrix of raw scores:
-scot_stbi <- read_csv(
-  file.path("dev", "scot_year_ci_matrix.csv"),
-  col_names = TRUE
+  # Create a list to store each YWCCM
+  list_of_yccms <- lapply(
+    X = ci_indices,
+    FUN = build_ywccm,
+    indexed_cis = indexed_cis,
+    year = target_year,
+    ciwms_list = ciwms_list
   )
 
+  tycm <- Reduce("+", list_of_yccms)
 
-# HERE
-
-## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
-## indexed scores. Returns matrix of indices.
-index_scores <- function(score_matrix, n_cis) {
-
-  scorecol_names <- paste0("stbi", 1:n_cis)
-  names(score_matrix) <- scorecol_names
-  working_matrix <- score_matrix
-
-  for (i in 1:n_cis) {
-    score_name <- paste0("stbi", i)
-    indic_name <- paste0("ind", i)
-
-    y1score <- score_matrix %>%
-      pull(!!score_name) %>%
-      .[1]
-
-    working_matrix <- working_matrix %>%
-      mutate(!!indic_name := (!!sym(score_name) / y1score) * 100)
-    # I'm not really familiar with the !! := and !!sym() operators.
-    # LLM recommendation!
-  }
-  index_matrix <- working_matrix %>%
-    select(-all_of(scorecol_names))
-
-  return(index_matrix)
-}
-
-# Convert matrix of Scottish year / raw CI scores to indexed values:
-# Number of CIs is the rows in the indicator directory.
-scot_cis_indexed <- index_scores(scot_stbi_matrix, nrow(scot_indd))
-head(scot_cis_indexed)
-# Remember it's important that the unrounded values of raw scores went in.
-
-
-## FUNCTION ciwm_to_cirm will load a bunch of regularly named CIRMs
-# and replace all non-zero and non-missing values with 1, and replace all NAs
-# with 0.
-# Don't need this here because it's done in bring_in_cirms.R.
-
-# Used bring_in_cirms.R to batch process the cirm matrices
-# from the NCAI sheet.
-
-# Here is a function to bring all the cirms into the environment:
-# But this tends to break R.
-
-n_cis <- nrow(indd)
-n_cis
-for (i in n_cis) {
-  object_name <- paste0("cirm", i)
-  csv_to_read <- file.path("dev", paste0("scot_cirm", i, ".csv"))
-  df <- read.csv(csv_to_read, header = TRUE)
-  assign(object_name, df, envir = .GlobalEnv)
+  return(tyc)
 }
 
 
-# So now we can loop through all 38 CIs, multiplying binary relevance matrix by
-# weights from indd, and then adding all together.
+# For Scotland, the year 2000:
+scot_tyc_2000 <- build_tycm(scot_cis_indexed, 2000, all_ciwms_list)
+View(scot_tyc_2000)
 
 
-# FUNCTIONISE THIS:
-# This should become a function to read in a batch of CIRM csvs.
+## CALCULATE THE INDEX FOR YEAR 2000
 
+# If all this has worked well, then the TYCM is :
+# multiplied by the WB
+# multiplied by indexed ED (ED this year/ED year one * 100)
+# and divided by 10,000 to give a number around 100.
+## FUNCTION calc_ncai_yearly_matrix()
+# Takes the total yearly condition TYC matrix, the WB wellbeing base and the
+# habitat extent data ED, and calculates the index for that year, decomposed
+# into contributions by habitat and ecosystem service.
+calc_ncai_yearly_matrix <- function(tyc, wb, ed, year) {
+  # Note that calculation is in sqm, not ha.
 
-st1_labels <- provisioning_labels
-st2_labels <- regulationandmaintenance_labels
-st3_labels <- cultural_labels
+  ch_year = as.character(year)
+  origin_year <- colnames(ed)[1]
 
-n_cis <- nrow(indd_short)
+  ed_this_year <- ed[, ch_year]
+  ed_origin_year <- ed[, origin_year]
+  ed_index <- (ed_this_year / ed_origin_year) * 100
 
+  ncai_yearly_matrix <- as.matrix(tyc) * as.matrix(wb) * ed_index
 
-
-build_ciwm <- function(ci_num) {
-  # ci_num is the number of the CI to work with
-  # CIRM objects named cirm1, cirm2, etc. are expected.
-
-  # Build the numbered name of the cirm object
-  cirm_name <- paste0("cirm", ci_num)
-  # Build the numbered name of the ciwm to be built
-  ciwm_name <- paste0("ciwm", ci_num)
-
-  n_st <- nrow(st) # where st is the list of service
-
-  # Initialise list of temp object to clean up later
-  temp_objects_to_remove <- c()
-
-  # Iterate through service types, applying weights to CIRMs.
-  for (i in 1:n_st) {
-    labels_name <- paste0("st", i, "_labels")
-    subrm_name  <- paste0(cirm_name, "_", i)
-    wcol_name   <- paste0("st", i, "_weight")
-    subwm_name  <- paste0(ciwm_name, "_", i)
-
-    # Construct list of temp objects to remove.
-    temp_objects_to_remove <- c(temp_objects_to_remove, subrm_name, subwm_name)
-
-    # select subset of the CIRM
-    assign(subrm_name, get(cirm_name)[ ,get(labels_name)], envir = .GlobalEnv)
-    # select correct weight
-    weight <- indd[ci_num, wcol_name]
-    # create subset of weight matrix by multiplying together <-
-    assign(subwm_name, get(subrm_name) * weight, envir = .GlobalEnv)
-
-  }
-
-  # Join the service type subsets back together:
-  ciwm_names_to_bind <- paste0(ciwm_name, "_", 1:n_st)
-  ciwm_list <- mget(ciwm_names_to_bind, envir = .GlobalEnv)
-  assign(ciwm_name, Reduce(cbind, ciwm_list), envir = .GlobalEnv)
-
-  # Remove temp objects
-  rm(list = temp_objects_to_remove, envir = .GlobalEnv)
 }
 
-# This would loop through, creating the ciwm object in the environment.
-# However, this is going to create an awful lot of objects.
-# Work towards including the layering step and then rm-ing all the extraneous
-# things. That could iteratively add the layers to the matrix.
-n_cis <- nrow(indd)
-for (ci_num in 1:n_cis) {
-  build_ciwm(ci_num)
-}
+scot_ncai_matrix_2000 <- calc_ncai_yearly_matrix(scot_tyc_2000, scot_wb, ed, 2000)
+# And that looks like 2000.
+
+# But this doesn't look like 2022 so something is wrong with th calculation.
+# Probably the indexing of the ED?
+scot_tyc_2022 <- build_tycm(scot_cis_indexed, 2022, all_ciwms_list)
+scot_ncai_matrix_2022 <- calc_ncai_yearly_matrix(scot_tyc_2022, scot_wb, ed, 2022)
 
 
 
@@ -919,19 +685,3 @@ for (ci_num in 1:n_cis) {
 
 
 
-
-# CHECKPOINT
-
-
-# And then I think these will be layered, added element-wise, on top of one
-# another, to recreate the sheet 'Total Indicator Relevances'.
-# We will use 'element-wise summation'
-
-# Create a character vector of all the CI weight matrix names:
-n_cis <- nrow(indd_short)
-ciwm_names <- paste0("ciwm", 1:n_cis)
-# Get a list of the actual objects
-ciwm_list <- mget(ciwm_names)
-# Use Reduce() to add all df in the list element wise.
-ciwm_total <- Reduce("+", ciwm_list)
-View(ciwm_total)
