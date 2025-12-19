@@ -102,7 +102,7 @@ colnames(eds) <- eds_year_labels
 # This section needs function-ised.
 # Define extent data
 ed <- eds
-# Set a year (prob not necessary)
+# Set a year (is this necessary?)
 origin_year <- "2000"
 
 # espu as weight - ESPPU contains scores out of 5 on the potential of a
@@ -187,26 +187,62 @@ esppu_scores_to_weights <- function(esppu, custom_weight_matrix = 5) {
 esppu_aw <- esppu_scores_to_weights(esppu, htst_wide)
 
 
+
 # To calculate ESPB (ecosystem service potential base) for Scotland,
 # we need Scotland's year one data.
-# Pull the vector for original year:
-#
-originyearvec <- ed %>%
-  pull(origin_year)
-# These habitat extent values are multiplied by their esppu weightings:
-scot_espb <- sweep(
-  x = esppu_aw,
-  MARGIN = 1,
-  STATS = originyearvec,
-  FUN = "*"
-)
-rownames(scot_espb) <- spu_labels
+
+# The years_from() function can collect the year range, if it is a consecutive
+# list of years, but allow a custom list.
+
+## FUNCTION years_from() takes a start year and number of years and returns a
+# list of consecutive years.
+years_from <- function(start_year, # a year, as integer numeric
+                       end_year # the number of consecutive years to process
+) {
+
+  as.character(start_year:end_year)
+
+}
+
+# For Scotland:
+scot_year_list <- years_from(2000, 2022)
+
+
+## FUNCTION calc_espb() calculates the ecosystem service potential base. It
+# takes ed the extent data, year_list and esppu_aw and multiplies each
+# habitat/service combination by the year one area of that habitat.
+
+calc_espb <- function(ed, esppu_aw, year_list, spu_labels) {
+
+  year_one <- year_list[1]
+  # Pull the vector for original year:
+  originyearvec <- ed %>%
+    pull(year_one)
+  # These habitat extent values are multiplied by their esppu weightings:
+  espb <- sweep(
+    x = esppu_aw,
+    MARGIN = 1,
+    STATS = originyearvec,
+    FUN = "*"
+  )
+  rownames(espb) <- as.character(spu_labels)
+
+  return(espb)
+}
+
+# For Scotland:
+scot_espb = calc_espb(ed = ed,
+                      esppu_aw = esppu_aw,
+                      year_list = scot_year_list,
+                      spu_labels = spu_codes)
+
 # View(espb)
 # scot_espb is a matrix dims habitats * services.
 # Does the calculated espb match the published one?
 # Yes:
-all.equal(espb, scot_espb)
-
+all.equal(espb, scot_espb, check.attributes = FALSE)
+# ^ We are using check.attributes=FALSE to quiet messages about the types of
+# labels and just see if the numbers/maths are correct.
 
 ## RECREATING THE WELLBEING BASE
 ## Next step is to recreate the wellbeing base.
@@ -326,6 +362,42 @@ scot_iw_within <- bind_imp_weights(ww_list = scot_ww_list,
                                    all_service_label_list = all_service_labels)
 
 
+## FUCNTION calc_wb() takes the espb (ES potential per habitat/service type
+# combo) and expresses each cell as a proportion of
+# the total potential for that service type across all habitats (colSums).
+# Next it multiplies in iw the importance weights (result of between and within
+# service-type weighting process above)).
+# Returns the wellbeing base which is a matrix of habitat/service type.
+calc_wb <- function(espb, # ES potential, a matrix habitat/service type
+                    iw # Importance weights, a vector (wide df) by service type
+                    ) {
+
+  # Express ESPB as proportion of habitat total contribution
+  espb_totals <- colSums(espb)
+  espb_as_prop <- sweep(
+    x = espb,
+    MARGIN = 2,
+    STATS = espb_totals,
+    FUN = "/"
+  )
+
+  # Multiply by within-service-type importance weights
+  wb <- sweep(
+    x = espb_as_prop,
+    MARGIN = 2,
+    STATS = as.numeric(iw),
+    FUN = "*"
+  )
+
+  # Multiply by 100
+  wb <- wb * 100
+
+  return(wb)
+
+}
+
+scot_wb <- calc_wb(scot_espb, scot_iw_within)
+
 # Calculate Scotland's Well-being Base:
 espb_totals <- colSums(espb)
 espb_as_prop <- sweep(
@@ -345,7 +417,7 @@ scot_wb <- sweep(
 scot_wb <- scot_wb * 100
 # head(scot_wb)
 # head(wb)
-all.equal(wb, round(scot_wb, digits = 0))
+all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 # TRUE!
 
 # OK, so up to here we have been able to recreate the potential base and the
