@@ -396,27 +396,9 @@ calc_wb <- function(espb, # ES potential, a matrix habitat/service type
 
 }
 
+# Calculate Scotland's Well-being Base:
 scot_wb <- calc_wb(scot_espb, scot_iw_within)
 
-# Calculate Scotland's Well-being Base:
-espb_totals <- colSums(espb)
-espb_as_prop <- sweep(
-  x = espb,
-  MARGIN = 2,
-  STATS = espb_totals,
-  FUN = "/"
-)
-head(espb_as_prop)
-
-scot_wb <- sweep(
-  x = espb_as_prop,
-  MARGIN = 2,
-  STATS = as.numeric(scot_iw_within),
-  FUN = "*"
-)
-scot_wb <- scot_wb * 100
-# head(scot_wb)
-# head(wb)
 all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 # TRUE!
 
@@ -425,6 +407,149 @@ all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 # which contain the ecosystem service potential per SPU (sheet 3) and the
 # between and within service type 'importance to Scotland' weights (sheet 4).
 
+# Next we are going to need the condition indicators data and their respective
+# weight matrices (actually we want them as relevance matrices, to use with
+# the indicator directory indd).
+
+# We have automatically processed these for the NatureScot spreadsheet:
+
+# 1. fns_bring_in_ci_raw_scores() was used to get each set of raw scores (after
+# any custom adjustments and inter/extrapolating) and put these into a matrix
+# of shape year/CI. These are found in scot_year_ci_matrix_automated.csv:
+scot_stbi_matrix <- read_csv(
+  file.path("dev", "scot_year_ci_matrix_automated.csv")
+  )
+
+# 2. fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
+# shape habitat/ecosystem service for each CI and save these as csv in the
+# folder 'cirms'. They are regularly named to facilitate processing with
+# functions below.
+
+# 3. The indicator directory in in scot_indicator_directory.csv
+# It was assigned to scot_indd above.
+
+## CALCULATING THE WEIGHTED INDICATORS MATRICES
+# For each indicator, the relevance matrix needs to be multiplied by the
+# ecosystem-service-type weight for that indicator, as recorded in indd.
+
+## FUNCTION get_cirm()
+# Takes a path to a folder containing CIRM CSVs and the number of CI to process.
+# Opens the CIRM and returns a regularly named/numbered object cirm#. Can take
+# the name stub but default value is "cirm".
+get_cirm <- function (folder_path, ci_num, csv_stub = "cirm") {
+
+  cirm_file_name <- paste0(paste0(csv_stub, ci_num), ".csv")
+  cirm_object <- read_csv(file.path(folder_path, cirm_file_name),
+                          col_names = FALSE)
+
+  return(cirm_object)
+
+}
+
+
+## FUNCTION build_ciwm
+# This will take a CIRM named cimr# where the # is the number of the CI.
+# Also requires the list of service types and a list of label sets for each
+# subtype.
+
+build_ciwm <- function(ci_num,
+                       cirm_object,
+                       st_list,
+                       label_subsets_list,
+                       indd = indd) {
+
+  # Determine number of service types
+  n_st <- length(st_list)
+
+  # Use a list to store the weighted sub-matrices
+  ciwm_parts <- list()
+
+  # 3. Iterate through service types
+  for (i in 1:n_st) {
+    # Get the column labels for this subset (e.g., from your list)
+    current_labels <- label_subsets_list[[i]]
+
+    # Get the weight from the indicator directory (indd)
+    wcol_name <- paste0("st", i, "_weight")
+    weight <- as.numeric(indd[ci_num, wcol_name])
+
+    # Extract columns from the CIRM and multiply by weight
+    # We use [ , current_labels] to subset columns
+    sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
+
+    # Store in our list
+    ciwm_parts[[i]] <- sub_ciwm
+  }
+
+  # Join the subsets back together (Left-to-Right)
+  # dplyr::bind_cols is faster and cleaner than Reduce(cbind, ...)
+  final_ciwm <- dplyr::bind_cols(ciwm_parts)
+
+  return(final_ciwm)
+}
+
+
+
+## FUNCTION to process all indicators
+# Wraps the two above.
+build_all_ciwms <- function(cirm_csvs_dir,
+                            csv_name_stub,
+                            all_service_labels,
+                            label_subsets_list,
+                            st_list,
+                            indd = indd) {
+
+  # Initialise list of ciwm objects
+  all_ciwms <- list()
+
+  ci_list <- 1:nrow(indd)
+
+  for (i in ci_list) {
+
+    # Load in relevance matrix
+    temp_cirm <- get_cirm(cirm_csvs_dir, i, csv_name_stub)
+
+    # Add colnames - may not be necessary
+    colnames(temp_cirm) <- all_service_labels
+
+    # Build all ciwms and add to the list
+    all_ciwms[[i]] <- build_ciwm(
+      ci_num = i,
+      cirm_object = temp_cirm,
+      st_list = st_list,
+      label_subsets_list = label_subsets_list,
+      indd = indd
+    )
+
+    # Report progress
+    message(paste("Indicator", i, "weighted and added to list."))
+  }
+
+  return(all_ciwms)
+
+}
+
+
+# For Scotland:
+scot_cirms_dir <- file.path("dev", "cirms")
+scot_label_subsets_list <- list(provisioning_labels,
+                             regulationandmaintenance_labels,
+                             cultural_labels)
+
+all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
+                  "scot_cirm",
+                  all_service_labels,
+                  scot_label_subsets_list,
+                  st_list = st_labels,
+                  indd = scot_indd)
+
+
+
+## FUNCTION to add all the ciwms together; it will loop through a list of CIs .
+# Put it here.
+
+
+#  Stuff below this I am transforming into more rational functions above.
 
 #### How to get the Condition Indicators (CIs) ####
 # OK, for each of the condition indicators...
@@ -636,9 +761,12 @@ View(ciwm_total)
 # E.g. in Sheet 2, CI1, there is data to 2018, so the 2018 value is pasted in
 # for the following years up to 2022. The finished vector should be 23 long in
 # each case.
+####
 
 
-## OK, GOING TO JUST WORK WITH THE VECTOR OF NON-INDEXED SCORES
+
+
+#### OK, GOING TO JUST WORK WITH THE VECTOR OF NON-INDEXED SCORES ####
 # Proceeding on the basis that any smoothing and inter/extrapolation is done
 # by the user as the expert.
 n_cis <- nrow(indd_short)
@@ -659,6 +787,9 @@ scot_stbi <- read_csv(
   file.path("dev", "scot_year_ci_matrix.csv"),
   col_names = TRUE
   )
+
+
+# HERE
 
 ## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
 ## indexed scores. Returns matrix of indices.
@@ -689,8 +820,8 @@ index_scores <- function(score_matrix, n_cis) {
 
 # Convert matrix of Scottish year / raw CI scores to indexed values:
 # Number of CIs is the rows in the indicator directory.
-scot_cis <- index_scores(scot_stbi, nrow(scot_indd))
-head(scot_cis)
+scot_cis_indexed <- index_scores(scot_stbi_matrix, nrow(scot_indd))
+head(scot_cis_indexed)
 # Remember it's important that the unrounded values of raw scores went in.
 
 

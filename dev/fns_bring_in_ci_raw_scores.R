@@ -62,28 +62,32 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 
 }
 
-
+# For NatureScot:
+# Run on 19-12-2025 and no need to repeat.
 # Read in the CI raw scores from NatureScot sheet:
 # (Note that by raw scores we mean the complete list of scores per year per CI,
 # after any smoothing, extrapolation, etc. )
 
 # Path
-ncai_sheet_path <- file.path("dev", "working_excel2.xlsx")
+# ncai_sheet_path <- file.path("dev", "working_excel2.xlsx")
 # Check sheet numbers:
-excel_sheets(ncai_sheet_path)
-ncai_sheet_list <- 10:47
+# excel_sheets(ncai_sheet_path)
+# ncai_sheet_list <- 10:47
 # Set range where list of CI raw scores per year are recorded. Assumed to be
 # the same in each sheet, and have no missing data.
-ncai_common_range <- "I36:I58"
+# ncai_common_range <- "I36:I58"
 
 # Read in:
-stbi_matrix <- read_the_ci_scores(ncai_sheet_path,
-                                  ncai_sheet_list,
-                                  ncai_common_range)
+# scot_stbi_matrix <- read_the_ci_scores(ncai_sheet_path,
+#                                   ncai_sheet_list,
+#                                   ncai_common_range)
 
 # View(stbi_matrix)
+# Checked this on 19-12-2025
+# manual_ci_matrix <- read_csv("dev/scot_year_ci_matrix.csv", col_names = TRUE)
+# all.equal(as.data.frame(stbi_matrix), as.data.frame(manual_ci_matrix))
 
-manual_ci_matrix <- read_csv("dev/scot_year_ci_matrix.csv", col_names = TRUE)
-all.equal(as.data.frame(stbi_matrix), as.data.frame(manual_ci_matrix))
+# Saving this automated version:
+# write_csv(scot_stbi_matrix, file.path("dev", "scot_year_ci_matrix_automated.csv"))
 
-
+# And moving the one we created manually to "archive".
