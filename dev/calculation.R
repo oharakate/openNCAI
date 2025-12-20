@@ -10,6 +10,7 @@ library(dplyr)
 library(tidyr)
 library(tibble)
 library(readr)
+library(readxl)
 
 # Scotland data for replication:
 # Existing bases (Scotland)
@@ -576,6 +577,41 @@ all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
                   indd = scot_indd)
 
 
+# From this we should be able to recreate the Total Indicator Relevances
+# Call it TIR.
+# For reasons we don't yet understand, 2 is added to every relevance.
+# Make this custom for NatureScot
+## FUNCTION calc_tir()
+calc_tir <- function(all_ciwms_list, addon) {
+
+  tir <- Reduce("+", all_ciwms_list)
+  tir <- tir + 2
+
+  return(tir)
+}
+
+scot_tir <- calc_tir(all_ciwms_list, addon = 2)
+View(scot_tir)
+
+excel_sheets("dev/ncai.xlsx")
+read_excel("dev/ncai.xlsx",
+           sheet = 75)
+
+ncai_tir_auto <- readxl::read_excel(
+  path = "dev/ncai.xlsx",
+  sheet = 75,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal" #quietens reporting on name repair
+)
+
+all.equal(as.data.frame(ncai_tir_auto),
+          as.data.frame(scot_tir),
+          check.attributes = FALSE)
+
+
 # For any year, the yearly condition matrix YCM can be generated
 # by multiplying the CIWM (condition indicator weights matrix) by the year's
 # indexed condition scores ICC (around 100).
@@ -607,12 +643,24 @@ build_ywccm <- function(indexed_cis, year, ciwms_list, ci_num) {
 
   ci_this_year <- get_yearly_condition(indexed_cis, year, ci_num)
 
+  # Belt and braces check for NAs
+  if(is.na(ci_this_year)) ci_this_year <- 0
+
   ciwm_to_multiply <- ciwms_list[[ci_num]]
   ywccm <- ciwm_to_multiply * ci_this_year
 
   return(ywccm)
 
 }
+
+# testit <- build_ywccm(indexed_cis = scot_cis_indexed,
+#                       2001,
+#                       all_ciwms_list,
+#                       2)
+# View(testit)
+# Values should be the indexed year value of the CI * the weight, in the correct
+# cells of the matrix, and that looks correct.
+
 
 # And ultimately these values are all added together to create a Total Yearly
 # Condition matrix (tyc)
@@ -632,14 +680,14 @@ build_tyc <- function(indexed_cis, target_year, ciwms_list) {
     ciwms_list = ciwms_list
   )
 
-  tycm <- Reduce("+", list_of_yccms)
+  tyc <- Reduce("+", list_of_yccms)
 
   return(tyc)
 }
 
 
 # For Scotland, the year 2000:
-scot_tyc_2000 <- build_tycm(scot_cis_indexed, 2000, all_ciwms_list)
+scot_tyc_2000 <- build_tyc(scot_cis_indexed, 2000, all_ciwms_list)
 View(scot_tyc_2000)
 
 
@@ -672,12 +720,16 @@ calc_ncai_yearly_matrix <- function(tyc, wb, ed, year) {
                               STATS = ed_index,
                               FUN = "*")
 
+  # Is this what is needed?
+  ncai_yearly_matrix <- ncai_yearly_matrix / 10000
+  # This does need to happen, but it doesn't fix the broken-ness.
+
   return(ncai_yearly_matrix)
 
 }
 
 scot_ncai_matrix_2000 <- calc_ncai_yearly_matrix(scot_tyc_2000, scot_wb, ed, 2000)
-View(scot_ncai_matrix_2000)
+# View(scot_ncai_matrix_2000)
 # And that looks like 2000.
 # Let's read in the year 2000 sheet automatically and check if they are the
 # same:
@@ -691,17 +743,17 @@ ncai_2000_auto <- readxl::read_excel(
   trim_ws = TRUE,
   .name_repair = "minimal" #quietens reporting on name repair
 )
-sqm_ncai_2000_auto <- ncai_2000_auto * 10000
-colnames(sqm_ncai_2000_auto) <- colnames(wb)
+# sqm_ncai_2000_auto <- ncai_2000_auto * 10000
+colnames(ncai_2000_auto) <- colnames(wb)
 all.equal(
   as.data.frame(scot_ncai_matrix_2000),
-  as.data.frame(sqm_ncai_2000_auto),
+  as.data.frame(ncai_2000_auto),
   check.attributes = FALSE)
 
 
 # But this doesn't look like 2022 so something is wrong with th calculation.
 # Probably the indexing of the ED?
-scot_tyc_2022 <- build_tycm(scot_cis_indexed, 2022, all_ciwms_list)
+scot_tyc_2022 <- build_tyc(scot_cis_indexed, 2022, all_ciwms_list)
 scot_ncai_matrix_2022 <- calc_ncai_yearly_matrix(scot_tyc_2022, scot_wb, ed, 2022)
 # Something still not right.
 # Check that no rounded data is being used in the data we brought in at the start.
