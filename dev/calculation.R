@@ -17,14 +17,12 @@ wb <- read.csv("dev/wellbeing_base.csv", header = FALSE)
 espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
 # Ecosystem service providing potential per SPU matrix:
 esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
-# Extent data all years (Scotland)
-eds_w_totals  <- read.csv("dev/ecosystem_area.csv", header = TRUE)
-# R/m totals
-eds <- eds_w_totals[-nrow(eds_w_totals),]
+# Extent data years to 2022 (Scotland)
+ed <- as.data.frame(scot_extent_data_to_2022 <- read_csv(
+  file.path("dev", "scot_extent_data_automated.csv"), col_names = FALSE))
 # Indicator directory
 scot_indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE)
-# Condition Indicator Relevance Matrix 1 (#2 Pollution orthophosphate etc.)
-scot_cirm1 <- read.csv("dev/scot_cirm1.csv", header = FALSE)
+
 
 # ES Potential ('Scotland weights')
 # Chris has typed these manually below, but here they are as csv:
@@ -80,17 +78,17 @@ spu_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "j1","j2","j3","j4","k")
 
 # The range of years in the Scotland 23 extent data:
-eds_year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
+year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
                 "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015",
-                "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023")
+                "2016", "2017", "2018", "2019", "2020", "2021", "2022")
 
 # Apply labels
 colnames(espb) <- colnames(esppu) <- colnames(wb) <- all_service_labels <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 
-rownames(espb) <- rownames(esppu) <- rownames(wb) <- spu_labels
+rownames(espb) <- rownames(esppu) <- rownames(wb) <- rownames(ed) <- spu_codes
 
-colnames(eds) <- eds_year_labels
+colnames(ed) <- year_labels
 
 ####
 
@@ -99,9 +97,7 @@ colnames(eds) <- eds_year_labels
 #### CALCULATING NCAI ####
 
 # RECREATING THE ES POTENTIAL BASE
-# This section needs function-ised.
-# Define extent data
-ed <- eds
+
 # Set a year (is this necessary?)
 origin_year <- "2000"
 
@@ -681,7 +677,27 @@ calc_ncai_yearly_matrix <- function(tyc, wb, ed, year) {
 }
 
 scot_ncai_matrix_2000 <- calc_ncai_yearly_matrix(scot_tyc_2000, scot_wb, ed, 2000)
+View(scot_ncai_matrix_2000)
 # And that looks like 2000.
+# Let's read in the year 2000 sheet automatically and check if they are the
+# same:
+excel_sheets("dev/ncai.xlsx")
+ncai_2000_auto <- readxl::read_excel(
+  path = "dev/ncai.xlsx",
+  sheet = 51,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal" #quietens reporting on name repair
+)
+sqm_ncai_2000_auto <- ncai_2000_auto * 10000
+colnames(sqm_ncai_2000_auto) <- colnames(wb)
+all.equal(
+  as.data.frame(scot_ncai_matrix_2000),
+  as.data.frame(sqm_ncai_2000_auto),
+  check.attributes = FALSE)
+
 
 # But this doesn't look like 2022 so something is wrong with th calculation.
 # Probably the indexing of the ED?
@@ -689,6 +705,9 @@ scot_tyc_2022 <- build_tycm(scot_cis_indexed, 2022, all_ciwms_list)
 scot_ncai_matrix_2022 <- calc_ncai_yearly_matrix(scot_tyc_2022, scot_wb, ed, 2022)
 # Something still not right.
 # Check that no rounded data is being used in the data we brought in at the start.
+# Will write a function fns_import_extent_data.R to bring it in automatically as
+# ED looks like it might be rounded.
+
 
 
 
