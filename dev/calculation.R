@@ -20,9 +20,11 @@ espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
 esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
 # Extent data years to 2022 (Scotland)
 ed <- as.data.frame(scot_extent_data_to_2022 <- read_csv(
-  file.path("dev", "scot_extent_data_automated.csv"), col_names = FALSE))
+  file.path("dev", "scot_extent_data_automated.csv"),
+  col_names = FALSE,
+  show_col_types = FALSE))
 # Indicator directory
-scot_indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE)
+indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE)
 
 
 # ES Potential ('Scotland weights')
@@ -79,6 +81,8 @@ spu_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "j1","j2","j3","j4","k")
 
 # The range of years in the Scotland 23 extent data:
+# This can prob be replaced with the code found below which generates a list of
+# years from and to.
 year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
                 "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015",
                 "2016", "2017", "2018", "2019", "2020", "2021", "2022")
@@ -270,12 +274,12 @@ imp_rtw_between <- function(between_scores) {
 # Gets within-service-type IMPORTANCE weights from a df of raw scores, using
 # between weights output from imp_rtw_between()
 # Used in calc_imp_weights() below
-imp_rtw_within <- function(scores, between_weights, index) {
+imp_rtw_within <- function(within_scores, between_weights, index) {
   # Takes index 1-3 for the appropriate section.
   # Should improve this to make that list of indices soft maybe.
   # Maybe could add a section index column to the df holding the sets of
   # within weights?
-  within_weights  <- scores / sum(scores) * between_weights[index, 1]
+  within_weights  <- within_scores / sum(within_scores) * between_weights[index, 1]
 
   return(within_weights)
 }
@@ -306,7 +310,7 @@ calc_imp_weights <- function (between_scores, within_scores_list) {
     ww_subset_name <- paste0("ww_subset_", st_num)
 
     # Calculate within weights for service type
-    ww_subset <- imp_rtw_within(scores = within_scores_list[[st_num]],
+    ww_subset <- imp_rtw_within(within_scores = within_scores_list[[st_num]],
                                 between_weights = b_weights,
                                 index = st_num)
     assign(ww_subset_name, ww_subset, envir = .GlobalEnv)
@@ -413,53 +417,58 @@ all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 # 1. fns_bring_in_ci_raw_scores() was used to get each set of raw scores (after
 # any custom adjustments and inter/extrapolating) and put these into a matrix
 # of shape year/CI. These are found in scot_year_ci_matrix_automated.csv:
-scot_stbi_matrix <- read_csv(
-  file.path("dev", "scot_year_ci_matrix_automated.csv")
+scot_raw_ci_score_matrix <- read_csv(
+  file.path("dev", "scot_year_ci_matrix_automated.csv"),
+  show_col_types = FALSE
   )
+sum(is.na(scot_raw_ci_score_matrix))
 
 # We use this function to convert the raw scores to indexed values (around 100):
-
+#### THINK THIS IS NOT REQUIRED. COMMENT OUT ON 23-12-2025. ####
 ## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
 ## indexed scores. Returns matrix of indices. Requires the indd to get the
 # number of CIs we are working with.
-index_scores <- function(score_matrix, indd, year_list) {
+# index_scores <- function(score_matrix, indd, year_list) {
+#
+#   n_cis <- nrow(indd)
+#
+#   scorecol_names <- paste0("stbi", 1:n_cis)
+#   names(score_matrix) <- scorecol_names
+#
+#   working_matrix <- score_matrix
+#
+#   for (i in 1:n_cis) {
+#     score_name <- paste0("stbi", i)
+#     indic_name <- paste0("ind", i)
+#
+#     y1score <- score_matrix[[score_name]][1]
+#
+#     working_matrix[[indic_name]] <- (working_matrix[[score_name]] / y1score) * 100
+#
+#   }
+#   index_matrix <- working_matrix %>%
+#     select(starts_with("ind")) %>%
+#     mutate(year = year_list) %>%  # Add the years here
+#     relocate(year)
+#
+#   return(index_matrix)
+# }
 
-  n_cis <- nrow(indd)
-
-  scorecol_names <- paste0("stbi", 1:n_cis)
-  names(score_matrix) <- scorecol_names
-
-  working_matrix <- score_matrix
-
-  for (i in 1:n_cis) {
-    score_name <- paste0("stbi", i)
-    indic_name <- paste0("ind", i)
-
-    y1score <- score_matrix[[score_name]][1]
-
-    working_matrix[[indic_name]] <- (working_matrix[[score_name]] / y1score) * 100
-
-  }
-  index_matrix <- working_matrix %>%
-    select(starts_with("ind")) %>%
-    mutate(year = year_list) %>%  # Add the years here
-    relocate(year)
-
-  return(index_matrix)
-}
 
 # Convert matrix of Scottish year / raw CI scores to indexed values:
 # Number of CIs is the rows in the indicator directory.
-scot_cis_indexed <- index_scores(scot_stbi_matrix, scot_indd, scot_year_list)
-head(scot_cis_indexed)
+# scot_cis_indexed <- index_scores(scot_stbi_matrix, scot_indd, scot_year_list)
+# head(scot_cis_indexed)
+#### CONTINUE ####
 
 # 2. fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
 # shape habitat/ecosystem service for each CI and save these as csv in the
 # folder 'cirms'. They are regularly named to facilitate processing with
 # functions below.
 
-# 3. The indicator directory in in scot_indicator_directory.csv
-# It was assigned to scot_indd above.
+# 3. The indicator directory is in scot_indicator_directory.csv
+# It was assigned to indd above.
+# Consider writing a NatureScot function to bring this in with readxl.
 
 ## CALCULATING THE WEIGHTED INDICATORS MATRICES
 # For each indicator, the relevance matrix needs to be multiplied by the
@@ -473,7 +482,8 @@ get_cirm <- function (folder_path, ci_num, csv_stub = "cirm") {
 
   cirm_file_name <- paste0(paste0(csv_stub, ci_num), ".csv")
   cirm_object <- read_csv(file.path(folder_path, cirm_file_name),
-                          col_names = FALSE)
+                          col_names = FALSE,
+                          show_col_types = FALSE)
 
   return(cirm_object)
 
@@ -481,7 +491,7 @@ get_cirm <- function (folder_path, ci_num, csv_stub = "cirm") {
 
 
 ## FUNCTION build_ciwm
-# This will take a CIRM named cimr# where the # is the number of the CI.
+# This will take a CIRM object named cirm# where the # is the number of the CI.
 # Also requires the list of service types and a list of label sets for each
 # subtype.
 
@@ -524,7 +534,8 @@ build_ciwm <- function(ci_num,
 
 
 ## FUNCTION to process all indicators
-# Wraps the two above.
+# Wraps the two above and produces a list of ciwm objects, equivalent to the
+# tables in sheets '2' - '104'.
 build_all_ciwms <- function(cirm_csvs_dir,
                             csv_name_stub,
                             all_service_labels,
@@ -558,7 +569,7 @@ build_all_ciwms <- function(cirm_csvs_dir,
     message(paste("Indicator", i, "weighted and added to list."))
   }
 
-  return(all_ciwms)
+  return(all_ciwms) # returns a list of ciwm matrix objects
 
 }
 
@@ -574,29 +585,62 @@ all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
                   all_service_labels,
                   scot_label_subsets_list,
                   st_list = st_labels,
-                  indd = scot_indd)
+                  indd = indd)
 
 
-# From this we should be able to recreate the Total Indicator Relevances
+
+# Still trying to solve how these come together.
+# There has to be some further averaging or indexing if more than one indicator
+# can be used per habitat/service combination, which it is. 2 gets added to the
+# scores. This is not explained, but it brings the ones with 3 up to 5 - check
+# if 3 is the maximum. If the indexed indicator is indexed around year one,
+# that would give a value around 1, which can be multiplied in here, giving
+# everything a score out of 5. That can become a weight. But surely that again
+# would need indexed year one before multiplying in with the wellbeing base?
+# Can that be compressed. Do, indexed scores * their relevance weights, and
+# this is giving every one something out of 500. And then index that against
+# the year one value of the same?
+
+# UPDATE, I think the addition of 2s is maybe just to avoid dividing 0s.
+
+# Note to self - it needs to be the weight over the total weight per that
+# hab/service combo maybe.
+
+# OK, think I get it. The weighted indicator for a CI (e.g. 1 in CI104 * its
+# indexed score for that year) is divided by the total relevance for that
+# indicator (so the value between 1 * 0 in cell H7 for each CI, all summed).
+# Specifically the former are all summed, and the latter all summed, and then
+# the division is done. This is multiplied by the wellbeing base. And then the
+# year's habitat extent vector is swept across.
+
+# The adding of 2 to the total relevance would be consequential. We can try it
+# with and without and see if either works to recreate the numbers.
+
+# From the list of CIWMs, we should be able to recreate the Total Indicator
+# Relevances matrix.
 # Call it TIR.
-# For reasons we don't yet understand, 2 is added to every relevance.
-# Make this custom for NatureScot
+# Make this customisable with the added 2.
+
 ## FUNCTION calc_tir()
 calc_tir <- function(all_ciwms_list, addon) {
 
   tir <- Reduce("+", all_ciwms_list)
-  tir <- tir + 2
+  tir <- tir + addon
 
   return(tir)
 }
 
-scot_tir <- calc_tir(all_ciwms_list, addon = 2)
-View(scot_tir)
+# With the 2:
+scot_tir_with2 <- calc_tir(all_ciwms_list, addon = 2)
+# View(scot_tir_with2)
 
+# Without the 2:
+# scot_tir_no2 <- calc_tir(all_ciwms_list, addon = 0)
+# View(scot_tir_no2)
+
+# Get TIR from the original sheet and compare:
 excel_sheets("dev/ncai.xlsx")
-read_excel("dev/ncai.xlsx",
-           sheet = 75)
-
+# Use sheet 75:
 ncai_tir_auto <- readxl::read_excel(
   path = "dev/ncai.xlsx",
   sheet = 75,
@@ -606,90 +650,191 @@ ncai_tir_auto <- readxl::read_excel(
   trim_ws = TRUE,
   .name_repair = "minimal" #quietens reporting on name repair
 )
+# Check this for NAs
+sum(is.na(ncai_tir_auto))
+# There is one and it's because cell 15,10 is broken in the spreadsheet.
+# I'm fairly certain it should be 2 so just replace it with that for now.
+ncai_tir_auto[15, 10] <- 2.0
+sum(is.na(ncai_tir_auto))
 
 all.equal(as.data.frame(ncai_tir_auto),
-          as.data.frame(scot_tir),
+          scot_tir_with2,
           check.attributes = FALSE)
+# Other than that broken cell in the source, the values are the same so that
+# suggestions that the addition of all_ciwms_list is working as we want.
+# Source has the twos.
 
+# Let's try again to work out how to calc the final index.
 
-# For any year, the yearly condition matrix YCM can be generated
+# For any year, I think NOW the yearly condition matrix YCM can be generated
 # by multiplying the CIWM (condition indicator weights matrix) by the year's
-# indexed condition scores ICC (around 100).
+# RAW condition scores ICC (around 100).
 
-## FUNCTION get_yearly_condition()
-get_yearly_condition <- function(indexed_cis, year_to_get, ci_num) {
 
-  # Construct column name
-  col_name <- paste0("ind", ci_num)
+# We need a function to add the year column to the raw CIs matrix:
+## FUNCTION add_years_to_ci_matrix
+add_years_to_ci_matrix <- function(raw_cis, year_list) {
 
-  # Pull column value for correct year:
-  indexed_cond_score <- indexed_cis %>%
-    filter(year == as.character(year_to_get)) %>%
-    pull(!!sym(col_name))
+  raw_cis_with_years <- as.data.frame(raw_cis)
 
-  return(indexed_cond_score)
+  raw_cis_with_years <- raw_cis %>%
+    as.data.frame() %>%
+    mutate(year = year_list, .before = 1)
+
+  return(raw_cis_with_years)
 
 }
 
+label_ci_matrix <- function(raw_cis_with_years, year_list) {
+
+  colnames(raw_cis_with_years) <- c("year",
+                                    paste0("ind",
+                                           1:(ncol(raw_cis_with_years)-1)))
+
+  return(raw_cis_with_years)
+}
+
+# Do this to Scot CIs:
+scot_raw_ci_score_matrix <- scot_raw_ci_score_matrix %>%
+  add_years_to_ci_matrix(scot_year_list) %>%
+  label_ci_matrix()
+
+
+# UPDATING THIS TO GET THE INDEXED VALUE AS PER SPREADSHEET
+# First extract the indexed condition score for the right CI for the right year.
+## FUNCTION get_yearly_condition()
+get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
+  # Use column index instead of name to be absolutely sure
+  # Year is col 1, so ind1 is col 2, ind2 is col 3...
+  col_idx <- ci_num + 1
+
+  row_idx <- which(as.character(raw_cis[, 1]) == as.character(year_to_get))
+  y1_idx  <- which(as.character(raw_cis[, 1]) == as.character(year_list[1]))
+
+  raw_cond_score <- raw_cis[row_idx, col_idx]
+  year_one_score <- raw_cis[y1_idx, col_idx]
+
+  indexed_cond_score <- (raw_cond_score / year_one_score) * 100
+  return(as.numeric(indexed_cond_score))
+}
+
 # E.g.
-# testit <- get_yearly_condition(scot_cis_indexed, 2003, 1)
-# testit
+# testit <- get_yearly_condition(scot_raw_ci_score_matrix, 2003, 1, scot_year_list)
+# testit # Compare to spreadsheet - correct
 # remove(testit)
-# View(scot_cis_indexed)
+
 
 # Next we build a Yearly Weighted CI contribution YWCCM
 ## FUNCTION
-build_ywccm <- function(indexed_cis, year, ciwms_list, ci_num) {
+build_ywccm <- function(ci_num, raw_cis, year, year_list, ciwms_list) {
 
-  ci_this_year <- get_yearly_condition(indexed_cis, year, ci_num)
+  # Get this year's indexed condition score
+  ci_this_year <- get_yearly_condition(
+    raw_cis = raw_cis,
+    year_to_get = year,
+    ci_num = ci_num,
+    year_list = year_list
+  )
 
-  # Belt and braces check for NAs
+  # Belt and braces check for NAs - prob not essential
   if(is.na(ci_this_year)) ci_this_year <- 0
 
-  ciwm_to_multiply <- ciwms_list[[ci_num]]
-  ywccm <- ciwm_to_multiply * ci_this_year
+  # Multiply the indexed score by its weight matrix.
+  ywccm <- ciwms_list[[ci_num]] * ci_this_year
 
+  # Returns a matrix with the yearly indexed CI * its weight in each relevant
+  # habitat/service cell.
   return(ywccm)
 
 }
 
-# testit <- build_ywccm(indexed_cis = scot_cis_indexed,
+# E.g.
+# testit <- build_ywccm(raw_cis = scot_raw_ci_score_matrix,
 #                       2001,
 #                       all_ciwms_list,
 #                       2)
 # View(testit)
+# remove(testit)
 # Values should be the indexed year value of the CI * the weight, in the correct
 # cells of the matrix, and that looks correct.
 
+# IMPORTANT
+# Then these should all be added together and multiplied by the total relevances
+# matrix.
+# Here I think is where I went wrong before.
+# To do it as per the spreadsheet, multiply the indexed score for the CI/year
+# by the CI's weight matrix. Add all together. Divide by the sum of the
+# relevances for all CIs which is equivalent to the TIR.
 
-# And ultimately these values are all added together to create a Total Yearly
-# Condition matrix (tyc)
-## FUNCTION build_tycm adds all the CI matrices for that year on top of each
-# other.
-build_tyc <- function(indexed_cis, target_year, ciwms_list) {
+# The summed yearly weighted contributions we are going to call the
+# Total Yearly Condition matrix (tyc)
+
+## FUNCTION build_tyc adds all the CI matrices for that year on top of each
+# other, then divides by the total indicator relevances.
+build_raw_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir) {
 
   # Create indices
   ci_indices <- seq_along(ciwms_list)
 
   # Create a list to store each YWCCM
-  list_of_yccms <- lapply(
-    X = ci_indices,
-    FUN = build_ywccm,
-    indexed_cis = indexed_cis,
-    year = target_year,
-    ciwms_list = ciwms_list
-  )
+  list_of_ywccms <- lapply(ci_indices, function(i) {
+    build_ywccm(
+      ci_num = i,
+      raw_cis = raw_cis,
+      year = target_year,
+      year_list = year_list,
+      ciwms_list = ciwms_list
+    )
+  })
 
-  tyc <- Reduce("+", list_of_yccms)
+  # Get sum of yearly weighted condition contributions
+  sum_ywccms <- Reduce("+", list_of_ywccms)
+
+  # Divide by the TIR
+  tyc <- sum_ywccms / tir
 
   return(tyc)
+
+}
+
+# FUNCTION build_indexed_tyc
+# Takes the raw_tyc and indexes it on the year_one raw TYC.
+build_indexed_tyc <- function (target_rtyc, year_one_rtyc) {
+
+  # Convert to matrices
+  t_mat  <- as.matrix(target_rtyc)
+  y1_mat <- as.matrix(year_one_rtyc)
+
+  indexed_tyc <- (t_mat / y1_mat) * 100
+
+  # Deal with 0/0 divisions
+  indexed_tyc[!is.finite(indexed_tyc)] <- 0
+
+  return(indexed_tyc)
+
 }
 
 
+
 # For Scotland, the year 2000:
-scot_tyc_2000 <- build_tyc(scot_cis_indexed, 2000, all_ciwms_list)
+
+scot_year_one_rtyc <- build_tyc(scot_raw_ci_score_matrix,
+                           2000,
+                           scot_year_list,
+                           all_ciwms_list,
+                           scot_tir_with2)
+
+scot_year_2000_rtyc <- build_tyc(scot_raw_ci_score_matrix,
+                                2000,
+                                scot_year_list,
+                                all_ciwms_list,
+                                scot_tir_with2)
+
+scot_tyc_2000 <- build_indexed_tyc(scot_year_2000_rtyc, scot_year_one_rtyc)
 View(scot_tyc_2000)
 
+scot_tyc_2001 <- build_indexed_tyc(scot_year_2001_rtyc, scot_year_one_rtyc)
+View(scot_tyc_2001)
 
 ## CALCULATE THE INDEX FOR YEAR 2000
 
@@ -697,68 +842,53 @@ View(scot_tyc_2000)
 # multiplied by the WB
 # multiplied by indexed ED (ED this year/ED year one * 100)
 # and divided by 10,000 to give a number around 100.
-## FUNCTION calc_ncai_yearly_matrix()
-# Takes the total yearly condition TYC matrix, the WB wellbeing base and the
-# habitat extent data ED, and calculates the index for that year, decomposed
-# into contributions by habitat and ecosystem service.
-calc_ncai_yearly_matrix <- function(tyc, wb, ed, year) {
-  # Note that calculation is in sqm, not ha.
 
-  ch_year = as.character(year)
-  origin_year <- colnames(ed)[1]
+# However, I'm concerned about zeros in the tyc matrices. Let's see what
+# happens:
 
-  ed_this_year <- ed[[ch_year]]
-  ed_origin_year <- ed[[origin_year]]
+test_ncai_2001 <-
 
-  # Calculate this year extent data as an index relative to year one
-  ed_index <- (ed_this_year / ed_origin_year) * 100
+# FUNCTION build_ncai_matrix
+# takes the wb and tyc and multiplies with the indexed extent data for the
+  # year in question
+build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
 
-  tyc_wb <- as.matrix(tyc) * as.matrix(wb)
+  # Convert to characters for safe column indexing
+  target_str <- as.character(target_year)
+  origin_str <- as.character(year_one)
 
-  ncai_yearly_matrix <- sweep(tyc_wb,
-                              MARGIN = 1,
-                              STATS = ed_index,
-                              FUN = "*")
+  # Extract extent vectors from the ed matrix/df
+  ed_target_vec <- ed[[target_str]]
+  ed_origin_vec <- ed[[origin_str]]
 
-  # Is this what is needed?
-  ncai_yearly_matrix <- ncai_yearly_matrix / 10000
-  # This does need to happen, but it doesn't fix the broken-ness.
+  # Index the habitat extent values.
+  extent_index <- ed_target_vec / ed_origin_vec
+  extent_index[!is.finite(extent_index)] <- 0
 
-  return(ncai_yearly_matrix)
+  # Multiply the wb by the tyc
+  wb_tyc <- as.matrix(tyc) * as.matrix(wb)
 
+  # And multiply in the indexed habitat extent values for that year
+  ncai_matrix <- sweep(
+    x = wb_tyc,
+    MARGIN = 1,        # Apply to Rows
+    STATS = extent_index,
+    FUN = "*"
+  )
+
+  return(ncai_matrix)
 }
 
-scot_ncai_matrix_2000 <- calc_ncai_yearly_matrix(scot_tyc_2000, scot_wb, ed, 2000)
-# View(scot_ncai_matrix_2000)
-# And that looks like 2000.
-# Let's read in the year 2000 sheet automatically and check if they are the
-# same:
-excel_sheets("dev/ncai.xlsx")
-ncai_2000_auto <- readxl::read_excel(
-  path = "dev/ncai.xlsx",
-  sheet = 51,
-  range = "F4:AG34",
-  col_names = FALSE,
-  col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" #quietens reporting on name repair
-)
-# sqm_ncai_2000_auto <- ncai_2000_auto * 10000
-colnames(ncai_2000_auto) <- colnames(wb)
-all.equal(
-  as.data.frame(scot_ncai_matrix_2000),
-  as.data.frame(ncai_2000_auto),
-  check.attributes = FALSE)
+test_ncai_2000 <- build_ncai_matrix(wb, scot_tyc_2000, ed, target_year = 2000, year_one = 2000)
+View(test_ncai_2000)
 
+# THIS DOES LOOK RIGHT!
 
-# But this doesn't look like 2022 so something is wrong with th calculation.
-# Probably the indexing of the ED?
-scot_tyc_2022 <- build_tyc(scot_cis_indexed, 2022, all_ciwms_list)
-scot_ncai_matrix_2022 <- calc_ncai_yearly_matrix(scot_tyc_2022, scot_wb, ed, 2022)
-# Something still not right.
-# Check that no rounded data is being used in the data we brought in at the start.
-# Will write a function fns_import_extent_data.R to bring it in automatically as
-# ED looks like it might be rounded.
+test_ncai_2001 <- build_ncai_matrix(wb, scot_tyc_2001, ed, target_year = 2001, year_one = 2000)
+View(test_ncai_2001)
+
+# These look wrong but sometimes a bit right.
+# What's going on?
 
 
 

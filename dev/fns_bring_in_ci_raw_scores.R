@@ -18,8 +18,8 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
                                ) {
 
   # Get details of range - useful for testing/changing
-  limits <- as.numeric(unlist(regmatches(vector_range, gregexpr("[0-9]+", vector_range))))
-  expected_rows <- limits[2] - limits[1] + 1
+  # limits <- as.numeric(unlist(regmatches(vector_range, gregexpr("[0-9]+", vector_range))))
+  # expected_rows <- limits[2] - limits[1] + 1
 
   # Initialise list of score vectors
   list_of_vectors <-  list()
@@ -35,12 +35,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
       range = vector_range,
       col_names = FALSE,
       col_types = "numeric",
-      # na = "",
       trim_ws = TRUE,
-      # skip = 0,
-      # n_max = Inf,
-      # guess_max = 1000,
-      # progress = readxl_progress(),
       .name_repair = "minimal" #quietens reporting on name repair
     )
 
@@ -49,7 +44,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
     vec <- as.vector(as.matrix(raw_score_data))
 
     # Add vector to list
-    list_of_vectors[[as.character(idx)]] <- vec
+    list_of_vectors[[paste0("ind", idx)]] <- vec
 
     # Confirmation message hopefully:
     cat("Processed column", idx, "(Sheet", actual_sheet_index, ")\n")
@@ -63,7 +58,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 }
 
 # For NatureScot:
-# Run on 19-12-2025 and no need to repeat.
+# Run on 23-12-2025 and no need to repeat.
 # Read in the CI raw scores from NatureScot sheet:
 # (Note that by raw scores we mean the complete list of scores per year per CI,
 # after any smoothing, extrapolation, etc. )
@@ -78,7 +73,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 # ncai_common_range <- "I36:I58"
 
 # Read in:
-# scot_stbi_matrix <- read_the_ci_scores(ncai_sheet_path,
+# scot_ci_raw_scores_matrix <- read_the_ci_scores(ncai_sheet_path,
 #                                   ncai_sheet_list,
 #                                   ncai_common_range)
 
