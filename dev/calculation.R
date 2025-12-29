@@ -403,6 +403,12 @@ scot_wb <- calc_wb(scot_espb, scot_iw_within)
 all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 # TRUE!
 
+
+
+################################
+## UP TO HERE IS CORRECT, THEN SOMETHING IS WRONG
+
+
 # OK, so up to here we have been able to recreate the potential base and the
 # wellbeing base from year 1 (2000) Scotland extent data and the two sheets
 # which contain the ecosystem service potential per SPU (sheet 3) and the
@@ -410,18 +416,50 @@ all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
 
 # Next we are going to need the condition indicators data and their respective
 # weight matrices (actually we want them as relevance matrices, to use with
-# the indicator directory indd).
+# the weights from the indicator directory indd).
 
 # We have automatically processed these for the NatureScot spreadsheet:
 
 # 1. fns_bring_in_ci_raw_scores() was used to get each set of raw scores (after
 # any custom adjustments and inter/extrapolating) and put these into a matrix
-# of shape year/CI. These are found in scot_year_ci_matrix_automated.csv:
+# of shape year/CI. These are found in scot_year_ci_matrix_automated.csv.
+
+# We need a wee helper function to add the year column to the raw CIs matrix:
+## FUNCTION add_years_to_ci_matrix
+add_years_to_ci_matrix <- function(raw_cis, year_list) {
+
+  raw_cis_with_years <- as.data.frame(raw_cis)
+
+  raw_cis_with_years <- raw_cis %>%
+    as.data.frame() %>%
+    mutate(year = year_list, .before = 1)
+
+  return(raw_cis_with_years)
+
+}
+
+label_ci_matrix <- function(raw_cis_with_years, year_list) {
+
+  colnames(raw_cis_with_years) <- c("year",
+                                    paste0("ind",
+                                           1:(ncol(raw_cis_with_years)-1)))
+
+  return(raw_cis_with_years)
+}
+
+# Do this to Scot CIs:
 scot_raw_ci_score_matrix <- read_csv(
   file.path("dev", "scot_year_ci_matrix_automated.csv"),
   show_col_types = FALSE
-  )
+) %>%
+  add_years_to_ci_matrix(scot_year_list) %>%
+  label_ci_matrix()
+
+# Check it has years, columns called ind#, 23 rows, 38 indicators.
+View(scot_raw_ci_score_matrix)
 sum(is.na(scot_raw_ci_score_matrix))
+# It should contain scores from I36 downwards in the numbered indicator sheets.
+
 
 # We use this function to convert the raw scores to indexed values (around 100):
 #### THINK THIS IS NOT REQUIRED. COMMENT OUT ON 23-12-2025. ####
@@ -586,38 +624,35 @@ all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
                   scot_label_subsets_list,
                   st_list = st_labels,
                   indd = indd)
+# E.g.
+View(all_ciwms_list[[3]])
+# Should look like first table in sheet '6' and it does.
 
 
+# Still trying to solve exactly how these come together.
+# NatureScot use a matching matrix full of 2s (sheet 'a1') in their calculations.
+# I think this is just to avoid zero divisions.
+# Coding this as an add-on which for recreating Scot NCAI will be 2.
 
-# Still trying to solve how these come together.
-# There has to be some further averaging or indexing if more than one indicator
-# can be used per habitat/service combination, which it is. 2 gets added to the
-# scores. This is not explained, but it brings the ones with 3 up to 5 - check
-# if 3 is the maximum. If the indexed indicator is indexed around year one,
-# that would give a value around 1, which can be multiplied in here, giving
-# everything a score out of 5. That can become a weight. But surely that again
-# would need indexed year one before multiplying in with the wellbeing base?
-# Can that be compressed. Do, indexed scores * their relevance weights, and
-# this is giving every one something out of 500. And then index that against
-# the year one value of the same?
-
-# UPDATE, I think the addition of 2s is maybe just to avoid dividing 0s.
-
-# Note to self - it needs to be the weight over the total weight per that
-# hab/service combo maybe.
-
-# OK, think I get it. The weighted indicator for a CI (e.g. 1 in CI104 * its
-# indexed score for that year) is divided by the total relevance for that
-# indicator (so the value between 1 * 0 in cell H7 for each CI, all summed).
-# Specifically the former are all summed, and the latter all summed, and then
-# the division is done. This is multiplied by the wellbeing base. And then the
-# year's habitat extent vector is swept across.
+# Looking at e.g. sheet '2000', this looks like it should hold the total
+# relevance-weighted contributions per habitat/service for that year.
+# The formula does:
+# Multiply the indexed condition indicator that year (calculate from raw_cis)
+# by the relevance weight for that habitat service (fetch from correct ciwm
+# in all_ciwms_list),
+# And take the sum of these.
+# Divide that by the total indicator relevance per habitat/servce (tir matrix).
+# (Note that the add-on 2 is summed into both numerator and denominator here).
+# Multiply the result by the wellbeing base values,
+# Multiply the result by the ecosystem area (vector by habitat) across the way.
+# Divide the result by 10000. CHECK SWEEP IS ON RIGHT AXIS.
 
 # The adding of 2 to the total relevance would be consequential. We can try it
 # with and without and see if either works to recreate the numbers.
 
 # From the list of CIWMs, we should be able to recreate the Total Indicator
-# Relevances matrix.
+# Relevances matrix. That's the sum of relevance weights across indicators,
+# plus the addon, found in sheet 'Total Indicator Relevances'.
 # Call it TIR.
 # Make this customisable with the added 2.
 
@@ -632,7 +667,7 @@ calc_tir <- function(all_ciwms_list, addon) {
 
 # With the 2:
 scot_tir_with2 <- calc_tir(all_ciwms_list, addon = 2)
-# View(scot_tir_with2)
+View(scot_tir_with2)
 
 # Without the 2:
 # scot_tir_no2 <- calc_tir(all_ciwms_list, addon = 0)
@@ -643,7 +678,7 @@ excel_sheets("dev/ncai.xlsx")
 # Use sheet 75:
 ncai_tir_auto <- readxl::read_excel(
   path = "dev/ncai.xlsx",
-  sheet = 75,
+  sheet = 74,
   range = "F4:AG34",
   col_names = FALSE,
   col_types = "numeric",
@@ -652,17 +687,13 @@ ncai_tir_auto <- readxl::read_excel(
 )
 # Check this for NAs
 sum(is.na(ncai_tir_auto))
-# There is one and it's because cell 15,10 is broken in the spreadsheet.
-# I'm fairly certain it should be 2 so just replace it with that for now.
-ncai_tir_auto[15, 10] <- 2.0
-sum(is.na(ncai_tir_auto))
-
+# Are they same?
 all.equal(as.data.frame(ncai_tir_auto),
           scot_tir_with2,
           check.attributes = FALSE)
-# Other than that broken cell in the source, the values are the same so that
-# suggestions that the addition of all_ciwms_list is working as we want.
-# Source has the twos.
+# Yes, so we should keep the add-on function.
+# Later, this needs to be involved in the division of weighted condition
+# contributions by the total indicator relevances.
 
 # Let's try again to work out how to calc the final index.
 
@@ -670,34 +701,8 @@ all.equal(as.data.frame(ncai_tir_auto),
 # by multiplying the CIWM (condition indicator weights matrix) by the year's
 # RAW condition scores ICC (around 100).
 
+# Moving code to add years and indicator labels to the raw CIS matrix further up
 
-# We need a function to add the year column to the raw CIs matrix:
-## FUNCTION add_years_to_ci_matrix
-add_years_to_ci_matrix <- function(raw_cis, year_list) {
-
-  raw_cis_with_years <- as.data.frame(raw_cis)
-
-  raw_cis_with_years <- raw_cis %>%
-    as.data.frame() %>%
-    mutate(year = year_list, .before = 1)
-
-  return(raw_cis_with_years)
-
-}
-
-label_ci_matrix <- function(raw_cis_with_years, year_list) {
-
-  colnames(raw_cis_with_years) <- c("year",
-                                    paste0("ind",
-                                           1:(ncol(raw_cis_with_years)-1)))
-
-  return(raw_cis_with_years)
-}
-
-# Do this to Scot CIs:
-scot_raw_ci_score_matrix <- scot_raw_ci_score_matrix %>%
-  add_years_to_ci_matrix(scot_year_list) %>%
-  label_ci_matrix()
 
 
 # UPDATING THIS TO GET THE INDEXED VALUE AS PER SPREADSHEET
@@ -714,13 +719,18 @@ get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
   raw_cond_score <- raw_cis[row_idx, col_idx]
   year_one_score <- raw_cis[y1_idx, col_idx]
 
+  # Index on year one
   indexed_cond_score <- (raw_cond_score / year_one_score) * 100
+
   return(as.numeric(indexed_cond_score))
 }
 
 # E.g.
-# testit <- get_yearly_condition(scot_raw_ci_score_matrix, 2003, 1, scot_year_list)
-# testit # Compare to spreadsheet - correct
+# testit <- get_yearly_condition(raw_cis = scot_raw_ci_score_matrix,
+#                                year_to_get = 2003,
+#                                ci_num = 1,
+#                                year_list = scot_year_list)
+# testit # Compare to spreadsheet (sheet '2' P39) - correct
 # remove(testit)
 
 
@@ -749,29 +759,30 @@ build_ywccm <- function(ci_num, raw_cis, year, year_list, ciwms_list) {
 }
 
 # E.g.
-# testit <- build_ywccm(raw_cis = scot_raw_ci_score_matrix,
-#                       2001,
-#                       all_ciwms_list,
-#                       2)
+# testit <- build_ywccm(ci_num = 2,
+#                       raw_cis = scot_raw_ci_score_matrix,
+#                       year = 2001,
+#                       year_list = scot_year_list,
+#                       ciwms_list = all_ciwms_list)
 # View(testit)
 # remove(testit)
 # Values should be the indexed year value of the CI * the weight, in the correct
 # cells of the matrix, and that looks correct.
 
 # IMPORTANT
-# Then these should all be added together and multiplied by the total relevances
-# matrix.
 # Here I think is where I went wrong before.
 # To do it as per the spreadsheet, multiply the indexed score for the CI/year
-# by the CI's weight matrix. Add all together. Divide by the sum of the
-# relevances for all CIs which is equivalent to the TIR.
+# by the CI's weight matrix.
+# Add all together and also the add-on.
+# Divide by the sum of the relevances for all CIs which is equivalent to the TIR.
+# Remember the TIR already has the add-on added.
 
 # The summed yearly weighted contributions we are going to call the
 # Total Yearly Condition matrix (tyc)
 
 ## FUNCTION build_tyc adds all the CI matrices for that year on top of each
 # other, then divides by the total indicator relevances.
-build_raw_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir) {
+build_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir, addon) {
 
   # Create indices
   ci_indices <- seq_along(ciwms_list)
@@ -791,12 +802,18 @@ build_raw_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir) {
   sum_ywccms <- Reduce("+", list_of_ywccms)
 
   # Divide by the TIR
-  tyc <- sum_ywccms / tir
+  # The addon value (from 'a1' sheet) should be included in the numerator
+  # (it's already in the denominator TIR):
+  tyc <- (sum_ywccms + addon) / tir
+
+  # # Trying this again without that
+  # tyc <- (sum_ywccms) / tir
 
   return(tyc)
 
 }
 
+# THIS PART MAY NOT BE NEEDED!
 # FUNCTION build_indexed_tyc
 # Takes the raw_tyc and indexes it on the year_one raw TYC.
 build_indexed_tyc <- function (target_rtyc, year_one_rtyc) {
@@ -816,25 +833,33 @@ build_indexed_tyc <- function (target_rtyc, year_one_rtyc) {
 
 
 
-# For Scotland, the year 2000:
+# For Scotland, the year 2000 total contributions:
+scot_year_2000_tyc <- build_tyc(
+  raw_cis = scot_raw_ci_score_matrix,
+  target_year = 2000,
+  year_list = scot_year_list,
+  ciwms_list = all_ciwms_list,
+  tir = scot_tir_with2,
+  addon = 2)
+# View(scot_year_2000_tyc)
 
-scot_year_one_rtyc <- build_tyc(scot_raw_ci_score_matrix,
-                           2000,
-                           scot_year_list,
-                           all_ciwms_list,
-                           scot_tir_with2)
+# And those for 2001:
+scot_year_2001_tyc <- build_tyc(
+  raw_cis = scot_raw_ci_score_matrix, target_year = 2001,
+  year_list = scot_year_list,
+  ciwms_list = all_ciwms_list,
+  tir = scot_tir_with2,
+  addon = 2)
 
-scot_year_2000_rtyc <- build_tyc(scot_raw_ci_score_matrix,
-                                2000,
-                                scot_year_list,
-                                all_ciwms_list,
-                                scot_tir_with2)
+# Get 2022 for testing
+scot_year_2022_tyc <- build_tyc(
+  raw_cis = scot_raw_ci_score_matrix,
+  target_year = 2022,
+  year_list = scot_year_list,
+  ciwms_list = all_ciwms_list,
+  tir = scot_tir_with2,
+  addon = 2)
 
-scot_tyc_2000 <- build_indexed_tyc(scot_year_2000_rtyc, scot_year_one_rtyc)
-View(scot_tyc_2000)
-
-scot_tyc_2001 <- build_indexed_tyc(scot_year_2001_rtyc, scot_year_one_rtyc)
-View(scot_tyc_2001)
 
 ## CALCULATE THE INDEX FOR YEAR 2000
 
@@ -843,10 +868,6 @@ View(scot_tyc_2001)
 # multiplied by indexed ED (ED this year/ED year one * 100)
 # and divided by 10,000 to give a number around 100.
 
-# However, I'm concerned about zeros in the tyc matrices. Let's see what
-# happens:
-
-test_ncai_2001 <-
 
 # FUNCTION build_ncai_matrix
 # takes the wb and tyc and multiplies with the indexed extent data for the
@@ -862,8 +883,12 @@ build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
   ed_origin_vec <- ed[[origin_str]]
 
   # Index the habitat extent values.
+  # This is seen in the year sheet calculations as the indexed value (drawn
+  # from the lower table in ecosystem area) of ecosystem area (extent) is used.
   extent_index <- ed_target_vec / ed_origin_vec
   extent_index[!is.finite(extent_index)] <- 0
+  # CHECK HERE
+  # Sheet A1 is the sheet full of 2s, which was the addon used above.
 
   # Multiply the wb by the tyc
   wb_tyc <- as.matrix(tyc) * as.matrix(wb)
@@ -879,20 +904,99 @@ build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
   return(ncai_matrix)
 }
 
-test_ncai_2000 <- build_ncai_matrix(wb, scot_tyc_2000, ed, target_year = 2000, year_one = 2000)
-View(test_ncai_2000)
+test_ncai_2000 <- build_ncai_matrix(
+  wb = wb,
+  tyc = scot_year_2000_tyc,
+  ed = ed,
+  target_year = 2000,
+  year_one = 2000)
+# View(test_ncai_2000)
 
-# THIS DOES LOOK RIGHT!
+# THIS DOES NOT LOOK RIGHT!
 
-test_ncai_2001 <- build_ncai_matrix(wb, scot_tyc_2001, ed, target_year = 2001, year_one = 2000)
-View(test_ncai_2001)
+test_ncai_2001 <- build_ncai_matrix(
+  wb = wb,
+  tyc = scot_year_2001_tyc,
+  ed = ed,
+  target_year = 2001,
+  year_one = 2000)
+# View(test_ncai_2001)
 
-# These look wrong but sometimes a bit right.
-# What's going on?
+test_ncai_2022 <- build_ncai_matrix(
+  wb = wb,
+  tyc = scot_year_2022_tyc,
+  ed = ed,
+  target_year = 2022,
+  year_one = 2000)
+
+# These are not right.
+# They are needing to be divided by something, but what is that something?
+
+# Try this:
+testit <- test_ncai_2000 / scot_year_2000_tyc
+# View(testit)
+# That recreates the year 2000 sheet! Why though?!
+# In doing that, we would be indexing the the total yearly condition on itself?
+# So...year one the condition is 1?
+
+testit2 <- test_ncai_2001 / scot_year_2001_tyc
+# View(testit2)
+
+testit3 <- test_ncai_2022 / scot_year_2022_tyc
+# View(testit3)
+
+
+scot_2000_indexed_tyc <- build_indexed_tyc(scot_year_2000_tyc, scot_year_2000_tyc)
+scot_2001_indexed_tyc <- build_indexed_tyc(scot_year_2001_tyc, scot_year_2000_tyc)
+scot_2022_indexed_tyc <- build_indexed_tyc(scot_year_2022_tyc, scot_year_2000_tyc)
+
+new_ncai_2000 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2000, 2000)
+new_ncai_2001 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2002, 2000)
+new_ncai_2022 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2022, 2000)
+
+# View(new_ncai_2000)
+# View(new_ncai_2001)
+# View(new_ncai_2022)
+# That ^ is only correct for 2000.
+
+# Get year sheets for checking.
+excel_sheets("dev/ncai.xlsx")
+sheet2000 <- readxl::read_excel(
+  path = "dev/ncai.xlsx",
+  sheet = 50,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal" #quietens reporting on name repair
+)
+sheet2001 <- readxl::read_excel(
+  path = "dev/ncai.xlsx",
+  sheet = 51,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal" #quietens reporting on name repair
+)
+sheet2022 <- readxl::read_excel(
+  path = "dev/ncai.xlsx",
+  sheet = 72,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal" #quietens reporting on name repair
+)
 
 
 
+all.equal(as.data.frame(new_ncai_2000 / 100), as.data.frame(sheet2000), check.attributes = FALSE)
+all.equal(as.data.frame(test_ncai_2000), as.data.frame(sheet2000), check.attributes = FALSE)
 
 
-
-
+# OK, right now, we think that new_ncai approach over 100 gets almost to the
+# right answers, perhaps with rounding errors.
+# Check it for a later year.
+all.equal(as.data.frame(new_ncai_2001 / 100), as.data.frame(sheet2001), check.attributes = FALSE)
+all.equal(as.data.frame(new_ncai_2022 / 100), as.data.frame(sheet2022), check.attributes = FALSE)
