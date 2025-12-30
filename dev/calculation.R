@@ -14,17 +14,47 @@ library(readxl)
 
 # Scotland data for replication:
 # Existing bases (Scotland)
-wb <- read.csv("dev/wellbeing_base.csv", header = FALSE)
-espb <- read.csv("dev/ecosystem_potential_base.csv", header = FALSE)
+# Use read_xlsx to bring these in without any unintentional rounding now.
+excel_sheets("dev/ncai.xlsx")
+# Wellbeing base
+wb <- read_xlsx("dev/ncai.xlsx",
+                sheet = 7,
+                range = "F4:AG34",
+                col_names = FALSE,
+                col_types = "numeric",
+                trim_ws = TRUE,
+                .name_repair = "minimal"
+                ) %>%
+  as.data.frame()
+# Ecosystem service potential base
+espb <- read_xlsx("dev/ncai.xlsx",
+                  sheet = 6,
+                  range = "F4:AG34",
+                  col_names = FALSE,
+                  col_types = "numeric",
+                  trim_ws = TRUE,
+                  .name_repair = "minimal") %>%
+  as.data.frame()
 # Ecosystem service providing potential per SPU matrix:
-esppu <- read.csv("dev/ecosystem_potential_per_service_provisioning_unit.csv", header = FALSE)
+esppu <- read_xlsx("dev/ncai.xlsx",
+                  sheet = 3,
+                  range = "F4:AG34",
+                  col_names = FALSE,
+                  col_types = "numeric",
+                  trim_ws = TRUE,
+                  .name_repair = "minimal") %>%
+  as.data.frame()
 # Extent data years to 2022 (Scotland)
-ed <- as.data.frame(scot_extent_data_to_2022 <- read_csv(
-  file.path("dev", "scot_extent_data_automated.csv"),
-  col_names = FALSE,
-  show_col_types = FALSE))
+# This CSV was processed automatically in fns_import_extent_data:
+ed <- read_csv(file.path("dev", "scot_extent_data_automated.csv"),
+               col_names = FALSE,
+               show_col_types = FALSE) %>%
+  as.data.frame()
 # Indicator directory
-indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE)
+# This one was manually created in excel, but shouldn't pose a rounding
+# problem as the values are exact:
+indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE) %>%
+  as.data.frame()
 
 
 # ES Potential ('Scotland weights')
@@ -400,7 +430,7 @@ calc_wb <- function(espb, # ES potential, a matrix habitat/service type
 # Calculate Scotland's Well-being Base:
 scot_wb <- calc_wb(scot_espb, scot_iw_within)
 
-all.equal(wb, round(scot_wb, digits = 0), check.attributes = FALSE)
+all.equal(wb, scot_wb, check.attributes = FALSE)
 # TRUE!
 
 
@@ -456,7 +486,7 @@ scot_raw_ci_score_matrix <- read_csv(
   label_ci_matrix()
 
 # Check it has years, columns called ind#, 23 rows, 38 indicators.
-View(scot_raw_ci_score_matrix)
+# View(scot_raw_ci_score_matrix)
 sum(is.na(scot_raw_ci_score_matrix))
 # It should contain scores from I36 downwards in the numbered indicator sheets.
 
@@ -707,6 +737,8 @@ all.equal(as.data.frame(ncai_tir_auto),
 
 # UPDATING THIS TO GET THE INDEXED VALUE AS PER SPREADSHEET
 # First extract the indexed condition score for the right CI for the right year.
+# Because we do the indexing here, we don't need that commented out function
+# to index the raw ci scores above.
 ## FUNCTION get_yearly_condition()
 get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
   # Use column index instead of name to be absolutely sure
@@ -803,8 +835,9 @@ build_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir, addon) {
 
   # Divide by the TIR
   # The addon value (from 'a1' sheet) should be included in the numerator
-  # (it's already in the denominator TIR):
-  tyc <- (sum_ywccms + addon) / tir
+  # (it's already in the denominator TIR). I think it needs to be multiplied
+  # by its dummy indexed condition score which is always 100.
+  tyc <- (sum_ywccms + (100 * addon)) / tir
 
   # # Trying this again without that
   # tyc <- (sum_ywccms) / tir
@@ -815,7 +848,7 @@ build_tyc <- function(raw_cis, target_year, year_list, ciwms_list, tir, addon) {
 
 # THIS PART MAY NOT BE NEEDED!
 # FUNCTION build_indexed_tyc
-# Takes the raw_tyc and indexes it on the year_one raw TYC.
+# Takes the raw_tyc and indexes it (around 1) on the year_one raw TYC.
 build_indexed_tyc <- function (target_rtyc, year_one_rtyc) {
 
   # Convert to matrices
@@ -832,33 +865,39 @@ build_indexed_tyc <- function (target_rtyc, year_one_rtyc) {
 }
 
 
+# NOW STOP AND CONSIDER THE WAY FORWARD
+
+
 
 # For Scotland, the year 2000 total contributions:
-scot_year_2000_tyc <- build_tyc(
+scot_2000_tyc <- build_tyc(
   raw_cis = scot_raw_ci_score_matrix,
   target_year = 2000,
   year_list = scot_year_list,
   ciwms_list = all_ciwms_list,
   tir = scot_tir_with2,
   addon = 2)
+scot_2000_ityc <- build_indexed_tyc(scot_2000_tyc, scot_2000_tyc)
 # View(scot_year_2000_tyc)
 
 # And those for 2001:
-scot_year_2001_tyc <- build_tyc(
+scot_2001_tyc <- build_tyc(
   raw_cis = scot_raw_ci_score_matrix, target_year = 2001,
   year_list = scot_year_list,
   ciwms_list = all_ciwms_list,
   tir = scot_tir_with2,
   addon = 2)
+scot_2001_ityc <- build_indexed_tyc(scot_2001_tyc, scot_2000_tyc)
 
 # Get 2022 for testing
-scot_year_2022_tyc <- build_tyc(
+scot_2022_tyc <- build_tyc(
   raw_cis = scot_raw_ci_score_matrix,
   target_year = 2022,
   year_list = scot_year_list,
   ciwms_list = all_ciwms_list,
   tir = scot_tir_with2,
   addon = 2)
+scot_2022_ityc <- build_indexed_tyc(scot_2022_tyc, scot_2000_tyc)
 
 
 ## CALCULATE THE INDEX FOR YEAR 2000
@@ -872,7 +911,7 @@ scot_year_2022_tyc <- build_tyc(
 # FUNCTION build_ncai_matrix
 # takes the wb and tyc and multiplies with the indexed extent data for the
   # year in question
-build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
+build_ncai_matrix <- function(wb, ityc, ed, target_year, year_one) {
 
   # Convert to characters for safe column indexing
   target_str <- as.character(target_year)
@@ -885,13 +924,13 @@ build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
   # Index the habitat extent values.
   # This is seen in the year sheet calculations as the indexed value (drawn
   # from the lower table in ecosystem area) of ecosystem area (extent) is used.
-  extent_index <- ed_target_vec / ed_origin_vec
+  extent_index <- (ed_target_vec / ed_origin_vec * 100)
   extent_index[!is.finite(extent_index)] <- 0
   # CHECK HERE
   # Sheet A1 is the sheet full of 2s, which was the addon used above.
 
-  # Multiply the wb by the tyc
-  wb_tyc <- as.matrix(tyc) * as.matrix(wb)
+  # Multiply the wb by the ityc
+  wb_tyc <- as.matrix(ityc) * as.matrix(wb)
 
   # And multiply in the indexed habitat extent values for that year
   ncai_matrix <- sweep(
@@ -901,65 +940,22 @@ build_ncai_matrix <- function(wb, tyc, ed, target_year, year_one) {
     FUN = "*"
   )
 
-  return(ncai_matrix)
+  return(as.data.frame(ncai_matrix/10000))
 }
 
-test_ncai_2000 <- build_ncai_matrix(
+matrix_2000 <- build_ncai_matrix(
   wb = wb,
-  tyc = scot_year_2000_tyc,
+  ityc = scot_2000_ityc,
   ed = ed,
   target_year = 2000,
   year_one = 2000)
-# View(test_ncai_2000)
+# View(matrix_2000)
 
-# THIS DOES NOT LOOK RIGHT!
-
-test_ncai_2001 <- build_ncai_matrix(
-  wb = wb,
-  tyc = scot_year_2001_tyc,
-  ed = ed,
-  target_year = 2001,
-  year_one = 2000)
-# View(test_ncai_2001)
-
-test_ncai_2022 <- build_ncai_matrix(
-  wb = wb,
-  tyc = scot_year_2022_tyc,
-  ed = ed,
-  target_year = 2022,
-  year_one = 2000)
-
-# These are not right.
-# They are needing to be divided by something, but what is that something?
-
-# Try this:
-testit <- test_ncai_2000 / scot_year_2000_tyc
-# View(testit)
-# That recreates the year 2000 sheet! Why though?!
-# In doing that, we would be indexing the the total yearly condition on itself?
-# So...year one the condition is 1?
-
-testit2 <- test_ncai_2001 / scot_year_2001_tyc
-# View(testit2)
-
-testit3 <- test_ncai_2022 / scot_year_2022_tyc
-# View(testit3)
-
-
-scot_2000_indexed_tyc <- build_indexed_tyc(scot_year_2000_tyc, scot_year_2000_tyc)
-scot_2001_indexed_tyc <- build_indexed_tyc(scot_year_2001_tyc, scot_year_2000_tyc)
-scot_2022_indexed_tyc <- build_indexed_tyc(scot_year_2022_tyc, scot_year_2000_tyc)
-
-new_ncai_2000 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2000, 2000)
-new_ncai_2001 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2002, 2000)
-new_ncai_2022 <- build_ncai_matrix(wb, scot_2000_indexed_tyc, ed, 2022, 2000)
-
-# View(new_ncai_2000)
-# View(new_ncai_2001)
-# View(new_ncai_2022)
-# That ^ is only correct for 2000.
-
-# Get year sheets for checking.
+# THIS NOW LOOKS RIGHT
+# but I'm not sure I see why we had to index the tyc.
+# We need to check if it works for further years like that.
+# First check if this really is right.
+# Get some year sheets for checking:
 excel_sheets("dev/ncai.xlsx")
 sheet2000 <- readxl::read_excel(
   path = "dev/ncai.xlsx",
@@ -989,14 +985,151 @@ sheet2022 <- readxl::read_excel(
   .name_repair = "minimal" #quietens reporting on name repair
 )
 
+# Check if we calculated 2000 exactly
+all.equal(matrix_2000, sheet2000, check.attributes = FALSE)
+# TRUE!
+# But will that work for another year.
 
+# Year 2001
+matrix_2001 <- build_ncai_matrix(
+  wb = wb,
+  ityc = scot_2001_ityc,
+  ed = ed,
+  target_year = 2001,
+  year_one = 2000)
+# View(matrix_2001)
+# I don't think this is right. Let's see.
+all.equal(matrix_2001, sheet2001, check.attributes = FALSE)
 
-all.equal(as.data.frame(new_ncai_2000 / 100), as.data.frame(sheet2000), check.attributes = FALSE)
-all.equal(as.data.frame(test_ncai_2000), as.data.frame(sheet2000), check.attributes = FALSE)
+# Year 2022
+matrix_2022 <- build_ncai_matrix(
+  wb = wb,
+  ityc = scot_2022_ityc,
+  ed = ed,
+  target_year = 2022,
+  year_one = 2000)
+# View(matrix_2022)
+# I don't think this is right. Let's see.
+all.equal(matrix_2022, sheet2022, check.attributes = FALSE)
 
+# These results show that after 21 years of the time series we have some
+# drift. LLM thinks this is likely due to excel applying some small rounding at
+# stages of the calculation, differently to R, but I tried various things
+# to recreate that and couldn't.
 
-# OK, right now, we think that new_ncai approach over 100 gets almost to the
-# right answers, perhaps with rounding errors.
-# Check it for a later year.
-all.equal(as.data.frame(new_ncai_2001 / 100), as.data.frame(sheet2001), check.attributes = FALSE)
-all.equal(as.data.frame(new_ncai_2022 / 100), as.data.frame(sheet2022), check.attributes = FALSE)
+# Can I check how big the
+# differences are in a way that I understand better?
+sheet2022 <- as.data.frame(sheet2022)
+rownames(matrix_2022) <- rownames(sheet2022) <- spu_codes
+
+# Calculate Percentage Error
+error_matrix <- (as.matrix(matrix_2022) / as.matrix(sheet2022) - 1) * 100
+
+# Extract only the finite numbers (removes NaN and Inf)
+clean_errors <- error_matrix[is.finite(error_matrix)]
+
+# Summary of the drift (in percent)
+summary(clean_errors)
+# Worst case is out by 9% points.
+# Can't say how bad that is without knowing the relative contribution of the
+# thing - it could be forest adn really big or CVS and minimal.
+
+# How many cells are exactly correct?
+exact_matches <- sum(abs(clean_errors) < 0.00001, na.rm = TRUE)
+total_cells <- length(clean_errors)
+message(paste0("Exact matches: ", exact_matches, " out of ", total_cells,
+               " (", round(exact_matches/total_cells*100, 2), "%)"))
+
+# Make a heatmap
+# install.packages("pheatmap")
+library(pheatmap)
+
+# Replace NaNs with 0 so the heatmap can render
+plot_matrix <- error_matrix
+plot_matrix[!is.finite(plot_matrix)] <- 0
+
+pheatmap(plot_matrix,
+         main = "Percentage Drift from Excel (2022)",
+         display_numbers = FALSE,
+         color = colorRampPalette(c("blue", "white", "red"))(100),
+         breaks = seq(-5, 5, length.out = 101)) # Focus on +/- 5% range
+
+# Mean absolute error by habitat and service:
+# Drift by Habitat (Rows)
+habitat_drift <- rowMeans(abs(error_matrix), na.rm = TRUE)
+habitat_summary <- data.frame(habitat = names(habitat_drift),
+                              mae_percent = habitat_drift) %>%
+  arrange(desc(mae_percent))
+
+# Drift by Service (Columns)
+service_drift <- colMeans(abs(error_matrix), na.rm = TRUE)
+service_summary <- data.frame(service = names(service_drift),
+                              mae_percent = service_drift) %>%
+  arrange(desc(mae_percent))
+
+head(habitat_summary, 10)
+head(service_summary, 10)
+
+# This is showing biggest problems to be:
+# overestimation of the contrib of g1 broadleaved deiduous woodland
+# underestimation of the contrib of g3 coniferous woodland
+# Slight overestimation of e2 mesic grasslands (farming then, I think)
+# These are areas with big extent but crucially they are 3/4 of areas where the
+# extent data actually changes!
+# Check market gardens which seems to be fine:
+i1_drift <- error_matrix["i1", , drop = FALSE]
+
+# 3. Summary of drift for i1
+message("Summary of % drift for Habitat i1:")
+print(summary(as.numeric(i1_drift)))
+
+# 4. View specific services for i1 to see if some are worse than others
+i1_drift_long <- as.data.frame(t(i1_drift)) %>%
+  rename(percent_error = i1) %>%
+  arrange(desc(abs(percent_error)))
+
+head(i1_drift_long, 10)
+# There is error - it's just small.
+
+# Check for error trend by service type:
+service_profile <- data.frame(
+  service = all_service_labels,
+  type = c(rep("Provisioning", length(provisioning_labels)),
+           rep("Regulation & Maintenance", length(regulationandmaintenance_labels)),
+           rep("Cultural", length(cultural_labels)))
+)
+
+error_summary_by_type <- as.data.frame(error_matrix) %>%
+  pivot_longer(everything(), names_to = "service", values_to = "error_pct") %>%
+  left_join(service_profile, by = "service") %>%
+  filter(is.finite(error_pct)) %>% # Remove the NaNs (zero-valued cells)
+  group_by(type) %>%
+  summarise(
+    mean_error = mean(error_pct),
+    median_error = median(error_pct),
+    max_error = max(error_pct),
+    min_error = min(error_pct),
+    sd_error = sd(error_pct),
+    n_cells = n()
+  )
+
+print(error_summary_by_type)
+
+library(ggplot2)
+
+ggplot(as.data.frame(error_matrix) %>%
+         pivot_longer(everything(), names_to = "service", values_to = "error_pct") %>%
+         left_join(service_profile, by = "service") %>%
+         filter(is.finite(error_pct)),
+       aes(x = type, y = error_pct, fill = type)) +
+  geom_boxplot(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Error Profile by Service Type (2022)",
+       subtitle = "Percentage drift between R and Excel results",
+       y = "Error (%)", x = "Service Section") +
+  theme(legend.position = "none")
+# Not much to see there.
+# It seems to be more about the manually edited area figures which change
+# annually.
+# Perhaps natureScot will have something to say about that.
+
