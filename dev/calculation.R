@@ -998,7 +998,7 @@ matrix_2001 <- build_ncai_matrix(
   target_year = 2001,
   year_one = 2000)
 # View(matrix_2001)
-# I don't think this is right. Let's see.
+# It's matching in year 2.
 all.equal(matrix_2001, sheet2001, check.attributes = FALSE)
 
 # Year 2022
@@ -1009,10 +1009,10 @@ matrix_2022 <- build_ncai_matrix(
   target_year = 2022,
   year_one = 2000)
 # View(matrix_2022)
-# I don't think this is right. Let's see.
+# And then it's close but not perfect by 2022.
 all.equal(matrix_2022, sheet2022, check.attributes = FALSE)
 
-# These results show that after 21 years of the time series we have some
+# These results show that after 22 years of the time series we have some
 # drift. LLM thinks this is likely due to excel applying some small rounding at
 # stages of the calculation, differently to R, but I tried various things
 # to recreate that and couldn't.
