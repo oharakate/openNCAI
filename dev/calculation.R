@@ -237,60 +237,49 @@ scot_espb = calc_espb(habitat_extent = ns_habitat_extent,
                       habitat_labels = habitat_codes)
 
 # Does the calculated scot_espb match the published ns_espb?
-# Yes:
 all.equal(ns_espb, scot_espb)
+# Yes
+
+
 
 ## RECREATING THE WELLBEING BASE
 ## Next step is to recreate the wellbeing base.
 
 # # FUNCTION imp_rtw_between()
 # Gets between-service-provision-type IMPORTANCE weights from a df of raw
-# scores.
-# Output is used in imp_rtw_within.
-
-# Convert sections of raw ratings to actual weights:
-# Guidance from excel sheet:
-# Get service section weights from a vector of scores
-# ("Step 1: ecosystem service section. The most important of the <list> is
-# assigned a value of 20, and the other <remainder> are assigned a value
-# (between 0 and 20) in terms of their relative importance.
-# 1. Provisioning (1.1 thru 1.12)
-# 2. Regulation and maintenance (2.1 thru 2.11)
-# 3. Cultural services (3.1 through 3.5
-imp_rtw_between <- function(between_scores) {
-  # Scores is a vector of scores 1,2 3
+# importance scores.
+# Output is used in importance_rtw_within().
+importance_rtw_between <- function(between_scores) {
+  # between_cores is a vector of between-service-type importance scores
   between_weights <- between_scores / sum(between_scores) * 100
-  # Return a df which can be indexed [,1] [,2] [,3]
+
   return(between_weights)
 }
 
 
-## FUNCTION imp_rtw_within()
-# Gets within-service-type IMPORTANCE weights from a df of raw scores, using
-# between weights output from imp_rtw_between()
-# Used in calc_imp_weights() below
-imp_rtw_within <- function(within_scores, between_weights, index) {
-  # Takes index 1-3 for the appropriate section.
-  # Should improve this to make that list of indices soft maybe.
-  # Maybe could add a section index column to the df holding the sets of
-  # within weights?
+## FUNCTION importance_rtw_within()
+# Gets within-service-type IMPORTANCE weights from a df of raw importance
+# scores, using between weights output from importance_rtw_between()
+# Used in calc_importance_weights() below
+importance_rtw_within <- function(within_scores, between_weights, index) {
+
   within_weights  <- within_scores / sum(within_scores) * between_weights[index, 1]
 
   return(within_weights)
 }
 
 
-## FUNCTION calc_imp_weights()
+## FUNCTION calc_importance_weights()
 # Calculates importance weights, using within and between weights.
 # Loops through the list of ecosystem service types, calculating importance
 # weights and returning a list of weight subset objects.
 
 # Requires the vector of between-service-type scores, and a list of the
 # within-service-type-score objects.
-calc_imp_weights <- function (between_scores, within_scores_list) {
+calc_importance_weights <- function (between_scores, within_scores_list) {
 
   # Calculate the between weights
-  b_weights <- imp_rtw_between(between_scores)
+  b_weights <- importance_rtw_between(between_scores)
 
   # Initialise service type group number
   st_num <- 0
@@ -305,7 +294,7 @@ calc_imp_weights <- function (between_scores, within_scores_list) {
     ww_subset_name <- paste0("ww_subset_", st_num)
 
     # Calculate within weights for service type
-    ww_subset <- imp_rtw_within(within_scores = within_scores_list[[st_num]],
+    ww_subset <- importance_rtw_within(within_scores = within_scores_list[[st_num]],
                                 between_weights = b_weights,
                                 index = st_num)
     assign(ww_subset_name, ww_subset, envir = .GlobalEnv)
@@ -321,9 +310,13 @@ calc_imp_weights <- function (between_scores, within_scores_list) {
 
 # eswr_scot_sections are the scottish between-ecosystem-service-type raw scores
 # Make a list of the within-ecosystem_service_type scores
-scot_within_score_list <- list(eswr_prov, eswr_regu, eswr_cult)
+scot_within_score_list <- list(ns_prov_importance_weights,
+                               ns_regu_importance_weights,
+                               ns_cult_importance_weights)
 
-scot_ww_list <- calc_imp_weights(eswr_scot_sections, scot_within_score_list)
+# Calculate Scotland's importance within-service-type weights:
+scot_within_weights_list <- calc_importance_weights(ns_st_importance_weights,
+                                                    scot_within_score_list)
 
 ## FUNCTION bind_imp_weights()
 # Rejoins within-service-type weights back into one weight vector, applying
@@ -332,10 +325,10 @@ scot_ww_list <- calc_imp_weights(eswr_scot_sections, scot_within_score_list)
 # Require list of importance within weight vectors, output from imp_rtw_within()
 # and list of all the service labels
 
-bind_imp_weights <- function(ww_list, all_service_label_list) {
+bind_importance_weights <- function(within_weights_list, all_service_label_list) {
 
   # Row bind the subsets of weights
-  long_weights <- dplyr::bind_rows(ww_list)
+  long_weights <- dplyr::bind_rows(within_weights_list)
 
   if(nrow(long_weights) != length(all_service_label_list)) {
     stop("The number of rows in the weights (", nrow(long_weights),
@@ -354,18 +347,21 @@ bind_imp_weights <- function(ww_list, all_service_label_list) {
 }
 
 # Rejoin the within-weight objects and pivot wide:
-scot_iw_within <- bind_imp_weights(ww_list = scot_ww_list,
+scot_importance_weights <- bind_importance_weights(within_weights_list = scot_within_weights_list,
                                    all_service_label_list = all_service_labels)
+
+# FIX - here we should have a wrapper function I think.
+
 
 
 ## FUCNTION calc_wb() takes the espb (ES potential per habitat/service type
-# combo) and expresses each cell as a proportion of
+# combination) and expresses each cell as a proportion of
 # the total potential for that service type across all habitats (colSums).
-# Next it multiplies in iw the importance weights (result of between and within
+# Next it multiplies in the importance weights (result of between and within
 # service-type weighting process above)).
 # Returns the wellbeing base which is a matrix of habitat/service type.
-calc_wb <- function(espb, # ES potential, a matrix habitat/service type
-                    iw # Importance weights, a vector (wide df) by service type
+calc_wellbeing_base <- function(espb, # ES potential, a matrix habitat/service type
+                    importance_weights # Importance weights, a vector (wide df) by service type
                     ) {
 
   # Express ESPB as proportion of habitat total contribution
@@ -378,31 +374,31 @@ calc_wb <- function(espb, # ES potential, a matrix habitat/service type
   )
 
   # Multiply by within-service-type importance weights
-  wb <- sweep(
+  wellbeing_base <- sweep(
     x = espb_as_prop,
     MARGIN = 2,
-    STATS = as.numeric(iw),
+    STATS = as.numeric(importance_weights),
     FUN = "*"
   )
 
   # Multiply by 100
-  wb <- wb * 100
+  wellbeing_base <- wellbeing_base * 100
 
-  return(wb)
+  return(wellbeing_base)
 
 }
 
 # Calculate Scotland's Well-being Base:
-scot_wb <- calc_wb(scot_espb, scot_iw_within)
+scot_wellbeing_base <- calc_wellbeing_base(espb = scot_espb,
+                               importance_weights = scot_importance_weights)
 
-all.equal(wb, scot_wb, check.attributes = FALSE)
-# TRUE!
+# Is the calculated wellbeing base equal to NatureScot's wellbeing base?
+all.equal(ns_wellbeing_base, scot_wellbeing_base)
+# Yes.
 
 
 
 ################################
-## UP TO HERE IS CORRECT, THEN SOMETHING IS WRONG
-
 
 # OK, so up to here we have been able to recreate the potential base and the
 # wellbeing base from year 1 (2000) Scotland extent data and the two sheets

@@ -5,7 +5,7 @@
 # Requires the vector of between-service-type scores, and a list of the
 # within-service-type-score objects.
 
-calc_imp_weights <- function (between_scores, within_scores_list) {
+calc_importance_weights <- function (between_scores, within_scores_list) {
 
   # Calculate the between weights
   b_weights <- imp_rtw_between(between_scores)
@@ -23,7 +23,7 @@ calc_imp_weights <- function (between_scores, within_scores_list) {
     ww_subset_name <- paste0("ww_subset_", st_num)
 
     # Calculate within weights for service type
-    ww_subset <- imp_rtw_within(scores = within_scores_list[[st_num]],
+    ww_subset <- imp_rtw_within(within_scores = within_scores_list[[st_num]],
                                 between_weights = b_weights,
                                 index = st_num)
     assign(ww_subset_name, ww_subset, envir = .GlobalEnv)
@@ -36,4 +36,3 @@ calc_imp_weights <- function (between_scores, within_scores_list) {
   return(ww_subset_list)
 
 }
-

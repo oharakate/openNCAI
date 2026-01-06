@@ -13,11 +13,9 @@
 # 2. Regulation and maintenance (2.1 thru 2.11)
 # 3. Cultural services (3.1 through 3.5
 
-imp_rtw_between <- function(between_scores) {
-
-  # Scores is a vector of scores 1,2 3
+importance_rtw_between <- function(between_scores) {
+  # between_cores is a vector of between-service-type importance scores
   between_weights <- between_scores / sum(between_scores) * 100
 
-  # Return a df which can be indexed [,1] [,2] [,3]
   return(between_weights)
 }

@@ -5,10 +5,10 @@
 # Require list of importance within weight vectors, output from imp_rtw_within()
 # and list of all the service labels
 
-bind_imp_weights <- function(ww_list, all_service_label_list) {
+bind_importance_weights <- function(within_weights_list, all_service_label_list) {
 
   # Row bind the subsets of weights
-  long_weights <- dplyr::bind_rows(ww_list)
+  long_weights <- dplyr::bind_rows(within_weights_list)
 
   if(nrow(long_weights) != length(all_service_label_list)) {
     stop("The number of rows in the weights (", nrow(long_weights),

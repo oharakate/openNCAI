@@ -4,8 +4,8 @@
 # Next it multiplies in iw the importance weights (result of between and within
 # service-type weighting process above)).
 # Returns the wellbeing base which is a matrix of habitat/service type.
-calc_wb <- function(espb, # ES potential, a matrix habitat/service type
-                    iw # Importance weights, a vector (wide df) by service type
+calc_wellbeing_base <- function(espb, # ES potential, a matrix habitat/service type
+                                importance_weights # Importance weights, a vector (wide df) by service type
 ) {
 
   # Express ESPB as proportion of habitat total contribution
@@ -18,16 +18,16 @@ calc_wb <- function(espb, # ES potential, a matrix habitat/service type
   )
 
   # Multiply by within-service-type importance weights
-  wb <- sweep(
+  wellbeing_base <- sweep(
     x = espb_as_prop,
     MARGIN = 2,
-    STATS = as.numeric(iw),
+    STATS = as.numeric(importance_weights),
     FUN = "*"
   )
 
   # Multiply by 100
-  wb <- wb * 100
+  wellbeing_base <- wellbeing_base * 100
 
-  return(wb)
+  return(wellbeing_base)
 
 }
