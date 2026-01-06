@@ -1,10 +1,24 @@
 ## FUNCTION esppu_scores_to_weights()
-# Takes matrix of ESSPU scores and converts it to weights
-esppu_scores_to_weights <- function(esppu, custom_weight_matrix = 5) {
+# Takes dataframe object of ESSPU scores (matrix habitats/ecosystem services)
+# and converts it to weights by dividing by a common denominator.
 
-  esppu_mat <- as.matrix(esppu)
-  esppu_aw  <- (esppu_mat / as.matrix(custom_weight_matrix)) %>%
-    as.data.frame()
+esppu_scores_to_weights <- function(
+    esppu, # dataframe habitat type / ecosystem service
+    divisor = 5, # divisor for calculating weights from scores
+    custom_divisor_matrix = NULL # dataframe habitat type / ecosystem service
+    # containing custom divisors
+) {
+
+  # Divide all scores by universal divisor if no customisations
+  if (is.null(custom_divisor_matrix)) {
+    esppu_aw <- esppu / divisor
+  } else {
+    # Or use custom divisor per habitat/ecosystem service combination
+    if (!all(dim(esppu) == dim(custom_divisor_matrix))) {
+      stop("Dimensions of esppu and custom_divisor_matrix must match.")
+    }
+    esppu_aw  <- esppu / custom_divisor_matrix
+  }
 
   return(esppu_aw)
 }

@@ -15,9 +15,11 @@ library(readxl)
 # Scotland data for replication:
 # Existing bases (Scotland)
 # Use read_xlsx to bring these in without any unintentional rounding now.
-excel_sheets("dev/ncai.xlsx")
+# Index of sheets in the NatureScot spreadsheet:
+ns_sheets_index <- excel_sheets("dev/ncai.xlsx")
+ns_sheets_index
 # Wellbeing base
-wb <- read_xlsx("dev/ncai.xlsx",
+ns_wellbeing_base <- read_xlsx("dev/ncai.xlsx",
                 sheet = 7,
                 range = "F4:AG34",
                 col_names = FALSE,
@@ -27,7 +29,7 @@ wb <- read_xlsx("dev/ncai.xlsx",
                 ) %>%
   as.data.frame()
 # Ecosystem service potential base
-espb <- read_xlsx("dev/ncai.xlsx",
+ns_espb <- read_xlsx("dev/ncai.xlsx",
                   sheet = 6,
                   range = "F4:AG34",
                   col_names = FALSE,
@@ -36,7 +38,7 @@ espb <- read_xlsx("dev/ncai.xlsx",
                   .name_repair = "minimal") %>%
   as.data.frame()
 # Ecosystem service providing potential per SPU matrix:
-esppu <- read_xlsx("dev/ncai.xlsx",
+ns_esppu <- read_xlsx("dev/ncai.xlsx",
                   sheet = 3,
                   range = "F4:AG34",
                   col_names = FALSE,
@@ -44,34 +46,38 @@ esppu <- read_xlsx("dev/ncai.xlsx",
                   trim_ws = TRUE,
                   .name_repair = "minimal") %>%
   as.data.frame()
-# Extent data years to 2022 (Scotland)
+# Habitat extent data years to 2022 (Scotland)
+# FIX change to bring in here using the function
 # This CSV was processed automatically in fns_import_extent_data:
-ed <- read_csv(file.path("dev", "scot_extent_data_automated.csv"),
+ns_habitat_extent <- read_csv(file.path("dev", "scot_extent_data_automated.csv"),
                col_names = FALSE,
                show_col_types = FALSE) %>%
   as.data.frame()
 # Indicator directory
+# FIX bring in automatically!
 # This one was manually created in excel, but shouldn't pose a rounding
 # problem as the values are exact:
-indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE) %>%
+ns_indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE) %>%
   as.data.frame()
 
 
 # ES Potential ('Scotland weights')
-# Chris has typed these manually below, but here they are as csv:
-eswr_scot_sections <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
-eswr_prov <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
-eswr_regu <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
-eswr_cult <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
-
-# Assign to more general terms:
-st <- eswr_scot_sections
+# Chris has typed these manually below, but here they are as csv,
+# but we should
+# FIX this so that we just read them from the spreadsheet.
+ns_st_importance_weights <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
+# main_weights <- c(10,20,10)
+ns_prov_importance_weights <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
+# provisioning_weights <- c(20,15,9,9,20,13,13,7,11,12,1,0)
+ns_regu_importance_weights <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
+# regulationandmaintenance_weights <- c(10,10,12,7,7,10,10,12,14,8,20)
+ns_cult_importance_weights <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
+# cultural_weights <- c(20,20,20,20,20)
+# We should also make a list of the three within-st sets.
 
 # Labels for data:
 st_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
 short_main_labels <- c("prov", "regu", "cult")
-main_weights <- c(10,20,10)
-provisioning_weights <- c(20,15,9,9,20,13,13,7,11,12,1,0)
 provisioning_labels <- c("cultivated_crops",
                          "reared_animals",
                          "wild_animals_plants_algae",
@@ -84,7 +90,6 @@ provisioning_labels <- c("cultivated_crops",
                          "plant_energy",
                          "animal_energy",
                          "animal_mechanical_energy")
-regulationandmaintenance_weights <- c(10,10,12,7,7,10,10,12,14,8,20)
 regulationandmaintenance_labels <- c("waste_mediation_biota",
                                      "waste_mediation_ecosystem",
                                      "erosion_mediation",
@@ -96,14 +101,13 @@ regulationandmaintenance_labels <- c("waste_mediation_biota",
                                      "soil_formation_composition",
                                      "water_chemistry",
                                      "climate")
-cultural_weights <- c(20,20,20,20,20)
 cultural_labels <- c("physical_experience",
                      "heritage_educational",
                      "aesthetic_entertainment",
                      "symbolic_sacred_religious",
                      "existence_bequest")
 
-spu_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
+habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "e1", "e2", "e4","e5", "e7",
                 "f2","f3","f4","f9",
                 "g1","g3","g4","g5","g6",
@@ -111,19 +115,17 @@ spu_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "j1","j2","j3","j4","k")
 
 # The range of years in the Scotland 23 extent data:
-# This can prob be replaced with the code found below which generates a list of
-# years from and to.
-year_labels <- c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
-                "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015",
-                "2016", "2017", "2018", "2019", "2020", "2021", "2022")
+year_labels <- as.character(2000:2022)
 
 # Apply labels
-colnames(espb) <- colnames(esppu) <- colnames(wb) <- all_service_labels <-
+colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
+  all_service_labels <-
   c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
 
-rownames(espb) <- rownames(esppu) <- rownames(wb) <- rownames(ed) <- spu_codes
+rownames(ns_espb) <- rownames(ns_esppu) <- rownames(ns_wellbeing_base) <-
+  rownames(ns_habitat_extent) <- habitat_codes
 
-colnames(ed) <- year_labels
+colnames(ns_habitat_extent) <- year_labels
 
 ####
 
@@ -133,147 +135,110 @@ colnames(ed) <- year_labels
 
 # RECREATING THE ES POTENTIAL BASE
 
-# Set a year (is this necessary?)
-origin_year <- "2000"
-
-# espu as weight - ESPPU contains scores out of 5 on the potential of a
-# service-providing unit to deliver its potential. So divide everything in
-# that by 5 to get a weight.
-
+# espu as weight - in the NatureScot spreadhsheet, ESPPU contains scores out of
+# 5 on the potential of a service-providing unit to deliver its potential. So
+# we will divide everything in that by max score 5 to get an ESPPU weight.
 
 # EXCEPT in the case of the red cells, which are multiplied by 5.
-# So we will make a matrix which records the divisor (will be 1 instead of 5
-# for these adjusted ones).
+# We need a matrix which records the divisor for each habitat/service type
+# combination.
 
-## So let's make a NatureScot function, which will hard code in this
-# adjustment in the first instance...
-# This is in fns_ajust_esppu_weights.R
+## NatureScot function make_custom_divisor_matrix() builds a matrix of
+# divisors where some are changed to a new value.
 
-adjust_esppu_weights <- function(spu_codes,
-                                 all_service_labels,
-                                 cultural_labels) {
-
-  # Make a grid with all combinations of habitat and service.
-  htst1 <- expand.grid(spu = spu_codes,
-                       service_potential = all_service_labels,
-                       stringsAsFactors = FALSE)
-
-  # Make a df which records all the cells to be adjusted:
-  # htst2 is like htst1, but only contains the combinations where we want an
-  # adjuster.
-  # In this case, the adjuster is always 1, but it could vary in other
-  # applications.
-  # This section is hard coded and would need manually adjusted if any changes.
-  htst2 <- data.frame(
-    spu = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
-            rep("i2",6), rep("j1",5), rep("j2",5)),
-    service_potential = c("erosion_mediation", "soil_formation_composition",
-                          cultural_labels,
-                          cultural_labels,
-                          cultural_labels,
-                          "climate",
-                          "climate",
-                          cultural_labels,
-                          cultural_labels,
-                          cultural_labels),
-    constant = 1,
-    stringsAsFactors = FALSE
-  )
-
-  # Merge in the custom adjusters, fill NAs with 5
-  # We use left_join to keep everything in htst1 and bring in htst2
-  htst <- htst1 %>%
-    left_join(htst2, by = c("spu", "service_potential")) %>%
-    mutate(constant = replace_na(constant, 5))
-
-  # Pivot wider to get the same dimension df as esppu matrix.
-  htst_wide <- htst %>%
-    pivot_wider(names_from = service_potential,
-                values_from = constant)
-
-  return(htst_wide %>% select(-spu))
-
-}
-
+# For Nature Scot's custom divisor matrix, these paired character
+# vectors identify all habitat/service-type combinations where the divisor is
+# changed:
+ns_habitats_to_adjust = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
+                       rep("i2",6), rep("j1",5), rep("j2",5))
+ns_services_to_adjust = c("erosion_mediation", "soil_formation_composition",
+                       cultural_labels,
+                       cultural_labels,
+                       cultural_labels,
+                       "climate",
+                       "climate",
+                       cultural_labels,
+                       cultural_labels,
+                       cultural_labels)
 
 # Make the matrix of ScotNCAI adjustments to the weights:
-htst_wide <- adjust_esppu_weights(spu_codes, all_service_labels, cultural_labels)
+ns_custom_divisor_matrix <- make_custom_divisor_matrix(
+  habitat_codes = habitat_codes,
+  all_service_labels = all_service_labels,
+  habitats_to_adjust = ns_habitats_to_adjust,
+  services_to_adjust = ns_services_to_adjust,
+  usual_divisor = 5,
+  custom_divisor = 1
+)
 
-# And then use this in this function, which converts scores to weights,
-# by default by dividing by 5, unless something like that ^ is passed to the
-# custom_weight_matrix argument:
+
 
 ## FUNCTION esppu_scores_to_weights()
-# Takes matrix of ESSPU scores and converts it to weights
-esppu_scores_to_weights <- function(esppu, custom_weight_matrix = 5) {
+# Takes dataframe object of ESSPU scores (matrix habitats/ecosystem services)
+# and converts it to weights by dividing by a common denominator.
 
-  esppu_mat <- as.matrix(esppu)
-  esppu_aw  <- (esppu_mat / as.matrix(custom_weight_matrix)) %>%
-    as.data.frame()
+esppu_scores_to_weights <- function(
+    esppu, # dataframe habitat type / ecosystem service
+    divisor = 5, # divisor for calculating weights from scores
+    custom_divisor_matrix = NULL # dataframe habitat type / ecosystem service
+                                # containing custom divisors
+    ) {
+
+  # Divide all scores by universal divisor if no customisations
+  if (is.null(custom_divisor_matrix)) {
+    esppu_aw <- esppu / divisor
+  } else {
+  # Or use custom divisor per habitat/ecosystem service combination
+    if (!all(dim(esppu) == dim(custom_divisor_matrix))) {
+      stop("Dimensions of esppu and custom_divisor_matrix must match.")
+    }
+    esppu_aw  <- esppu / custom_divisor_matrix
+  }
 
   return(esppu_aw)
 }
 
 # For the Scottish data:
-esppu_aw <- esppu_scores_to_weights(esppu, htst_wide)
-
+scot_esppu_weights <- esppu_scores_to_weights(
+  esppu = ns_esppu,
+  divisor = 5,
+  custom_divisor_matrix = ns_custom_divisor_matrix)
 
 
 # To calculate ESPB (ecosystem service potential base) for Scotland,
 # we need Scotland's year one data.
 
-# The years_from() function can collect the year range, if it is a consecutive
-# list of years, but allow a custom list.
-
-## FUNCTION years_from() takes a start year and number of years and returns a
-# list of consecutive years.
-years_from <- function(start_year, # a year, as integer numeric
-                       end_year # the number of consecutive years to process
-) {
-
-  as.character(start_year:end_year)
-
-}
-
-# For Scotland:
-scot_year_list <- years_from(2000, 2022)
-
 
 ## FUNCTION calc_espb() calculates the ecosystem service potential base. It
-# takes ed the extent data, year_list and esppu_aw and multiplies each
+# takes the habitat extent data, year list and ESPPU weights and multiplies each
 # habitat/service combination by the year one area of that habitat.
-
-calc_espb <- function(ed, esppu_aw, year_list, spu_labels) {
+calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) {
 
   year_one <- year_list[1]
   # Pull the vector for original year:
-  originyearvec <- ed %>%
+  origin_year_vec <- habitat_extent %>%
     pull(year_one)
   # These habitat extent values are multiplied by their esppu weightings:
   espb <- sweep(
-    x = esppu_aw,
+    x = esppu_weights,
     MARGIN = 1,
-    STATS = originyearvec,
+    STATS = origin_year_vec,
     FUN = "*"
   )
-  rownames(espb) <- as.character(spu_labels)
+  rownames(espb) <- habitat_labels
 
   return(espb)
 }
 
 # For Scotland:
-scot_espb = calc_espb(ed = ed,
-                      esppu_aw = esppu_aw,
-                      year_list = scot_year_list,
-                      spu_labels = spu_codes)
+scot_espb = calc_espb(habitat_extent = ns_habitat_extent,
+                      esppu_weights = scot_esppu_weights,
+                      year_list = year_labels,
+                      habitat_labels = habitat_codes)
 
-# View(espb)
-# scot_espb is a matrix dims habitats * services.
-# Does the calculated espb match the published one?
+# Does the calculated scot_espb match the published ns_espb?
 # Yes:
-all.equal(espb, scot_espb, check.attributes = FALSE)
-# ^ We are using check.attributes=FALSE to quiet messages about the types of
-# labels and just see if the numbers/maths are correct.
+all.equal(ns_espb, scot_espb)
 
 ## RECREATING THE WELLBEING BASE
 ## Next step is to recreate the wellbeing base.
@@ -704,7 +669,7 @@ View(scot_tir_with2)
 # View(scot_tir_no2)
 
 # Get TIR from the original sheet and compare:
-excel_sheets("dev/ncai.xlsx")
+ns_sheets_index
 # Use sheet 75:
 ncai_tir_auto <- readxl::read_excel(
   path = "dev/ncai.xlsx",
@@ -956,7 +921,7 @@ matrix_2000 <- build_ncai_matrix(
 # We need to check if it works for further years like that.
 # First check if this really is right.
 # Get some year sheets for checking:
-excel_sheets("dev/ncai.xlsx")
+ns_sheets_index
 sheet2000 <- readxl::read_excel(
   path = "dev/ncai.xlsx",
   sheet = 50,
@@ -988,7 +953,7 @@ sheet2022 <- readxl::read_excel(
 # Check if we calculated 2000 exactly
 all.equal(matrix_2000, sheet2000, check.attributes = FALSE)
 # TRUE!
-# But will that work for another year.
+# But will that work for another year?
 
 # Year 2001
 matrix_2001 <- build_ncai_matrix(
@@ -1013,14 +978,21 @@ matrix_2022 <- build_ncai_matrix(
 all.equal(matrix_2022, sheet2022, check.attributes = FALSE)
 
 # These results show that after 22 years of the time series we have some
-# drift. LLM thinks this is likely due to excel applying some small rounding at
-# stages of the calculation, differently to R, but I tried various things
-# to recreate that and couldn't.
+# drift. LLM thinks this is likely due to differences in how excel and R
+# handle floating points.
+# But we think this is too wrong to be that.
+
+# 05-01-2026
+# CL found transcription error in sheet 66 P55 - cell references previous
+# year in indexing formula.
+# Expect to find more errors like this, since we have now checked and the whole
+# time series works except 2019 and 2022.
+# This error is likely what breaks 2019.
 
 # Can I check how big the
 # differences are in a way that I understand better?
 sheet2022 <- as.data.frame(sheet2022)
-rownames(matrix_2022) <- rownames(sheet2022) <- spu_codes
+rownames(matrix_2022) <- rownames(sheet2022) <- habitat_codes
 
 # Calculate Percentage Error
 error_matrix <- (as.matrix(matrix_2022) / as.matrix(sheet2022) - 1) * 100
@@ -1039,6 +1011,7 @@ exact_matches <- sum(abs(clean_errors) < 0.00001, na.rm = TRUE)
 total_cells <- length(clean_errors)
 message(paste0("Exact matches: ", exact_matches, " out of ", total_cells,
                " (", round(exact_matches/total_cells*100, 2), "%)"))
+# These will just be the ones where the data doesn't change!
 
 # Make a heatmap
 # install.packages("pheatmap")
@@ -1133,3 +1106,5 @@ ggplot(as.data.frame(error_matrix) %>%
 # annually.
 # Perhaps natureScot will have something to say about that.
 
+# Next step, calculate the NCAI indexed values, look at the whole time series,
+# see how impactful this error is to the index.
