@@ -3,7 +3,7 @@
 # 03-12-2025
 
 
-# SETUP ####
+#### SETUP ####
 # install.packages("slider")
 
 library(dplyr)
@@ -12,14 +12,17 @@ library(tibble)
 library(readr)
 library(readxl)
 
-# Scotland data for replication:
-# Existing bases (Scotland)
-# Use read_xlsx to bring these in without any unintentional rounding now.
+#### Get existing index data ####
+# Get Scotland data for replication from NatureScot spreadsheet:
+# Existing bases and data (Scotland)
+
 # Index of sheets in the NatureScot spreadsheet:
-ns_sheets_index <- excel_sheets("dev/ncai.xlsx")
+ns_sheets_path <- file.path("dev", "ncai.xlsx")
+ns_sheets_index <- excel_sheets(ns_sheets_path)
 ns_sheets_index
+
 # Wellbeing base
-ns_wellbeing_base <- read_xlsx("dev/ncai.xlsx",
+ns_wellbeing_base <- read_xlsx(ns_sheets_path,
                 sheet = 7,
                 range = "F4:AG34",
                 col_names = FALSE,
@@ -28,8 +31,9 @@ ns_wellbeing_base <- read_xlsx("dev/ncai.xlsx",
                 .name_repair = "minimal"
                 ) %>%
   as.data.frame()
+
 # Ecosystem service potential base
-ns_espb <- read_xlsx("dev/ncai.xlsx",
+ns_espb <- read_xlsx(ns_sheets_path,
                   sheet = 6,
                   range = "F4:AG34",
                   col_names = FALSE,
@@ -37,8 +41,9 @@ ns_espb <- read_xlsx("dev/ncai.xlsx",
                   trim_ws = TRUE,
                   .name_repair = "minimal") %>%
   as.data.frame()
+
 # Ecosystem service providing potential per SPU matrix:
-ns_esppu <- read_xlsx("dev/ncai.xlsx",
+ns_esppu <- read_xlsx(ns_sheets_path,
                   sheet = 3,
                   range = "F4:AG34",
                   col_names = FALSE,
@@ -46,38 +51,141 @@ ns_esppu <- read_xlsx("dev/ncai.xlsx",
                   trim_ws = TRUE,
                   .name_repair = "minimal") %>%
   as.data.frame()
+
 # Habitat extent data years to 2022 (Scotland)
-# FIX change to bring in here using the function
-# This CSV was processed automatically in fns_import_extent_data:
-ns_habitat_extent <- read_csv(file.path("dev", "scot_extent_data_automated.csv"),
-               col_names = FALSE,
-               show_col_types = FALSE) %>%
+ns_habitat_extent <- readxl::read_excel(
+    path = ns_sheets_path,
+    sheet = 5,
+    range = "E4:AA34",
+    col_names = FALSE,
+    col_types = "numeric",
+    trim_ws = TRUE,
+    .name_repair = "minimal" #quietens reporting on name repair
+  ) %>%
   as.data.frame()
+
 # Indicator directory
-# FIX bring in automatically!
-# This one was manually created in excel, but shouldn't pose a rounding
-# problem as the values are exact:
-ns_indd <- read.csv("dev/scot_indicator_directory.csv", header = TRUE) %>%
-  as.data.frame()
+ns_indd <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 8,
+  range = "N2:R106",
+  col_names = TRUE,
+  col_types = NULL,
+  trim_ws = TRUE #,
+  # .name_repair = "minimal" #quietens reporting on name repair
+) %>%
+  as.data.frame() %>%
+  setNames(c(st_labels,
+          "comments",
+          "used")) %>%
+  select(-comments) %>%
+  filter(used == "Yes")
 
 
-# ES Potential ('Scotland weights')
-# Chris has typed these manually below, but here they are as csv,
-# but we should
-# FIX this so that we just read them from the spreadsheet.
-ns_st_importance_weights <- read.csv("dev/scotland_weight_raw_service_sections.csv", header = FALSE)
-# main_weights <- c(10,20,10)
-ns_prov_importance_weights <- read.csv("dev/scotland_weights_raw_provisioning.csv", header = FALSE)
-# provisioning_weights <- c(20,15,9,9,20,13,13,7,11,12,1,0)
-ns_regu_importance_weights <- read.csv("dev/scotland_weights_raw_regulationmaintenance.csv", header = FALSE)
-# regulationandmaintenance_weights <- c(10,10,12,7,7,10,10,12,14,8,20)
-ns_cult_importance_weights <- read.csv("dev/scotland_weights_raw_cultural.csv", header = FALSE)
-# cultural_weights <- c(20,20,20,20,20)
-# We should also make a list of the three within-st sets.
+# Importance scores ("Scotland weights")
+# Between service-type scores:
+ns_st_importance_scores <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 4,
+  range = "D6:D8",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE #,
+  # .name_repair = "minimal" #quietens reporting on name repair
+) %>%
+  as.data.frame() %>%
+  setNames("score")
 
-# Labels for data:
+ns_prov_importance_scores <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 4,
+  range = "D13:D24",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE #,
+  # .name_repair = "minimal" #quietens reporting on name repair
+) %>%
+  as.data.frame() %>%
+  setNames("score")
+
+ns_regu_importance_scores <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 4,
+  range = "D29:D39",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE #,
+  # .name_repair = "minimal" #quietens reporting on name repair
+) %>%
+  as.data.frame() %>%
+  setNames("score")
+
+ns_cult_importance_scores <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 4,
+  range = "D44:D48",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE #,
+  # .name_repair = "minimal" #quietens reporting on name repair
+) %>%
+  as.data.frame() %>%
+  setNames("score")
+
+# Condition indicator scores, by year:
+# Function read_the_ci_scores() gets the CI scores from NS sheets:
+read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
+                               sheet_list, # list of sheets containing CI scores
+                               vector_range # SINGLE-COLUMN range where scores
+                               # are; must be same in each sheet.
+) {
+
+  # Initialise list of score vectors
+  list_of_vectors <-  list()
+
+  # Loop through list of sheets, reading in vector of scores
+  for (idx in seq_along(sheet_list)) {
+
+    actual_sheet_index <- sheet_list[idx]
+
+    raw_score_data <- readxl::read_excel(
+      path = sheet_path,
+      sheet = actual_sheet_index,
+      range = vector_range,
+      col_names = FALSE,
+      col_types = "numeric",
+      trim_ws = TRUE,
+      .name_repair = "minimal" #quietens reporting on name repair
+    )
+
+    vec <- as.numeric(raw_score_data[[1]])
+    list_of_vectors[[paste0("ind", idx)]] <- vec
+
+    # Confirmation message hopefully:
+    cat("Processed column", idx, "(Sheet", actual_sheet_index, ")\n")
+  }
+
+  # Make list of vecs into df:
+  ci_scores_df <- as.data.frame(list_of_vectors)
+
+  return(ci_scores_df)
+
+}
+
+ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
+                                         sheet_list = 10:47,
+                                         vector_range = "I36:I58")
+# need to add year column?
+
+
+
+# LABELLING THE DATA
+# Define labels
+# Service-type labels:
 st_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
+# Short version (needed?)
 short_main_labels <- c("prov", "regu", "cult")
+# Sets of ecosystem service labels by type:
 provisioning_labels <- c("cultivated_crops",
                          "reared_animals",
                          "wild_animals_plants_algae",
@@ -107,6 +215,7 @@ cultural_labels <- c("physical_experience",
                      "symbolic_sacred_religious",
                      "existence_bequest")
 
+# Habitat-type codes (required?)
 habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "e1", "e2", "e4","e5", "e7",
                 "f2","f3","f4","f9",
@@ -114,8 +223,8 @@ habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                 "h2", "h3","i1","i2",
                 "j1","j2","j3","j4","k")
 
-# The range of years in the Scotland 23 extent data:
-year_labels <- as.character(2000:2022)
+# The range of years in the Scotland 23 extent data to be processed:
+ns_year_list <- as.character(2000:2022)
 
 # Apply labels
 colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
@@ -125,7 +234,9 @@ colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
 rownames(ns_espb) <- rownames(ns_esppu) <- rownames(ns_wellbeing_base) <-
   rownames(ns_habitat_extent) <- habitat_codes
 
-colnames(ns_habitat_extent) <- year_labels
+colnames(ns_habitat_extent) <- ns_year_list
+
+rownames(ns_ci_score_matrix) <- ns_year_list
 
 ####
 
@@ -135,16 +246,18 @@ colnames(ns_habitat_extent) <- year_labels
 
 # RECREATING THE ES POTENTIAL BASE
 
-# espu as weight - in the NatureScot spreadhsheet, ESPPU contains scores out of
-# 5 on the potential of a service-providing unit to deliver its potential. So
-# we will divide everything in that by max score 5 to get an ESPPU weight.
+# In the NatureScot spreadhsheet, ESPPU contains scores out of 5 indicating the
+# likely of a service-providing unit to deliver its potential. So we will
+# divide everything in that sheet by the max score 5 to get an ESPPU weight...
 
-# EXCEPT in the case of the red cells, which are multiplied by 5.
-# We need a matrix which records the divisor for each habitat/service type
-# combination.
-
-## NatureScot function make_custom_divisor_matrix() builds a matrix of
-# divisors where some are changed to a new value.
+# EXCEPT in the case of the cells (habitat/ecosystem service combinations) in
+# the ES Potential Base sheet: these have received a custom adjustment., viz
+# they are divided by 0.2 (equiv. multiplied by 5). This can be applied at
+# the point of dividing by max score: instead of 5, scores for these cells
+# should be divided by 1.
+#
+# We build a matrix which records the custom divisor for each habitat/service
+# type combination.
 
 # For Nature Scot's custom divisor matrix, these paired character
 # vectors identify all habitat/service-type combinations where the divisor is
@@ -161,6 +274,48 @@ ns_services_to_adjust = c("erosion_mediation", "soil_formation_composition",
                        cultural_labels,
                        cultural_labels)
 
+# Function make_custom_divisor_matrix() takes these and outputs a matrix of
+# custom weights:
+make_custom_divisor_matrix <- function(
+    habitat_codes,
+    all_service_labels,
+    # long-form paired lists of habitat and service types to adjust:
+    habitats_to_adjust,
+    services_to_adjust,
+    usual_divisor,
+    custom_divisor
+) {
+
+  # Make a grid with all combinations of habitat and service.
+  htst1 <- expand.grid(habitat = habitat_codes,
+                       service_type = all_service_labels,
+                       stringsAsFactors = FALSE)
+
+  # Make a df which records all the cells to be adjusted:
+  # htst2 is similar htst1, but only contains the combinations where we want a
+  # different divisor:
+  htst2 <- data.frame(
+    habitat = habitats_to_adjust,
+    service_type = services_to_adjust,
+    divisor = custom_divisor,
+    stringsAsFactors = FALSE
+  )
+
+  # Merge in the custom divisors, filling NAs with the usual divisor
+  # We use left_join to keep everything in htst1 and bring in htst2
+  htst <- htst1 %>%
+    left_join(htst2, by = c("habitat", "service_type")) %>%
+    mutate(divisor = replace_na(divisor, usual_divisor))
+
+  # Pivot wider to get the same dimension df as esppu matrix.
+  htst_wide <- htst %>%
+    pivot_wider(names_from = service_type,
+                values_from = divisor)
+
+  return(htst_wide %>% select(-habitat))
+
+}
+
 # Make the matrix of ScotNCAI adjustments to the weights:
 ns_custom_divisor_matrix <- make_custom_divisor_matrix(
   habitat_codes = habitat_codes,
@@ -175,11 +330,11 @@ ns_custom_divisor_matrix <- make_custom_divisor_matrix(
 
 ## FUNCTION esppu_scores_to_weights()
 # Takes dataframe object of ESSPU scores (matrix habitats/ecosystem services)
-# and converts it to weights by dividing by a common denominator.
-
+# and converts it to weights by dividing by a common denominator, or a matrix
+# in shape habitat/ecosystem service of custom divisors.
 esppu_scores_to_weights <- function(
     esppu, # dataframe habitat type / ecosystem service
-    divisor = 5, # divisor for calculating weights from scores
+    divisor = NULL, # divisor for calculating weights from scores
     custom_divisor_matrix = NULL # dataframe habitat type / ecosystem service
                                 # containing custom divisors
     ) {
@@ -205,13 +360,10 @@ scot_esppu_weights <- esppu_scores_to_weights(
   custom_divisor_matrix = ns_custom_divisor_matrix)
 
 
-# To calculate ESPB (ecosystem service potential base) for Scotland,
-# we need Scotland's year one data.
-
 
 ## FUNCTION calc_espb() calculates the ecosystem service potential base. It
-# takes the habitat extent data, year list and ESPPU weights and multiplies each
-# habitat/service combination by the year one area of that habitat.
+# takes the habitat extent data, year list, and ESPPU weights, and multiplies
+# each habitat/service combination by the year one area of that habitat.
 calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) {
 
   year_one <- year_list[1]
@@ -225,7 +377,7 @@ calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) 
     STATS = origin_year_vec,
     FUN = "*"
   )
-  rownames(espb) <- habitat_labels
+  # rownames(espb) <- habitat_labels # Unneccesary?
 
   return(espb)
 }
@@ -233,24 +385,26 @@ calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) 
 # For Scotland:
 scot_espb = calc_espb(habitat_extent = ns_habitat_extent,
                       esppu_weights = scot_esppu_weights,
-                      year_list = year_labels,
-                      habitat_labels = habitat_codes)
+                      year_list = ns_year_list
+                      # ,habitat_labels = habitat_codes #unneccesary?
+                      )
 
 # Does the calculated scot_espb match the published ns_espb?
 all.equal(ns_espb, scot_espb)
-# Yes
+# Yes.
 
 
 
 ## RECREATING THE WELLBEING BASE
-## Next step is to recreate the wellbeing base.
+## The wellbeing base is recreated using the between- and within-service-type
+# importance weights (the "Scotland weights").
 
 # # FUNCTION imp_rtw_between()
-# Gets between-service-provision-type IMPORTANCE weights from a df of raw
-# importance scores.
+# Gets between-service-provision-type IMPORTANCE weights from a dataframe of
+# raw importance scores.
 # Output is used in importance_rtw_within().
 importance_rtw_between <- function(between_scores) {
-  # between_cores is a vector of between-service-type importance scores
+  # between_scores is a vector of between-service-type importance scores
   between_weights <- between_scores / sum(between_scores) * 100
 
   return(between_weights)
@@ -258,9 +412,9 @@ importance_rtw_between <- function(between_scores) {
 
 
 ## FUNCTION importance_rtw_within()
-# Gets within-service-type IMPORTANCE weights from a df of raw importance
-# scores, using between weights output from importance_rtw_between()
-# Used in calc_importance_weights() below
+# Gets within-service-type importance weights from a dataframe of raw importance
+# scores, using between weights output from importance_rtw_between().
+# Used in calc_importance_weights() below.
 importance_rtw_within <- function(within_scores, between_weights, index) {
 
   within_weights  <- within_scores / sum(within_scores) * between_weights[index, 1]
@@ -270,95 +424,85 @@ importance_rtw_within <- function(within_scores, between_weights, index) {
 
 
 ## FUNCTION calc_importance_weights()
-# Calculates importance weights, using within and between weights.
+# Calculates importance weights, using within- and between-service-type weights.
 # Loops through the list of ecosystem service types, calculating importance
 # weights and returning a list of weight subset objects.
 
 # Requires the vector of between-service-type scores, and a list of the
 # within-service-type-score objects.
+# Returns a list of numeric vectors of service-type subsets of importance
+# weights.
 calc_importance_weights <- function (between_scores, within_scores_list) {
 
   # Calculate the between weights
   b_weights <- importance_rtw_between(between_scores)
 
-  # Initialise service type group number
-  st_num <- 0
+  # Map over the list and the indices simultaneously
+  ww_subset_list <- lapply(seq_along(within_scores_list), function(i) {
 
-  # Initialise list of weight subsets
-  ww_subset_list <- list()
+    importance_rtw_within(
+      within_scores   = within_scores_list[[i]],
+      between_weights = b_weights,
+      index           = i
+    )
+  })
 
-  for (i in within_scores_list) {
-
-    # Increment service type group number
-    st_num <-  st_num + 1
-    ww_subset_name <- paste0("ww_subset_", st_num)
-
-    # Calculate within weights for service type
-    ww_subset <- importance_rtw_within(within_scores = within_scores_list[[st_num]],
-                                between_weights = b_weights,
-                                index = st_num)
-    assign(ww_subset_name, ww_subset, envir = .GlobalEnv)
-
-    # Add the ww subset to the list thereof
-    ww_subset_list[[ww_subset_name]] <- ww_subset
-
-  }
+  # Restore the names (prov, regu, cult) to the new list
+  names(ww_subset_list) <- names(within_scores_list)
 
   return(ww_subset_list)
-
 }
 
 # eswr_scot_sections are the scottish between-ecosystem-service-type raw scores
 # Make a list of the within-ecosystem_service_type scores
-scot_within_score_list <- list(ns_prov_importance_weights,
-                               ns_regu_importance_weights,
-                               ns_cult_importance_weights)
+# Make a list of the within-service-type score sets:
+ns_within_scores_list <- list(
+  prov = ns_prov_importance_scores,
+  regu = ns_regu_importance_scores,
+  cult = ns_cult_importance_scores)
 
 # Calculate Scotland's importance within-service-type weights:
-scot_within_weights_list <- calc_importance_weights(ns_st_importance_weights,
-                                                    scot_within_score_list)
+scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
+                                                    ns_within_scores_list)
 
 ## FUNCTION bind_imp_weights()
 # Rejoins within-service-type weights back into one weight vector, applying
 # between-service-type weights.
 
-# Require list of importance within weight vectors, output from imp_rtw_within()
-# and list of all the service labels
+# Require list of importance within weight dataframes (output from
+# imp_rtw_within() ) and list of all the service labels
+bind_importance_weights <- function(within_weights_list,
+                                    all_service_label_list) {
 
-bind_importance_weights <- function(within_weights_list, all_service_label_list) {
+  # Safely get each subset of weights and flatten to one vector
+  combined_weights <- unlist(lapply(within_weights_list, `[[`, 1), use.names = FALSE)
 
-  # Row bind the subsets of weights
-  long_weights <- dplyr::bind_rows(within_weights_list)
-
-  if(nrow(long_weights) != length(all_service_label_list)) {
-    stop("The number of rows in the weights (", nrow(long_weights),
-         ") does not match the number of labels (", length(all_service_label_list), ").")
+  # Check the list of weights is now the same length as list of all services
+  if(length(combined_weights) != length(all_service_label_list)) {
+    stop("Length mismatch: Total weights (", length(combined_weights),
+         ") vs Labels (", length(all_service_label_list), ").")
   }
 
-  # Label rows with the service type subsets of service labels
-  rownames(long_weights) <- all_service_label_list
-  colnames(long_weights) <- ("weight")
-
-  # Pivot wider to make one row df, services as cols
-  wide_joined_weights <- as.data.frame(t(long_weights))
+  # Put in wide format
+  wide_joined_weights <- as.data.frame(t(combined_weights))
+  colnames(wide_joined_weights) <- all_service_label_list
 
   return(wide_joined_weights)
-
 }
 
 # Rejoin the within-weight objects and pivot wide:
-scot_importance_weights <- bind_importance_weights(within_weights_list = scot_within_weights_list,
-                                   all_service_label_list = all_service_labels)
+scot_importance_weights <- bind_importance_weights(
+  within_weights_list = scot_imp_weights_subsets,
+  all_service_label_list = all_service_labels)
 
-# FIX - here we should have a wrapper function I think.
+# FIX MAYBE We could wrap these together.
 
 
-
-## FUCNTION calc_wb() takes the espb (ES potential per habitat/service type
-# combination) and expresses each cell as a proportion of
-# the total potential for that service type across all habitats (colSums).
-# Next it multiplies in the importance weights (result of between and within
-# service-type weighting process above)).
+## FUCNTION calc_wb() takes the ESPB (ES potential per habitat/service type
+# combination) and expresses each cell as a proportion of the total potential
+# for that service type across all habitats (colSums).
+# Next, it multiplies in the importance weights (result of between and within
+# service-type weighting process above).
 # Returns the wellbeing base which is a matrix of habitat/service type.
 calc_wellbeing_base <- function(espb, # ES potential, a matrix habitat/service type
                     importance_weights # Importance weights, a vector (wide df) by service type
@@ -398,125 +542,55 @@ all.equal(ns_wellbeing_base, scot_wellbeing_base)
 
 
 
-################################
+#### PROCESS CONDITTION SCORES ####
 
-# OK, so up to here we have been able to recreate the potential base and the
-# wellbeing base from year 1 (2000) Scotland extent data and the two sheets
-# which contain the ecosystem service potential per SPU (sheet 3) and the
-# between and within service type 'importance to Scotland' weights (sheet 4).
-
-# Next we are going to need the condition indicators data and their respective
-# weight matrices (actually we want them as relevance matrices, to use with
-# the weights from the indicator directory indd).
-
-# We have automatically processed these for the NatureScot spreadsheet:
-
-# 1. fns_bring_in_ci_raw_scores() was used to get each set of raw scores (after
-# any custom adjustments and inter/extrapolating) and put these into a matrix
-# of shape year/CI. These are found in scot_year_ci_matrix_automated.csv.
-
-# We need a wee helper function to add the year column to the raw CIs matrix:
-## FUNCTION add_years_to_ci_matrix
-add_years_to_ci_matrix <- function(raw_cis, year_list) {
-
-  raw_cis_with_years <- as.data.frame(raw_cis)
-
-  raw_cis_with_years <- raw_cis %>%
-    as.data.frame() %>%
-    mutate(year = year_list, .before = 1)
-
-  return(raw_cis_with_years)
-
-}
-
-label_ci_matrix <- function(raw_cis_with_years, year_list) {
-
-  colnames(raw_cis_with_years) <- c("year",
-                                    paste0("ind",
-                                           1:(ncol(raw_cis_with_years)-1)))
-
-  return(raw_cis_with_years)
-}
-
-# Do this to Scot CIs:
-scot_raw_ci_score_matrix <- read_csv(
-  file.path("dev", "scot_year_ci_matrix_automated.csv"),
-  show_col_types = FALSE
-) %>%
-  add_years_to_ci_matrix(scot_year_list) %>%
-  label_ci_matrix()
-
-# Check it has years, columns called ind#, 23 rows, 38 indicators.
-# View(scot_raw_ci_score_matrix)
-sum(is.na(scot_raw_ci_score_matrix))
-# It should contain scores from I36 downwards in the numbered indicator sheets.
-
-
-# We use this function to convert the raw scores to indexed values (around 100):
-#### THINK THIS IS NOT REQUIRED. COMMENT OUT ON 23-12-2025. ####
-## FUNCTION index_scores() converts matrix of year/ci raw scores to year/ci
-## indexed scores. Returns matrix of indices. Requires the indd to get the
-# number of CIs we are working with.
-# index_scores <- function(score_matrix, indd, year_list) {
-#
-#   n_cis <- nrow(indd)
-#
-#   scorecol_names <- paste0("stbi", 1:n_cis)
-#   names(score_matrix) <- scorecol_names
-#
-#   working_matrix <- score_matrix
-#
-#   for (i in 1:n_cis) {
-#     score_name <- paste0("stbi", i)
-#     indic_name <- paste0("ind", i)
-#
-#     y1score <- score_matrix[[score_name]][1]
-#
-#     working_matrix[[indic_name]] <- (working_matrix[[score_name]] / y1score) * 100
-#
-#   }
-#   index_matrix <- working_matrix %>%
-#     select(starts_with("ind")) %>%
-#     mutate(year = year_list) %>%  # Add the years here
-#     relocate(year)
-#
-#   return(index_matrix)
-# }
-
-
-# Convert matrix of Scottish year / raw CI scores to indexed values:
-# Number of CIs is the rows in the indicator directory.
-# scot_cis_indexed <- index_scores(scot_stbi_matrix, scot_indd, scot_year_list)
-# head(scot_cis_indexed)
-#### CONTINUE ####
-
-# 2. fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
+# fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
 # shape habitat/ecosystem service for each CI and save these as csv in the
 # folder 'cirms'. They are regularly named to facilitate processing with
 # functions below.
-
-# 3. The indicator directory is in scot_indicator_directory.csv
-# It was assigned to indd above.
-# Consider writing a NatureScot function to bring this in with readxl.
 
 ## CALCULATING THE WEIGHTED INDICATORS MATRICES
 # For each indicator, the relevance matrix needs to be multiplied by the
 # ecosystem-service-type weight for that indicator, as recorded in indd.
 
-## FUNCTION get_cirm()
-# Takes a path to a folder containing CIRM CSVs and the number of CI to process.
-# Opens the CIRM and returns a regularly named/numbered object cirm#. Can take
-# the name stub but default value is "cirm".
-get_cirm <- function (folder_path, ci_num, csv_stub = "cirm") {
+# To build the weighted relevance matrix we start by buiding a list of
+# matrices of binary indicators of whether a CI is relevant for each combination
+# of habitat/ecosystem service:
+get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
 
-  cirm_file_name <- paste0(paste0(csv_stub, ci_num), ".csv")
-  cirm_object <- read_csv(file.path(folder_path, cirm_file_name),
-                          col_names = FALSE,
-                          show_col_types = FALSE)
+  # Loop through each sheet in the list
+  list_of_dfs <- lapply(sheet_list, function(current_sheet) {
 
-  return(cirm_object)
+    # Read the data
+    data <- readxl::read_excel(
+      path = spreadsheet_path,
+      sheet = current_sheet,
+      range = matrix_range,
+      col_names = FALSE,
+      col_types = "numeric",
+      trim_ws = TRUE,
+      .name_repair = "minimal"
+    ) %>%
+      as.data.frame() %>%
+      setNames(all_service_labels)
 
+    data[] <- lapply(data, function(x) ifelse(!is.na(x) & x > 0, 1, 0))
+
+    # Convert to dataframe
+    return(as.data.frame(data))
+
+  })
+
+  # Return the full list of CIRMs
+  return(list_of_dfs)
 }
+
+# Get list of relevance matrices for Scotland indicators
+ns_cirms_list <- get_cirm_list(spreadsheet_path = ns_sheets_path,
+                               sheet_list = 9:46,
+                               matrix_range = "F4:AG34")
+
+
 
 
 ## FUNCTION build_ciwm
@@ -524,147 +598,86 @@ get_cirm <- function (folder_path, ci_num, csv_stub = "cirm") {
 # Also requires the list of service types and a list of label sets for each
 # subtype.
 
-build_ciwm <- function(ci_num,
-                       cirm_object,
-                       st_list,
-                       label_subsets_list,
-                       indd = indd) {
+build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indd) {
 
-  # Determine number of service types
-  n_st <- length(st_list)
+  # Use lapply to iterate over the indices of the cirm_list
+  final_ciwm_list <- lapply(seq_along(cirm_list), function(ci_num) {
 
-  # Use a list to store the weighted sub-matrices
-  ciwm_parts <- list()
+    # Extract the specific CIRM matrix for this iteration (e.g., ind1, ind2)
+    cirm_object <- cirm_list[[ci_num]]
 
-  # 3. Iterate through service types
-  for (i in 1:n_st) {
-    # Get the column labels for this subset (e.g., from your list)
-    current_labels <- label_subsets_list[[i]]
+    # List to store weighted sub-matrices for this specific indicator
+    ciwm_parts <- list()
 
-    # Get the weight from the indicator directory (indd)
-    wcol_name <- paste0("st", i, "_weight")
-    weight <- as.numeric(indd[ci_num, wcol_name])
+    # Iterate through the actual names in st_list
+    for (i in seq_along(st_list)) {
 
-    # Extract columns from the CIRM and multiply by weight
-    # We use [ , current_labels] to subset columns
-    sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
+      # 1. Get the column labels for the CIRM subset
+      current_labels <- label_subsets_list[[i]]
 
-    # Store in our list
-    ciwm_parts[[i]] <- sub_ciwm
-  }
+      # 2. Get the weight name from st_list (e.g., "provisioning_weight")
+      weight_col_name <- st_list[[i]]
 
-  # Join the subsets back together (Left-to-Right)
-  # dplyr::bind_cols is faster and cleaner than Reduce(cbind, ...)
-  final_ciwm <- dplyr::bind_cols(ciwm_parts)
+      # 3. Pull the numeric weight from indd
+      # Row = current indicator (ci_num), Column = current weight type
+      weight <- as.numeric(indd[ci_num, weight_col_name])
 
-  return(final_ciwm)
+      # 4. Multiply subset of columns by weight
+      sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
+
+      # Store in our parts list
+      ciwm_parts[[i]] <- sub_ciwm
+    }
+
+    # Combine parts side-by-side to recreate the full CIRM dimensions
+    return(dplyr::bind_cols(ciwm_parts))
+  })
+  # Maintain list names
+  names(final_ciwm_list) <- names(cirm_list)
+
+  return(final_ciwm_list)
 }
 
-
-
-## FUNCTION to process all indicators
-# Wraps the two above and produces a list of ciwm objects, equivalent to the
-# tables in sheets '2' - '104'.
-build_all_ciwms <- function(cirm_csvs_dir,
-                            csv_name_stub,
-                            all_service_labels,
-                            label_subsets_list,
-                            st_list,
-                            indd = indd) {
-
-  # Initialise list of ciwm objects
-  all_ciwms <- list()
-
-  ci_list <- 1:nrow(indd)
-
-  for (i in ci_list) {
-
-    # Load in relevance matrix
-    temp_cirm <- get_cirm(cirm_csvs_dir, i, csv_name_stub)
-
-    # Add colnames - may not be necessary
-    colnames(temp_cirm) <- all_service_labels
-
-    # Build all ciwms and add to the list
-    all_ciwms[[i]] <- build_ciwm(
-      ci_num = i,
-      cirm_object = temp_cirm,
-      st_list = st_list,
-      label_subsets_list = label_subsets_list,
-      indd = indd
-    )
-
-    # Report progress
-    message(paste("Indicator", i, "weighted and added to list."))
-  }
-
-  return(all_ciwms) # returns a list of ciwm matrix objects
-
-}
-
-
-# For Scotland:
-scot_cirms_dir <- file.path("dev", "cirms")
+# Need list of service-type subsets of ecosystem service labels:
 scot_label_subsets_list <- list(provisioning_labels,
-                             regulationandmaintenance_labels,
-                             cultural_labels)
+                                regulationandmaintenance_labels,
+                                cultural_labels)
 
-all_ciwms_list <- build_all_ciwms(scot_cirms_dir,
-                  "scot_cirm",
-                  all_service_labels,
-                  scot_label_subsets_list,
-                  st_list = st_labels,
-                  indd = indd)
+# Build list of Condition Indicator Weighted Relevance matrices:
+all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
+                                  st_list = st_labels,
+                                  label_subsets_list = scot_label_subsets_list,
+                                  indd = ns_indd)
+
+
 # E.g.
 View(all_ciwms_list[[3]])
 # Should look like first table in sheet '6' and it does.
 
 
-# Still trying to solve exactly how these come together.
-# NatureScot use a matching matrix full of 2s (sheet 'a1') in their calculations.
-# I think this is just to avoid zero divisions.
-# Coding this as an add-on which for recreating Scot NCAI will be 2.
-
-# Looking at e.g. sheet '2000', this looks like it should hold the total
-# relevance-weighted contributions per habitat/service for that year.
-# The formula does:
-# Multiply the indexed condition indicator that year (calculate from raw_cis)
-# by the relevance weight for that habitat service (fetch from correct ciwm
-# in all_ciwms_list),
-# And take the sum of these.
-# Divide that by the total indicator relevance per habitat/servce (tir matrix).
-# (Note that the add-on 2 is summed into both numerator and denominator here).
-# Multiply the result by the wellbeing base values,
-# Multiply the result by the ecosystem area (vector by habitat) across the way.
-# Divide the result by 10000. CHECK SWEEP IS ON RIGHT AXIS.
-
-# The adding of 2 to the total relevance would be consequential. We can try it
-# with and without and see if either works to recreate the numbers.
-
 # From the list of CIWMs, we should be able to recreate the Total Indicator
 # Relevances matrix. That's the sum of relevance weights across indicators,
 # plus the addon, found in sheet 'Total Indicator Relevances'.
 # Call it TIR.
-# Make this customisable with the added 2.
+# A constant of 2 is added to the total indicator relevances in the NatureScot
+# calculations. This may be to avoid zero divisions.
 
 ## FUNCTION calc_tir()
-calc_tir <- function(all_ciwms_list, addon) {
+calc_tir <- function(all_ciwms_list, tir_constant) {
 
   tir <- Reduce("+", all_ciwms_list)
-  tir <- tir + addon
+  tir <- tir + tir_constant
 
   return(tir)
 }
 
 # With the 2:
-scot_tir_with2 <- calc_tir(all_ciwms_list, addon = 2)
+scot_tir_with2 <- calc_tir(all_ciwms_list = all_ciwms_list,
+                           tir_constant = 2)
 View(scot_tir_with2)
 
-# Without the 2:
-# scot_tir_no2 <- calc_tir(all_ciwms_list, addon = 0)
-# View(scot_tir_no2)
 
-# Get TIR from the original sheet and compare:
+# Compare this calculated matrix with the TIR from the original sheet:
 ns_sheets_index
 # Use sheet 75:
 ncai_tir_auto <- readxl::read_excel(
@@ -676,17 +689,16 @@ ncai_tir_auto <- readxl::read_excel(
   trim_ws = TRUE,
   .name_repair = "minimal" #quietens reporting on name repair
 )
-# Check this for NAs
-sum(is.na(ncai_tir_auto))
+
 # Are they same?
 all.equal(as.data.frame(ncai_tir_auto),
           scot_tir_with2,
           check.attributes = FALSE)
-# Yes, so we should keep the add-on function.
-# Later, this needs to be involved in the division of weighted condition
-# contributions by the total indicator relevances.
+# Yes.
 
-# Let's try again to work out how to calc the final index.
+
+
+######## worked up to here on sat 10 jan
 
 # For any year, I think NOW the yearly condition matrix YCM can be generated
 # by multiplying the CIWM (condition indicator weights matrix) by the year's
@@ -702,17 +714,15 @@ all.equal(as.data.frame(ncai_tir_auto),
 # to index the raw ci scores above.
 ## FUNCTION get_yearly_condition()
 get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
-  # Use column index instead of name to be absolutely sure
-  # Year is col 1, so ind1 is col 2, ind2 is col 3...
-  col_idx <- ci_num + 1
 
-  row_idx <- which(as.character(raw_cis[, 1]) == as.character(year_to_get))
-  y1_idx  <- which(as.character(raw_cis[, 1]) == as.character(year_list[1]))
+  col_idx <- ci_num
 
-  raw_cond_score <- raw_cis[row_idx, col_idx]
-  year_one_score <- raw_cis[y1_idx, col_idx]
+  # Access data directly by row name (year) and column index
+  # We use [[ ]] to ensure we get a numeric value back, not a 1x1 dataframe
+  raw_cond_score <- raw_cis[as.character(year_to_get), col_idx]
+  year_one_score <- raw_cis[as.character(year_list[1]), col_idx]
 
-  # Index on year one
+  # Index calculation
   indexed_cond_score <- (raw_cond_score / year_one_score) * 100
 
   return(as.numeric(indexed_cond_score))
@@ -738,9 +748,6 @@ build_ywccm <- function(ci_num, raw_cis, year, year_list, ciwms_list) {
     ci_num = ci_num,
     year_list = year_list
   )
-
-  # Belt and braces check for NAs - prob not essential
-  if(is.na(ci_this_year)) ci_this_year <- 0
 
   # Multiply the indexed score by its weight matrix.
   ywccm <- ciwms_list[[ci_num]] * ci_this_year

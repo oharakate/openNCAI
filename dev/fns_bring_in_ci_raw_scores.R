@@ -39,11 +39,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
       .name_repair = "minimal" #quietens reporting on name repair
     )
 
-    # Force the vector to be the expected length to dodge unexpected Excel
-    # behaviour:
-    vec <- as.vector(as.matrix(raw_score_data))
-
-    # Add vector to list
+    vec <- as.numeric(raw_score_data[[1]])
     list_of_vectors[[paste0("ind", idx)]] <- vec
 
     # Confirmation message hopefully:
@@ -51,7 +47,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
   }
 
   # Make list of vecs into df:
-  ci_scores_df <- dplyr::bind_cols(list_of_vectors)
+  ci_scores_df <- as.data.frame(list_of_vectors)
 
   return(ci_scores_df)
 
@@ -66,7 +62,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 # Path
 # ncai_sheet_path <- file.path("dev", "working_excel2.xlsx")
 # Check sheet numbers:
-# excel_sheets(ncai_sheet_path)
+# excel_sheets(ncai_sheets_path)
 # ncai_sheet_list <- 10:47
 # Set range where list of CI raw scores per year are recorded. Assumed to be
 # the same in each sheet, and have no missing data.

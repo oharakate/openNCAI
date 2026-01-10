@@ -3,6 +3,8 @@
 ## Kate O'Hara
 ## 20-12-2025
 
+# THIS DOESN'T NEED TO BE A FUNCTION AND CAN BE REMOVED.
+
 
 import_extent_data <- function(sheet_path, # path to the spreadsheet
                                sheet_num, # list of sheets containing CI scores

@@ -5,24 +5,22 @@
 # Require list of importance within weight vectors, output from imp_rtw_within()
 # and list of all the service labels
 
-bind_importance_weights <- function(within_weights_list, all_service_label_list) {
+bind_importance_weights <- function(within_weights_list,
+                                    all_service_label_list) {
 
-  # Row bind the subsets of weights
-  long_weights <- dplyr::bind_rows(within_weights_list)
+  # Safely get each subset of weights and flatten to one vector
+  combined_weights <- unlist(lapply(within_weights_list, `[[`, 1), use.names = FALSE)
 
-  if(nrow(long_weights) != length(all_service_label_list)) {
-    stop("The number of rows in the weights (", nrow(long_weights),
-         ") does not match the number of labels (", length(all_service_label_list), ").")
+  # Check the list of weights is now the same length as list of all services
+  if(length(combined_weights) != length(all_service_label_list)) {
+    stop("Length mismatch: Total weights (", length(combined_weights),
+         ") vs Labels (", length(all_service_label_list), ").")
   }
 
-  # Label rows with the service type subsets of service labels
-  rownames(long_weights) <- all_service_label_list
-  colnames(long_weights) <- ("weight")
-
-  # Pivot wider to make one row df, services as cols
-  wide_joined_weights <- as.data.frame(t(long_weights))
+  # Put in wide format
+  wide_joined_weights <- as.data.frame(t(combined_weights))
+  colnames(wide_joined_weights) <- all_service_label_list
 
   return(wide_joined_weights)
-
 }
 

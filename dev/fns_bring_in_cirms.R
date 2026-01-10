@@ -11,23 +11,32 @@ library(readr)
 
 # FUNCTION read_one_cirm gets the habitat/service type matrix containing the
 # weights from NatureScot spreadhseet.
-read_one_cirm <- function(spreadsheet_path, sheet, matrix_range) {
+get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
 
-  readxl::read_excel(
-    path = spreadsheet_path,
-    sheet = sheet,
-    range = matrix_range,
-    col_names = FALSE,
-    col_types = "numeric",
-    na = "",
-    trim_ws = TRUE,
-    skip = 0,
-    n_max = Inf,
-    guess_max = 1000,
-    progress = readxl_progress(),
-    .name_repair = "unique"
-  )
+  # Loop through each sheet in the list
+  list_of_dfs <- lapply(sheet_list, function(current_sheet) {
+
+    # Read the data
+    data <- readxl::read_excel(
+      path = spreadsheet_path,
+      sheet = current_sheet,
+      range = matrix_range,
+      col_names = FALSE,
+      col_types = "numeric",
+      na = "",
+      trim_ws = TRUE,
+      .name_repair = "unique"
+    )
+
+  # Convert to dataframe
+    return(as.data.frame(data))
+
+  })
+
+  # Return the full list of CIRMs
+  return(list_of_dfs)
 }
+
 
 ## FUNCTION cirms_to_csv() takes the path of the NatureScot spreadsheet, a
 # list of the condition indicator sheets, and the regular range of the matrix
