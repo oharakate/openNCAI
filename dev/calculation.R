@@ -10,6 +10,7 @@ library(tidyr)
 library(tibble)
 library(readr)
 library(readxl)
+library(slider)
 
 #### DEFINE LABELS AND LISTS FOR NS DATA ####
 
@@ -67,6 +68,23 @@ habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
 
 # We require the list of years to be calculated:
 ns_year_list <- as.character(2000:2022)
+
+# We require a list of broad habitats by which the index is broken down:
+broad_habitat_labels <- c("coastal",
+                          "freshwater",
+                          "wetlands",
+                          "grasslands",
+                          "moorland",
+                          "woodland",
+                          "cropland")
+
+# We create a list of all index breakdowns:
+ns_index_breakdown_labels <- c("overall", st_labels, broad_habitat_labels)
+# And their locations in the spreadsheet:
+index_breakdown_ranges <- c("B2:D24",
+                            "B30:D52", "G30:I52", "L30:N52",
+                            "B59:D81", "G59:I81", "L59:N81", "Q59:S81",
+                            "V59:X81", "AA59:AC81", "AF59:AH81")
 
 
 #### IMPORT EXISTING DATA FROM NS SHEETS ####
@@ -310,6 +328,44 @@ ns_all_year_sheets <- lapply(X = ns_year_sheets_ids,
 
 # e.g. this should look like the year 2000:
 # View(ns_all_year_sheets[[1]])
+
+# FUNCTION read_the_indices() gets the overall NCA index sets from "Final NCAI",
+# including the overall index, plus breakdowns by service type and broad
+# habitat. Raw total capital, raw index, and smoothed index are imported,
+# by year.
+read_the_indices <- function(indices_range,
+                             sheet_path,
+                             sheet) {
+
+  index_set <- read_xlsx(
+    path = sheet_path,
+    sheet = sheet,
+    range = indices_range,
+    col_names = FALSE,
+    col_types = "numeric",
+    trim_ws = TRUE,
+    .name_repair = "minimal"
+    ) %>%
+    as.data.frame() %>%
+    setNames(c("raw_total", "raw_index", "smoothed_index"))
+
+  return(index_set)
+}
+
+ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
+  read_the_indices(
+    indices_range = rng,
+    sheet_path = ns_corrected_sheets_path,
+    sheet = 73
+  )
+}) %>%
+  setNames(ns_index_breakdown_labels)
+
+# E.g. cross reference this with B2:D24 in Final NCAI sheet:
+# View(ns_index_breakdowns[["overall"]])
+# View(ns_index_breakdowns[[1]])
+
+
 
 
 
@@ -576,10 +632,22 @@ bind_importance_weights <- function(within_weights_list,
   return(wide_joined_weights)
 }
 
+bind_importance_weights2 <- function (within_weights_list,
+                                       all_service_labels) {
+  long_df = bind_rows(within_weights_list)
+  wide_df <- as.data.frame(t(long_df)) %>%
+    setNames(all_service_labels)
+}
+
 # Rejoin the within-weight objects and pivot wide:
-scot_importance_weights <- bind_importance_weights(
+scot_importance_weights <- bind_importance_weights2(
   within_weights_list = scot_imp_weights_subsets,
-  all_service_label_list = all_service_labels)
+  all_service_labels = all_service_labels
+)
+
+# scot_importance_weights <- bind_importance_weights(
+#   within_weights_list = scot_imp_weights_subsets,
+#   all_service_label_list = all_service_labels)
 
 # FIX SHOULD WE WRAP ALL OF THESE TOGETHER? WOULD ANYONE WANT TO MAKE THE
 # SUBSETS OF WEIGHTS? I'M THINKING NOT so wrapping makes sense?
@@ -1030,15 +1098,56 @@ comparison_results
 
 ## CALCULATE INDEXED NATURAL CAPITAL ASSETS
 
-build_indices <- function(total_assets_matrix_list) {
+# FUNCTION
+# Something not right here with the raw_index
+# It's because the overall trend smoothing happens differenly to the others.
+# deliberate?
+build_indices <- function(total_assets_matrix_list,
+                          smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
+                          year_one = names(total_assets_matrix_list)[[1]]) {
 
-  yearly_sums <-  sapply(total_assets_matrix_list, sum, na.rm = TRUE)
+  # Get the raw totals.
+  yearly_sums <- sapply(total_assets_matrix_list, sum, na.rm = TRUE)
 
+  # These are indexed on year one to give a 'raw' index.
+  year_one_val <- yearly_sums[[year_one]]
+  indexed_values <- (yearly_sums / year_one_val) * 100
+
+  # Smoothing is applied, with more recent values given more weight.
+  # Define the smoothing function:
+  weighted_smooth <- function(window_vec) {
+    current_weights <-  tail(smoothing_weights, length(window_vec))
+    current_divisor <- sum(current_weights)
+    return(sum(window_vec * current_weights) / current_divisor)
+  }
+
+  # Build as a dataframe
   indices_df <- data.frame(
-    total = yearly_sums,
+    raw_total = yearly_sums,
+    raw_index = indexed_values,
     row.names = names(total_assets_matrix_list)
-  )
+  ) %>%
+    mutate(
+      smoothed_index = slide_dbl(
+        .x = raw_index,
+        .f = weighted_smooth,
+        .before = 4,
+        .complete = FALSE
+      )
+    )
+
+  return(indices_df)
 
 }
-test_building_indices <- build_indices(scot_corrected_ncai_list)
-View(test_building_indices)
+
+# Get the overall NCA index set:
+scot_overall_indices <- build_indices(scot_corrected_ncai_list)
+
+# This can be compared to the first entry (named "overall") in the imported
+# ns_index_breakdowns:
+test_overall <- ns_index_breakdowns[["overall"]] %>%
+  setNames(names(scot_overall_indices)) %>%
+  # NB dispayed raw total in NS sheet is divided by 100 so:
+  mutate(raw_total = raw_total * 100)
+rownames(test_overall) <- rownames(scot_overall_indices)
+all.equal(scot_overall_indices, test_overall)
