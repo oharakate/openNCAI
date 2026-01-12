@@ -1,10 +1,9 @@
-## DEVELOP CALCULATION PROCESS FOR openNCAI
+## Recreating Scotland's NCAI in R
 # Kate O'Hara, Chris Littleboy
 # 03-12-2025
 
 
 #### SETUP ####
-# install.packages("slider")
 
 library(dplyr)
 library(tidyr)
@@ -14,12 +13,11 @@ library(readxl)
 
 #### DEFINE LABELS AND LISTS FOR NS DATA ####
 
-# Define labels
-# Service-type labels:
+# We require a list of the names of ecosystem service TYPEs:
 st_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
-# Short version (needed?)
-short_main_labels <- c("prov", "regu", "cult")
-# Sets of ecosystem service labels by type:
+
+# For each ecosystem service type, we require a list of the ecosystem services
+# within it:
 provisioning_labels <- c("cultivated_crops",
                          "reared_animals",
                          "wild_animals_plants_algae",
@@ -49,12 +47,17 @@ cultural_labels <- c("physical_experience",
                      "symbolic_sacred_religious",
                      "existence_bequest")
 
-# All service labels in order:
+# We require the list of all ecosystem services, in the same order:
 all_service_labels <- c(provisioning_labels,
                         regulationandmaintenance_labels,
                         cultural_labels)
 
-# Habitat-type codes (required?)
+# We also need a list of the label subsets:
+ns_label_subsets_list <- list(provisioning_labels,
+                                regulationandmaintenance_labels,
+                                cultural_labels)
+
+# We require a list of the habitat categories:
 habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                    "e1", "e2", "e4","e5", "e7",
                    "f2","f3","f4","f9",
@@ -62,81 +65,35 @@ habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                    "h2", "h3","i1","i2",
                    "j1","j2","j3","j4","k")
 
-# The range of years in the Scotland 23 extent data to be processed:
+# We require the list of years to be calculated:
 ns_year_list <- as.character(2000:2022)
 
 
 #### IMPORT EXISTING DATA FROM NS SHEETS ####
 # Get Scotland data for replication from NatureScot spreadsheet:
-# Existing bases and data (Scotland)
 
 # Index of sheets in the NatureScot spreadsheet:
 ns_sheets_path <- file.path("dev", "ncai.xlsx")
 ns_sheets_index <- excel_sheets(ns_sheets_path)
-ns_sheets_index
+print(ns_sheets_index)
 
-# Wellbeing base
-ns_wellbeing_base <- read_xlsx(ns_sheets_path,
-                sheet = 7,
-                range = "F4:AG34",
-                col_names = FALSE,
-                col_types = "numeric",
-                trim_ws = TRUE,
-                .name_repair = "minimal"
-                ) %>%
-  as.data.frame()
+# EXISTING WEIGHTS (decided at the outset and do not chanage from year to year)
 
-# Ecosystem service potential base
-ns_espb <- read_xlsx(ns_sheets_path,
-                  sheet = 6,
-                  range = "F4:AG34",
-                  col_names = FALSE,
-                  col_types = "numeric",
-                  trim_ws = TRUE,
-                  .name_repair = "minimal") %>%
-  as.data.frame()
-
-# Ecosystem service providing potential per SPU matrix:
+# Ecosystem service providing potential per SPU (ESPPU)
+# (sheet "ES Potential per SPU"):
 ns_esppu <- read_xlsx(ns_sheets_path,
-                  sheet = 3,
-                  range = "F4:AG34",
-                  col_names = FALSE,
-                  col_types = "numeric",
-                  trim_ws = TRUE,
-                  .name_repair = "minimal") %>%
+                      sheet = 3,
+                      range = "F4:AG34",
+                      col_names = FALSE,
+                      col_types = "numeric",
+                      trim_ws = TRUE,
+                      .name_repair = "minimal") %>%
   as.data.frame()
 
-# Habitat extent data years to 2022 (Scotland)
-ns_habitat_extent <- readxl::read_excel(
-    path = ns_sheets_path,
-    sheet = 5,
-    range = "E4:AA34",
-    col_names = FALSE,
-    col_types = "numeric",
-    trim_ws = TRUE,
-    .name_repair = "minimal" #quietens reporting on name repair
-  ) %>%
-  as.data.frame()
-
-# Indicator directory
-ns_indd <- readxl::read_excel(
-  path = ns_sheets_path,
-  sheet = 8,
-  range = "N2:R106",
-  col_names = TRUE,
-  col_types = NULL,
-  trim_ws = TRUE #,
-  # .name_repair = "minimal" #quietens reporting on name repair
-) %>%
-  as.data.frame() %>%
-  setNames(c(st_labels,
-          "comments",
-          "used")) %>%
-  select(-comments) %>%
-  filter(used == "Yes")
 
 
-# Importance scores ("Scotland weights")
+# Importance scores (sheet "ES Potential (Weighting)"):
+
 # Between service-type scores:
 ns_st_importance_scores <- readxl::read_excel(
   path = ns_sheets_path,
@@ -150,7 +107,7 @@ ns_st_importance_scores <- readxl::read_excel(
   as.data.frame() %>%
   setNames("score")
 
-# FIX these three should become a list maybe?
+# Subsets of ecosystem service score, within each service type:
 ns_prov_importance_scores <- readxl::read_excel(
   path = ns_sheets_path,
   sheet = 4,
@@ -187,6 +144,86 @@ ns_cult_importance_scores <- readxl::read_excel(
   as.data.frame() %>%
   setNames("score")
 
+# Place the within-service-type service importance scores in a list:
+ns_within_scores_list <- list(
+  prov = ns_prov_importance_scores,
+  regu = ns_regu_importance_scores,
+  cult = ns_cult_importance_scores)
+
+
+# Indicator Directory - relevance of Condition Indicators (CIs) to ecosystem
+# service types:
+ns_indicator_directory <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 8,
+  range = "N2:R106",
+  col_names = TRUE,
+  col_types = NULL,
+  trim_ws = TRUE
+) %>%
+  as.data.frame() %>%
+  setNames(c(st_labels,
+             "comments",
+             "used")) %>%
+  select(-comments) %>%
+  filter(used == "Yes")
+
+
+# Total Indicator Relevances sheet
+ns_tir <- readxl::read_excel(
+  path = ns_sheets_path,
+  sheet = 74,
+  range = "F4:AG34",
+  col_names = FALSE,
+  col_types = "numeric",
+  trim_ws = TRUE,
+  .name_repair = "minimal"
+) %>%
+  as.data.frame() %>%
+  setNames(all_service_labels)
+
+
+
+# EXISTING BASES (calculated at the outset and do not change from year to year)
+
+# Ecosystem service potential base (ESPB) (sheet "ES Potential Base")
+ns_espb <- read_xlsx(ns_sheets_path,
+                     sheet = 6,
+                     range = "F4:AG34",
+                     col_names = FALSE,
+                     col_types = "numeric",
+                     trim_ws = TRUE,
+                     .name_repair = "minimal") %>%
+  as.data.frame()
+
+# Wellbeing base "Well-being base":
+ns_wellbeing_base <- read_xlsx(ns_sheets_path,
+                sheet = 7,
+                range = "F4:AG34",
+                col_names = FALSE,
+                col_types = "numeric",
+                trim_ws = TRUE,
+                .name_repair = "minimal"
+                ) %>%
+  as.data.frame()
+
+
+
+
+# DYNAMIC DATA (data about the extent and condition of habitat fed in yearly)
+# Habitat extent data years to 2022 (Scotland)
+ns_habitat_extent <- readxl::read_excel(
+    path = ns_sheets_path,
+    sheet = 5,
+    range = "E4:AA34",
+    col_names = FALSE,
+    col_types = "numeric",
+    trim_ws = TRUE,
+    .name_repair = "minimal" #quietens reporting on name repair
+  ) %>%
+  as.data.frame()
+
+
 # Condition indicator scores, by year:
 # Function read_the_ci_scores() gets the CI scores from NS sheets:
 read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
@@ -216,7 +253,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
     vec <- as.numeric(raw_score_data[[1]])
     list_of_vectors[[paste0("ind", idx)]] <- vec
 
-    # Confirmation message hopefully:
+    # Confirmation message:
     cat("Processed column", idx, "(Sheet", actual_sheet_index, ")\n")
   }
 
@@ -227,6 +264,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 
 }
 
+
 # Import the Condition Indicators from NS sheet:
 ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
                                          sheet_list = 9:46,
@@ -234,10 +272,10 @@ ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
 
 
 
-# Function read_ns_year_sheet() gets the main matrix of contributions (based on
-# habitat condition scores and relevance weighting of condition indicators)
-# from one of the year named sheets (e.g. "2000"):
-read_ns_year_sheet <- function(sheet, path, labels) {
+# RESULTS DATA - sheets calculated using base weights and dynamic data:
+# Function read_ns_year_sheet() gets the main matrices of (non-indexed) natural
+# capital from one of the year named sheets (e.g. "2000"):
+read_ns_year_sheet <- function(sheet, path, service_labels, habitat_labels) {
 
   year_sheet <- readxl::read_excel(
     path = path,
@@ -249,10 +287,14 @@ read_ns_year_sheet <- function(sheet, path, labels) {
     .name_repair = "minimal" #quietens reporting on name repair
   ) %>%
     as.data.frame() %>% #make sure DF
-    setNames(labels) #give same column names
+    setNames(service_labels) #give same column names
+  rownames(year_sheet) <- habitat_labels
 
   # NAs to 0 as before
   year_sheet[is.na(year_sheet)] <- 0
+
+  # Confirm
+  message("Successfully read and processed sheet: ", sheet)
 
   return(year_sheet)
 
@@ -263,10 +305,11 @@ ns_year_sheets_ids <- 50:72
 ns_all_year_sheets <- lapply(X = ns_year_sheets_ids,
                              FUN = read_ns_year_sheet,
                              path = ns_sheets_path,
-                             labels = all_service_labels)
+                             service_labels = all_service_labels,
+                             habitat_labels = habitat_codes)
 
 # e.g. this should look like the year 2000:
-View(ns_all_year_sheets[[1]])
+# View(ns_all_year_sheets[[1]])
 
 
 
@@ -289,9 +332,9 @@ rownames(ns_ci_score_matrix) <- ns_year_list
 
 
 
-#### CALCULATING NCAI ####
+#### CALCULATE NCAI ####
 
-#### RECREATING THE ES POTENTIAL BASE ####
+## RECREATE THE ECOSYSTEM SERVICE POTENTIAL BASE
 
 # In the NatureScot spreadhsheet, ESPPU contains scores out of 5 indicating the
 # likely of a service-providing unit to deliver its potential. So we will
@@ -410,7 +453,8 @@ scot_esppu_weights <- esppu_scores_to_weights(
 
 ## FUNCTION calc_espb() calculates the ecosystem service potential base. It
 # takes the habitat extent data, year list, and ESPPU weights, and multiplies
-# each habitat/service combination by the year one area of that habitat.
+# each habitat/service combination potential weight by the year one area of that
+# habitat.
 calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) {
 
   year_one <- year_list[1]
@@ -444,11 +488,12 @@ all.equal(ns_espb, scot_espb)
 
 ## RECREATING THE WELLBEING BASE
 ## The wellbeing base is recreated using the between- and within-service-type
-# importance weights (the "Scotland weights").
+# importance weights (the "Scotland weights"), and multiplying these by the
+# ESPB.
 
 # # FUNCTION imp_rtw_between()
 # Gets between-service-provision-type IMPORTANCE weights from a dataframe of
-# raw importance scores.
+# raw ecosystem-service-type importance scores.
 # Output is used in importance_rtw_within().
 importance_rtw_between <- function(between_scores) {
   # between_scores is a vector of between-service-type importance scores
@@ -459,8 +504,9 @@ importance_rtw_between <- function(between_scores) {
 
 
 ## FUNCTION importance_rtw_within()
-# Gets within-service-type importance weights from a dataframe of raw importance
-# scores, using between weights output from importance_rtw_between().
+# Gets within-service-type importance weights from a dataframe of raw individual
+# ecosystem service importance scores, using between weights output from
+# importance_rtw_between().
 # Used in calc_importance_weights() below.
 importance_rtw_within <- function(within_scores, between_weights, index) {
 
@@ -500,13 +546,6 @@ calc_importance_weights <- function (between_scores, within_scores_list) {
   return(ww_subset_list)
 }
 
-# eswr_scot_sections are the scottish between-ecosystem-service-type raw scores
-# Make a list of the within-ecosystem_service_type scores
-# Make a list of the within-service-type score sets:
-ns_within_scores_list <- list(
-  prov = ns_prov_importance_scores,
-  regu = ns_regu_importance_scores,
-  cult = ns_cult_importance_scores)
 
 # Calculate Scotland's importance within-service-type weights:
 scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
@@ -542,18 +581,13 @@ scot_importance_weights <- bind_importance_weights(
   within_weights_list = scot_imp_weights_subsets,
   all_service_label_list = all_service_labels)
 
-# FIX MAYBE We could wrap these together.
+# FIX SHOULD WE WRAP ALL OF THESE TOGETHER? WOULD ANYONE WANT TO MAKE THE
+# SUBSETS OF WEIGHTS? I'M THINKING NOT so wrapping makes sense?
 
 
-## FUCNTION calc_wb() takes the ESPB (ES potential per habitat/service type
-# combination) and expresses each cell as a proportion of the total potential
-# for that service type across all habitats (colSums).
-# Next, it multiplies in the importance weights (result of between and within
-# service-type weighting process above).
-# Returns the wellbeing base which is a matrix of habitat/service type.
-calc_wellbeing_base <- function(espb, # ES potential, a matrix habitat/service type
-                    importance_weights # Importance weights, a vector (wide df) by service type
-                    ) {
+## FUCNTION calc_wellbeing_base() multiplies the importance weights by the ESPB
+# to generate the Wellbeing Base, a matrix of shape habitat/service type.
+calc_wellbeing_base <- function(espb, importance_weights) {
 
   # Express ESPB as proportion of habitat total contribution
   espb_totals <- colSums(espb)
@@ -579,7 +613,7 @@ calc_wellbeing_base <- function(espb, # ES potential, a matrix habitat/service t
 
 }
 
-# Calculate Scotland's Well-being Base:
+# Calculate Scotland's Wellbeing Base:
 scot_wellbeing_base <- calc_wellbeing_base(espb = scot_espb,
                                importance_weights = scot_importance_weights)
 
@@ -589,20 +623,20 @@ all.equal(ns_wellbeing_base, scot_wellbeing_base)
 
 
 
-#### PROCESS CONDITTION SCORES ####
-
-# fns_bring_in_cirms() was used to harvest a binary CI relevance matrix in
-# shape habitat/ecosystem service for each CI and save these as csv in the
-# folder 'cirms'. They are regularly named to facilitate processing with
-# functions below.
+## PROCESS CONDITION SCORES
 
 ## CALCULATING THE WEIGHTED INDICATORS MATRICES
-# For each indicator, the relevance matrix needs to be multiplied by the
-# ecosystem-service-type weight for that indicator, as recorded in indd.
+# In the first table of sheets "2", "4", etc. - the condition indicator sheets -
+# we find the condition indicator (CI) weight matrices (in shape
+# habitat/ecosystem service).
 
-# To build the weighted relevance matrix we start by buiding a list of
-# matrices of binary indicators of whether a CI is relevant for each combination
-# of habitat/ecosystem service:
+# These could be best created by starting with a CI binary relevance matrix
+# which records whether a CI is relevant to each habitat/ecoystem service
+# combination. This can be multiplied by the appropriate weight from the
+# Indicator Directory.
+
+# FUNCTION get_cirm_list() use data from the NatureScot spreadsheet to build a
+# list of binary CI relevance matrices:
 get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
 
   # Loop through each sheet in the list
@@ -640,12 +674,10 @@ ns_cirms_list <- get_cirm_list(spreadsheet_path = ns_sheets_path,
 
 
 
-## FUNCTION build_ciwm
-# This will take a CIRM object named cirm# where the # is the number of the CI.
-# Also requires the list of service types and a list of label sets for each
-# subtype.
-
-build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indd) {
+## FUNCTION build_ciwm_list() converts the CI relevance matrix list to CI
+# CI weight matrices, by multiplying in the correct relevance weight from the
+# Indicator Directory:
+build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_directory) {
 
   # Use lapply to iterate over the indices of the cirm_list
   final_ciwm_list <- lapply(seq_along(cirm_list), function(ci_num) {
@@ -665,9 +697,9 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indd) {
       # 2. Get the weight name from st_list (e.g., "provisioning_weight")
       weight_col_name <- st_list[[i]]
 
-      # 3. Pull the numeric weight from indd
+      # 3. Pull the numeric weight from indicator_directory
       # Row = current indicator (ci_num), Column = current weight type
-      weight <- as.numeric(indd[ci_num, weight_col_name])
+      weight <- as.numeric(indicator_directory[ci_num, weight_col_name])
 
       # 4. Multiply subset of columns by weight
       sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
@@ -685,16 +717,12 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indd) {
   return(final_ciwm_list)
 }
 
-# Need list of service-type subsets of ecosystem service labels:
-scot_label_subsets_list <- list(provisioning_labels,
-                                regulationandmaintenance_labels,
-                                cultural_labels)
 
 # Build list of Condition Indicator Weighted Relevance matrices:
 ns_all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
                                   st_list = st_labels,
-                                  label_subsets_list = scot_label_subsets_list,
-                                  indd = ns_indd)
+                                  label_subsets_list = ns_label_subsets_list,
+                                  indicator_directory = ns_indicator_directory)
 
 
 # E.g.
@@ -702,15 +730,15 @@ ns_all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
 # Should look like first table in sheet '6' and it does.
 
 
-# From the list of CIWMs, we should be able to recreate the Total Indicator
-# Relevances matrix. That's the sum of relevance weights across indicators,
-# plus the addon, found in sheet 'Total Indicator Relevances'.
-# Call it TIR.
-# A constant of 2 is added to the total indicator relevances in the NatureScot
-# calculations. This may be to avoid zero divisions. The constant multiplied
-# by 100 will be included when we sum the relevance-weighted contributions of
-# quality indicators in the following step (such that indexed on itself it
-# always equals 1).
+# From the list of CIWMs, we need to recreate the Total Indicator
+# Relevances matrix: the sum of relevance weights across indicators found in
+# sheet 'Total Indicator Relevances'.
+
+# A constant of 2 is added to the Total Indicator Relevances in the NatureScot
+# calculations. This may be to avoid zero divisions. The same constant
+# multiplied by 100 will be included when we sum the relevance-weighted
+# contributions of quality indicators in the following step (such that indexed
+# on itself it always equals 1).
 
 ## FUNCTION calc_tir()
 calc_tir <- function(all_ciwms_list, tir_constant) {
@@ -725,37 +753,23 @@ calc_tir <- function(all_ciwms_list, tir_constant) {
 ns_tir_constant = 2
 scot_tir <- calc_tir(all_ciwms_list = ns_all_ciwms_list,
                      tir_constant = ns_tir_constant)
-# Should look like NS sheet "Total Indicator Relevances":
-# View(scot_tir)
+
+# This should recreate NS sheet "Total Indicator Relevances" (imported above):
+all.equal(scot_tir, ns_tir)
 # It does.
 
 
-# Compare this calculated matrix with the TIR from the original sheet:
-ns_sheets_index
-# Use sheet 75:
-ns_tir <- readxl::read_excel(
-  path = "dev/ncai.xlsx",
-  sheet = 74,
-  range = "F4:AG34",
-  col_names = FALSE,
-  col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" #quietens reporting on name repair
-) %>%
-  as.data.frame() %>% #make sure DF
-  setNames(all_service_labels) #give same column names
-
-# Are they same?
-all.equal(ns_tir, scot_tir)
-# Yes.
 
 
+#### CALCULATE FLOW ####
 
-#### Generate YWCCMS ####
-
-# For any year, yearly weighted condition contribution matrix YWCCM for each
+# For any year, a yearly weighted condition contribution matrix (YWCCM) for each
 # indicator can be generated by multiplying the CIWM (condition indicator
 # weights matrix) by the year's raw condition scores ICC (around 100).
+# These objects are not explicitly displayed in the NS spreadsheet; rather they
+# are equivalent to the the first table in the numbered
+# condition indicator sheets multiplied by the year value in P36 thru 58 on the
+# same sheet.
 
 ## FUNCTION get_yearly_condition() extracts the indexed condition score for one
 # CI in one year:
@@ -763,7 +777,7 @@ get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
 
   col_idx <- ci_num
 
-  # Access data directly by row name (year) and column index
+  # Access data by row name (year) and column index
   raw_cond_score <- raw_cis[as.character(year_to_get), col_idx]
   year_one_score <- raw_cis[as.character(year_list[1]), col_idx]
 
@@ -777,9 +791,7 @@ get_yearly_condition <- function(raw_cis, year_to_get, ci_num, year_list) {
 
 # FUNCTION build_all_ywccms() multiplies one year's indexed value by the
 # relevance weight matrix (CIWM) for all CIs in the list. Takes all_ciwms_list
-# and outputs all_ywccms_list. These objects are not explicitly in the NS
-# spreadsheet; rather they are equvalent to the the first table in the numbered
-# indicator sheets multiplied by the year value in P36 thru 58
+# and outputs all_ywccms_list.
 build_all_ywccms <- function(raw_cis, year, year_list, ciwms_list) {
 
   # Iterate through the list of CIWMs
@@ -821,35 +833,35 @@ build_all_ywccms <- function(raw_cis, year, year_list, ciwms_list) {
 # cells of the matrix, and that looks correct.
 
 
+# Next, we will sum together the YWCCMs for all indicators to create the Total
+# Yearly Flow of ecosystem services from Scotland's habitats in each year.
+# Again this is not explicitly displayed in the spreadsheet.
 
-# Next we will sum together the YWCCMs for all indicators to create the Total
-# Yearly Contribution of Scotland's habitats to ecosystem services in each year.
-# FUNCTION build_tyc() takes the list of indicator ywccms for a year, adds in
-# the constant numerator term * index of 100 and divides by the total relevances
-# (including constant term again):
-build_tyc <- function(list_of_ywccms, tir, tir_constant) {
+# FUNCTION build_tyf() takes the list of YWCCMs for a year and divides
+# by the Total Indicator Relevances. Note the inclusion of the TIR constant
+# term both in the denominator, and in the numerator where it is multiplied by
+# 100 to give an indexed term congruent with those of the 'real' CIs:
+build_tyf <- function(list_of_ywccms, tir, tir_constant) {
 
   # Get sum of yearly weighted condition contributions for a year
   sum_ywccms <- Reduce("+", list_of_ywccms)
 
   # Add the TIR constant * 100 and divide by TIR
-  tyc <- (sum_ywccms + (100 * tir_constant)) / tir
+  tyf <- (sum_ywccms + (100 * tir_constant)) / tir
 
-  return(tyc)
+  return(tyf)
 }
 
 
 
-# FUNCTION build_all_tycs(), for each year in the series, uses build_all_yccms()
+# FUNCTION build_all_tyfs(), for each year in the series, uses build_all_yccms()
 # to generate the yearly relevance-weighted contribution for each CI, before
-# using build_tyc() to combine these. Outputs a list of TYCs per year (can be
-# understood as the yearly flow of ecosystem service per habitat, and will be
-# indexed upon its year one values and multiplied by the habitat extent and
-# the wellbeing base to gain the raw measure of natural capital assets.)
-build_all_tycs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
+# using build_tyf() to combine these. Outputs a list of TYFs, one for each year
+# of the series.
+build_all_tyfs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
 
   # Call the process for every year in the list
-  raw_tyc_list <- lapply(year_list, function(yr) {
+  raw_tyf_list <- lapply(year_list, function(yr) {
 
     # STEP A: Build all the individual indicator matrices for THIS year
     current_year_ywccms <- build_all_ywccms(
@@ -859,33 +871,36 @@ build_all_tycs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
       ciwms_list = ciwms_list
     )
 
-    # STEP B: Sum them and normalize using the updated build_tyc
-    tyc <- build_tyc(
+    # STEP B: Sum them and normalize using the updated build_tyf
+    tyf <- build_tyf(
       list_of_ywccms = current_year_ywccms,
       tir = tir,
       tir_constant = tir_constant
     )
 
-    return(tyc)
+    return(tyf)
   })
 
-  names(raw_tyc_list) <- year_list
-  return(raw_tyc_list)
+  names(raw_tyf_list) <- year_list
+  return(raw_tyf_list)
 }
 
 
 
 
 # For Scotland:
-scot_tycs_list <- build_all_tycs(raw_cis = ns_ci_score_matrix,
+scot_tyfs_list <- build_all_tyfs(raw_cis = ns_ci_score_matrix,
                                 year_list = ns_year_list,
                                 ciwms_list = ns_all_ciwms_list,
                                 tir = scot_tir,
                                 tir_constant = ns_tir_constant)
 
 
-# FUNCTION build_ncai_matrix builds a matrix for a year as per the year sheets:
-build_ncai_matrix <- function(tyc, wellbeing_base, habitat_extent, target_year, year_one) {
+## CALCULATE NATURAL CAPITAL ASSETS
+
+# FUNCTION build_ncai_matrix builds a matrix of actual natural capital in one
+# year as per the year sheets "2000", "2002", etc.:
+build_ncai_matrix <- function(tyf, wellbeing_base, habitat_extent, target_year, year_one) {
 
   # Convert to characters for safe indexing
   target_str <- as.character(target_year)
@@ -899,14 +914,14 @@ build_ncai_matrix <- function(tyc, wellbeing_base, habitat_extent, target_year, 
   extent_index <- (extent_target_vec / extent_origin_vec * 100)
   # extent_index[!is.finite(extent_index)] <- 0 # hopefully redundant?
 
-  # Multiply the wellbeing base by the TYC
+  # Multiply the wellbeing base by the tyf
   # Ensure they are both treated as matrices for element-wise multiplication
-  wb_tyc <- as.matrix(tyc) * as.matrix(wellbeing_base)
+  wb_tyf <- as.matrix(tyf) * as.matrix(wellbeing_base)
 
   # Apply the extent index across the rows (Habitats)
   # sweep() works perfectly here: MARGIN 1 applies extent_index[i] to every cell in row i
   ncai_matrix <- sweep(
-    x = wb_tyc,
+    x = wb_tyf,
     MARGIN = 1,
     STATS = extent_index,
     FUN = "*"
@@ -918,35 +933,37 @@ build_ncai_matrix <- function(tyc, wellbeing_base, habitat_extent, target_year, 
 
 # FUNCTION build_all_nca_matrices() builds the year sheet for every year in the
 # year list:
-build_all_ncai_matrices <- function(tyc_list, wellbeing_base, habitat_extent, year_one) {
+build_all_ncai_matrices <- function(tyf_list, wellbeing_base, habitat_extent, year_one, habitat_labels) {
 
-  # Iterate over the names (years) of the tyc_list
-  all_ncai <- lapply(names(tyc_list), function(yr) {
+  # Iterate over the names (years) of the tyf_list
+  all_ncai <- lapply(names(tyf_list), function(yr) {
 
-    build_ncai_matrix(
-      tyc = tyc_list[[yr]],
+    ncai_df <- build_ncai_matrix(
+      tyf = tyf_list[[yr]],
       wellbeing_base = wellbeing_base,
       habitat_extent = habitat_extent,
       target_year = yr,
       year_one = year_one
     )
+    rownames(ncai_df) <- habitat_labels
+
+    return(ncai_df)
   })
 
-  names(all_ncai) <- names(tyc_list)
+  names(all_ncai) <- names(tyf_list)
   return(all_ncai)
 }
 
-scot_ncai_list <- build_all_ncai_matrices(tyc_list = scot_tycs_list,
+scot_ncai_list <- build_all_ncai_matrices(tyf_list = scot_tyfs_list,
                                           wellbeing_base = ns_wellbeing_base,
                                           habitat_extent = ns_habitat_extent,
-                                          year_one = ns_year_list[[1]]
+                                          year_one = ns_year_list[[1]],
+                                          habitat_labels = habitat_codes
 )
 
-View(scot_ncai_list[[1]])
-View(scot_ncai_list[[23]])
-
-# NOW THESE LOOK CORRECT.
-# We can test the whole series:
+# In some years we manage to recreate the NatureScot results, but not others.
+# We can test the whole series against the values we imported from the
+# spreadsheet at the start:
 comparison_results <- mapply(function(list1, list2) {
   all.equal(list1, list2)
 }, scot_ncai_list[1:23], ns_all_year_sheets[1:23], SIMPLIFY = FALSE)
@@ -956,3 +973,72 @@ comparison_results
 
 # After close inspection we are able to pinpoint transcription errors in the
 # spreadsheet.
+# 1. In year sheet "2022" the cell formulae includes multiplication by the
+# habitat extent data for year 2021 (Z44, Z45, etc. in sheet "Ecosystem Area")
+# instead of 2022 (should be AA44, AA45, etc.)
+
+# In Sheet "66" (CI 32 in the sequence of 38), there is a an error in cell P55.
+# This cell should contain a formula to calculate the indexed value of the
+# score for the year 2019. Instead it contains the number equal to the indexed
+# value of the year 2018 score.
+
+# We have manually corrected the spreadsheet (fixing the erroneous value in
+# sheet "66" and the erroneous formulae in sheet "2022":
+ns_corrected_sheets_path <- file.path("dev", "ncai_corrected.xlsx")
+
+# We import the corrected version of the Condition Indicator scores
+# matrix:
+ns_corrected_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_corrected_sheets_path,
+                                                   sheet_list = 9:46,
+                                                   vector_range = "I36:I58")
+
+# And the corrected version of the year sheets:
+ns_corrected_all_year_sheets <- lapply(X = ns_year_sheets_ids,
+                                       FUN = read_ns_year_sheet,
+                                       path = ns_corrected_sheets_path,
+                                       service_labels = all_service_labels,
+                                       habitat_labels = habitat_codes)
+
+rownames(ns_corrected_ci_score_matrix) <- ns_year_list
+
+# Calculate flow again:
+scot_corrected_tyfs_list <- build_all_tyfs(raw_cis = ns_corrected_ci_score_matrix,
+                                           year_list = ns_year_list,
+                                           ciwms_list = ns_all_ciwms_list,
+                                           tir = scot_tir,
+                                           tir_constant = ns_tir_constant)
+
+# Calculate assets again:
+scot_corrected_ncai_list <- build_all_ncai_matrices(
+  tyf_list = scot_corrected_tyfs_list,
+  wellbeing_base = ns_wellbeing_base,
+  habitat_extent = ns_habitat_extent,
+  year_one = ns_year_list[[1]],
+  habitat_labels = habitat_codes
+)
+
+# Compare results again:
+comparison_results <- mapply(function(list1, list2) {
+  all.equal(list1, list2)},
+  scot_corrected_ncai_list[1:23],
+  ns_corrected_all_year_sheets[1:23],
+  SIMPLIFY = FALSE)
+comparison_results
+
+# And now we recreate the calculation without discrepancies.
+
+
+## CALCULATE INDEXED NATURAL CAPITAL ASSETS
+
+build_indices <- function(total_assets_matrix_list) {
+
+  yearly_sums <-  sapply(total_assets_matrix_list, sum, na.rm = TRUE)
+
+  indices_df <- data.frame(
+    total = yearly_sums,
+    row.names = names(total_assets_matrix_list)
+  )
+
+}
+test_building_indices <- build_indices(scot_corrected_ncai_list)
+View(test_building_indices)
