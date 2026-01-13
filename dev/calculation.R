@@ -54,9 +54,10 @@ all_service_labels <- c(provisioning_labels,
                         cultural_labels)
 
 # We also need a list of the label subsets:
-ns_label_subsets_list <- list(provisioning_labels,
-                                regulationandmaintenance_labels,
-                                cultural_labels)
+st_label_subsets <- list(provisioning_labels,
+                         regulationandmaintenance_labels,
+                         cultural_labels) %>%
+  setNames(st_labels)
 
 # We require a list of the habitat categories:
 habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
@@ -66,9 +67,6 @@ habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
                    "h2", "h3","i1","i2",
                    "j1","j2","j3","j4","k")
 
-# We require the list of years to be calculated:
-ns_year_list <- as.character(2000:2022)
-
 # We require a list of broad habitats by which the index is broken down:
 broad_habitat_labels <- c("coastal",
                           "freshwater",
@@ -77,6 +75,25 @@ broad_habitat_labels <- c("coastal",
                           "moorland",
                           "woodland",
                           "cropland")
+
+# We require a list of character vectors, detailing habitat_types and the broad
+# habitat type they belong to:
+bh_label_subsets <- list(
+  coastal = c("b1", "b2", "b3"),
+  freshwater = c("c"),
+  wetlands = c("d1", "d2", "d4", "d5"),
+  grasslands = c("e1", "e2", "e4","e5", "e7"),
+  moorland = c("f2","f3","f4","f9"),
+  woodland = c("g1","g3","g4","g5","g6"),
+  cropland = c("i1","i2")
+)
+# NB Scotland's breakdowns do not include the unvegetated 'H' group or the
+# Montane 'K' group.
+
+
+# We require the list of years to be calculated:
+ns_year_list <- as.character(2000:2022)
+
 
 # We create a list of all index breakdowns:
 ns_index_breakdown_labels <- c("overall", st_labels, broad_habitat_labels)
@@ -348,6 +365,7 @@ read_the_indices <- function(indices_range,
     ) %>%
     as.data.frame() %>%
     setNames(c("raw_total", "raw_index", "smoothed_index"))
+  row.names(index_set) <- ns_year_list
 
   return(index_set)
 }
@@ -374,15 +392,13 @@ ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
 
 # Apply labels
 colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
-  all_service_labels <-
-  c(provisioning_labels,regulationandmaintenance_labels,cultural_labels)
+  all_service_labels
 
 rownames(ns_espb) <- rownames(ns_esppu) <- rownames(ns_wellbeing_base) <-
   rownames(ns_habitat_extent) <- habitat_codes
 
-colnames(ns_habitat_extent) <- ns_year_list
+colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 
-rownames(ns_ci_score_matrix) <- ns_year_list
 
 ####
 
@@ -789,7 +805,7 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_di
 # Build list of Condition Indicator Weighted Relevance matrices:
 ns_all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
                                   st_list = st_labels,
-                                  label_subsets_list = ns_label_subsets_list,
+                                  label_subsets_list = st_label_subsets,
                                   indicator_directory = ns_indicator_directory)
 
 
@@ -1022,11 +1038,12 @@ build_all_ncai_matrices <- function(tyf_list, wellbeing_base, habitat_extent, ye
   return(all_ncai)
 }
 
-scot_ncai_list <- build_all_ncai_matrices(tyf_list = scot_tyfs_list,
-                                          wellbeing_base = ns_wellbeing_base,
-                                          habitat_extent = ns_habitat_extent,
-                                          year_one = ns_year_list[[1]],
-                                          habitat_labels = habitat_codes
+scot_ncai_year_matrices <- build_all_ncai_matrices(
+  tyf_list = scot_tyfs_list,
+  wellbeing_base = ns_wellbeing_base,
+  habitat_extent = ns_habitat_extent,
+  year_one = ns_year_list[[1]],
+  habitat_labels = habitat_codes
 )
 
 # In some years we manage to recreate the NatureScot results, but not others.
@@ -1034,7 +1051,7 @@ scot_ncai_list <- build_all_ncai_matrices(tyf_list = scot_tyfs_list,
 # spreadsheet at the start:
 comparison_results <- mapply(function(list1, list2) {
   all.equal(list1, list2)
-}, scot_ncai_list[1:23], ns_all_year_sheets[1:23], SIMPLIFY = FALSE)
+}, scot_ncai_year_matrices[1:23], ns_all_year_sheets[1:23], SIMPLIFY = FALSE)
 
 # We find errors in years 2019 and 2022:
 comparison_results
@@ -1077,7 +1094,7 @@ scot_corrected_tyfs_list <- build_all_tyfs(raw_cis = ns_corrected_ci_score_matri
                                            tir_constant = ns_tir_constant)
 
 # Calculate assets again:
-scot_corrected_ncai_list <- build_all_ncai_matrices(
+scot_corrected_ncai_year_matrices <- build_all_ncai_matrices(
   tyf_list = scot_corrected_tyfs_list,
   wellbeing_base = ns_wellbeing_base,
   habitat_extent = ns_habitat_extent,
@@ -1088,7 +1105,7 @@ scot_corrected_ncai_list <- build_all_ncai_matrices(
 # Compare results again:
 comparison_results <- mapply(function(list1, list2) {
   all.equal(list1, list2)},
-  scot_corrected_ncai_list[1:23],
+  scot_corrected_ncai_year_matrices[1:23],
   ns_corrected_all_year_sheets[1:23],
   SIMPLIFY = FALSE)
 comparison_results
@@ -1097,21 +1114,18 @@ comparison_results
 
 
 ## CALCULATE INDEXED NATURAL CAPITAL ASSETS
-
-# FUNCTION
-# Something not right here with the raw_index
-# It's because the overall trend smoothing happens differenly to the others.
-# deliberate?
-build_indices <- function(total_assets_matrix_list,
-                          smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
-                          year_one = names(total_assets_matrix_list)[[1]]) {
+# FUNCTION cal_ncai() collects the sum of actual assets, and calculates an
+# indexed value and subsequently a smoothed index value. Default settings as
+# per NatureScot. Returns a dataframe of indexed values one row per year.
+calc_ncai <- function(total_assets_matrix_list,
+                      smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
+                      year_one = names(total_assets_matrix_list)[[1]]) {
 
   # Get the raw totals.
   yearly_sums <- sapply(total_assets_matrix_list, sum, na.rm = TRUE)
 
-  # These are indexed on year one to give a 'raw' index.
+  # These will indexed on year one to give a 'raw' index.
   year_one_val <- yearly_sums[[year_one]]
-  indexed_values <- (yearly_sums / year_one_val) * 100
 
   # Smoothing is applied, with more recent values given more weight.
   # Define the smoothing function:
@@ -1124,7 +1138,7 @@ build_indices <- function(total_assets_matrix_list,
   # Build as a dataframe
   indices_df <- data.frame(
     raw_total = yearly_sums,
-    raw_index = indexed_values,
+    raw_index = yearly_sums / year_one_val * 100,
     row.names = names(total_assets_matrix_list)
   ) %>%
     mutate(
@@ -1140,14 +1154,80 @@ build_indices <- function(total_assets_matrix_list,
 
 }
 
+# To test this:
 # Get the overall NCA index set:
-scot_overall_indices <- build_indices(scot_corrected_ncai_list)
+scot_overall_index <- calc_ncai(scot_corrected_ncai_year_matrices)
 
 # This can be compared to the first entry (named "overall") in the imported
 # ns_index_breakdowns:
-test_overall <- ns_index_breakdowns[["overall"]] %>%
-  setNames(names(scot_overall_indices)) %>%
-  # NB dispayed raw total in NS sheet is divided by 100 so:
-  mutate(raw_total = raw_total * 100)
-rownames(test_overall) <- rownames(scot_overall_indices)
-all.equal(scot_overall_indices, test_overall)
+test_ns_overall_index <- ns_index_breakdowns[["overall"]] %>%
+  setNames(names(scot_overall_index)) %>%
+  # NB displayed raw total in NS sheet is divided by 100 so, for comparison:
+  mutate(raw_total = raw_total * 100) %>%
+  # Also, and we don't know if this is a mistake or not, no raw index is shown
+  # for the overall index. Instead the smoothed value is displayed in that
+  # column, so let's deselect that column in both for testing:
+  select(-raw_index)
+
+test_scot_overall_index <- scot_overall_index %>%
+  select(-raw_index)
+all.equal(test_scot_overall_index, test_ns_overall)
+
+
+## Calculating NCAI, broken down by service type:
+# We want to calculate breakdowns of the index, by service type and broad
+# habitat type.
+# FUNCTION calc_ncai_by_st() will allow breakdown of the index by groups of
+# columns (services) passed in as a list, named by service type:
+calc_ncai_by_st <- function(total_assets_matrix_list,
+                            label_subsets_list,
+                            ...) {
+
+  lapply(label_subsets_list, function(subset_labels) {
+
+    filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
+      m[, subset_labels, drop = FALSE]
+    })
+
+    calc_ncai(filtered_matrix_list, ...)
+  })
+}
+
+# For Scotland, the index broken down by service type is:
+scot_index_by_st <- calc_ncai_by_st(
+  total_assets_matrix_list = scot_corrected_ncai_year_matrices,
+  label_subsets_list = st_label_subsets)
+
+# We can compare with the index breakdowns in the NatureScot sheet:
+ns_index_by_st <- ns_index_breakdowns[names(st_label_subsets)]
+
+# Are they equal?
+all.equal(scot_index_by_st, ns_index_by_st)
+# Yes.
+
+
+## Calculating NCAI, broken down by broad habitats:
+calc_ncai_by_bh <- function(total_assets_matrix_list,
+                            label_subsets_list,
+                            ...) {
+
+  lapply(label_subsets_list, function(subset_labels) {
+
+    filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
+      m[subset_labels, , drop = FALSE]
+    })
+
+    calc_ncai(filtered_matrix_list, ...)
+  })
+}
+
+# For Scotland, the index broken down by service type is:
+scot_index_by_bh <- calc_ncai_by_bh(
+  total_assets_matrix_list = scot_corrected_ncai_year_matrices,
+  label_subsets_list = bh_label_subsets)
+
+# We can compare with the index breakdowns in the NatureScot sheet:
+ns_index_by_bh <- ns_index_breakdowns[names(bh_label_subsets)]
+
+# Are they equal?
+all.equal(scot_index_by_bh, ns_index_by_bh)
