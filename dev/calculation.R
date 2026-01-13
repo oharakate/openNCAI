@@ -13,8 +13,8 @@ library(readxl)
 library(slider)
 library(ggplot2)
 
-#### DEFINE LABELS AND LISTS FOR NS DATA ####
 
+#### DEFINE LABELS AND LISTS FOR NS DATA ####
 # We require a list of the names of ecosystem service TYPEs:
 st_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
 
@@ -91,29 +91,30 @@ bh_label_subsets <- list(
 # NB Scotland's breakdowns do not include the unvegetated 'H' group or the
 # Montane 'K' group.
 
-
-# We require the list of years to be calculated:
-ns_year_list <- as.character(2000:2022)
-
-
 # We create a list of all index breakdowns:
-ns_index_breakdown_labels <- c("overall", st_labels, broad_habitat_labels)
+index_breakdown_labels <- c("overall", st_labels, broad_habitat_labels)
+
 # And their locations in the spreadsheet:
 index_breakdown_ranges <- c("B2:D24",
                             "B30:D52", "G30:I52", "L30:N52",
                             "B59:D81", "G59:I81", "L59:N81", "Q59:S81",
                             "V59:X81", "AA59:AC81", "AF59:AH81")
 
+# We require the list of years to be calculated:
+ns_year_list <- as.character(2000:2022)
+
+
+
 
 #### IMPORT EXISTING DATA FROM NS SHEETS ####
-# Get Scotland data for replication from NatureScot spreadsheet:
+# Get Scotland data from NatureScot spreadsheet which we will aim to replicate:
 
 # Index of sheets in the NatureScot spreadsheet:
 ns_sheets_path <- file.path("dev", "ncai.xlsx")
 ns_sheets_index <- excel_sheets(ns_sheets_path)
 print(ns_sheets_index)
 
-# EXISTING WEIGHTS (decided at the outset and do not chanage from year to year)
+# EXISTING WEIGHTS (decided at the outset and do not change from year to year)
 
 # Ecosystem service providing potential per SPU (ESPPU)
 # (sheet "ES Potential per SPU"):
@@ -127,11 +128,10 @@ ns_esppu <- read_xlsx(ns_sheets_path,
   as.data.frame()
 
 
-
 # Importance scores (sheet "ES Potential (Weighting)"):
 
 # Between service-type scores:
-ns_st_importance_scores <- readxl::read_excel(
+ns_st_importance_scores <- readxl::read_xlsx(
   path = ns_sheets_path,
   sheet = 4,
   range = "D6:D8",
@@ -143,53 +143,32 @@ ns_st_importance_scores <- readxl::read_excel(
   as.data.frame() %>%
   setNames("score")
 
-# Subsets of ecosystem service score, within each service type:
-ns_prov_importance_scores <- readxl::read_excel(
-  path = ns_sheets_path,
-  sheet = 4,
-  range = "D13:D24",
-  col_names = FALSE,
-  col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" #quietens reporting on name repair
-) %>%
-  as.data.frame() %>%
-  setNames("score")
 
-ns_regu_importance_scores <- readxl::read_excel(
-  path = ns_sheets_path,
-  sheet = 4,
-  range = "D29:D39",
-  col_names = FALSE,
-  col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" #quietens reporting on name repair
-) %>%
-  as.data.frame() %>%
-  setNames("score")
+# The within-service-type importance scores are recorded at these ranges:
+ns_importance_ranges <- c("D13:D24", "D29:D39", "D44:D48")
+names(ns_importance_ranges) <- st_labels
 
-ns_cult_importance_scores <- readxl::read_excel(
-  path = ns_sheets_path,
-  sheet = 4,
-  range = "D44:D48",
-  col_names = FALSE,
-  col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" #quietens reporting on name repair
-) %>%
-  as.data.frame() %>%
-  setNames("score")
+# Import these into a list of dataframes:
+ns_within_scores_list <- lapply(ns_importance_ranges, function(rng) {
+  readxl::read_xlsx(
+    path = ns_sheets_path,
+    sheet = 4,
+    range = rng,
+    col_names = FALSE,
+    col_types = "numeric",
+    trim_ws = TRUE,
+    .name_repair = "minimal"
+  ) %>%
+    as.data.frame() %>%
+    setNames("score")
+})
 
-# Place the within-service-type service importance scores in a list:
-ns_within_scores_list <- list(
-  prov = ns_prov_importance_scores,
-  regu = ns_regu_importance_scores,
-  cult = ns_cult_importance_scores)
+
 
 
 # Indicator Directory - relevance of Condition Indicators (CIs) to ecosystem
 # service types:
-ns_indicator_directory <- readxl::read_excel(
+ns_indicator_directory <- readxl::read_xlsx(
   path = ns_sheets_path,
   sheet = 8,
   range = "N2:R106",
@@ -206,7 +185,7 @@ ns_indicator_directory <- readxl::read_excel(
 
 
 # Total Indicator Relevances sheet
-ns_tir <- readxl::read_excel(
+ns_tir <- readxl::read_xlsx(
   path = ns_sheets_path,
   sheet = 74,
   range = "F4:AG34",
@@ -248,7 +227,7 @@ ns_wellbeing_base <- read_xlsx(ns_sheets_path,
 
 # DYNAMIC DATA (data about the extent and condition of habitat fed in yearly)
 # Habitat extent data years to 2022 (Scotland)
-ns_habitat_extent <- readxl::read_excel(
+ns_habitat_extent <- readxl::read_xlsx(
     path = ns_sheets_path,
     sheet = 5,
     range = "E4:AA34",
@@ -276,7 +255,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 
     actual_sheet_index <- sheet_list[idx]
 
-    raw_score_data <- readxl::read_excel(
+    raw_score_data <- readxl::read_xlsx(
       path = sheet_path,
       sheet = actual_sheet_index,
       range = vector_range,
@@ -313,7 +292,7 @@ ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
 # capital from one of the year named sheets (e.g. "2000"):
 read_ns_year_sheet <- function(sheet, path, service_labels, habitat_labels) {
 
-  year_sheet <- readxl::read_excel(
+  year_sheet <- readxl::read_xlsx(
     path = path,
     sheet = sheet,
     range = "F4:AG34",
@@ -374,15 +353,16 @@ read_the_indices <- function(indices_range,
 ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
   read_the_indices(
     indices_range = rng,
-    sheet_path = ns_corrected_sheets_path,
+    sheet_path = ns_sheets_path,
     sheet = 73
   )
 }) %>%
-  setNames(ns_index_breakdown_labels)
+  setNames(index_breakdown_labels)
 
 # E.g. cross reference this with B2:D24 in Final NCAI sheet:
 # View(ns_index_breakdowns[["overall"]])
 # View(ns_index_breakdowns[[1]])
+
 
 
 
@@ -405,7 +385,8 @@ colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 
 
 
-#### CALCULATE NCAI ####
+
+#### CALCULATE BASES ####
 
 ## RECREATE THE ECOSYSTEM SERVICE POTENTIAL BASE
 
@@ -627,50 +608,26 @@ scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
 ## FUNCTION bind_imp_weights()
 # Rejoins within-service-type weights back into one weight vector, applying
 # between-service-type weights.
-
 # Require list of importance within weight dataframes (output from
 # imp_rtw_within() ) and list of all the service labels
-bind_importance_weights <- function(within_weights_list,
-                                    all_service_label_list) {
+bind_importance_weights <- function(within_weights_list, all_service_labels) {
 
-  # Safely get each subset of weights and flatten to one vector
-  combined_weights <- unlist(lapply(within_weights_list, `[[`, 1), use.names = FALSE)
-
-  # Check the list of weights is now the same length as list of all services
-  if(length(combined_weights) != length(all_service_label_list)) {
-    stop("Length mismatch: Total weights (", length(combined_weights),
-         ") vs Labels (", length(all_service_label_list), ").")
-  }
-
-  # Put in wide format
-  wide_joined_weights <- as.data.frame(t(combined_weights))
-  colnames(wide_joined_weights) <- all_service_label_list
-
-  return(wide_joined_weights)
-}
-
-bind_importance_weights2 <- function (within_weights_list,
-                                       all_service_labels) {
-  long_df = bind_rows(within_weights_list)
-  wide_df <- as.data.frame(t(long_df)) %>%
+  within_weights_list %>%
+    unlist(use.names = FALSE) %>%
+    t() %>%
+    as.data.frame() %>%
     setNames(all_service_labels)
 }
 
 # Rejoin the within-weight objects and pivot wide:
-scot_importance_weights <- bind_importance_weights2(
+scot_importance_weights <- bind_importance_weights(
   within_weights_list = scot_imp_weights_subsets,
   all_service_labels = all_service_labels
 )
 
-# scot_importance_weights <- bind_importance_weights(
-#   within_weights_list = scot_imp_weights_subsets,
-#   all_service_label_list = all_service_labels)
-
-# FIX SHOULD WE WRAP ALL OF THESE TOGETHER? WOULD ANYONE WANT TO MAKE THE
-# SUBSETS OF WEIGHTS? I'M THINKING NOT so wrapping makes sense?
 
 
-## FUCNTION calc_wellbeing_base() multiplies the importance weights by the ESPB
+## FUNCTION calc_wellbeing_base() multiplies the importance weights by the ESPB
 # to generate the Wellbeing Base, a matrix of shape habitat/service type.
 calc_wellbeing_base <- function(espb, importance_weights) {
 
@@ -728,7 +685,7 @@ get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
   list_of_dfs <- lapply(sheet_list, function(current_sheet) {
 
     # Read the data
-    data <- readxl::read_excel(
+    data <- readxl::read_xlsx(
       path = spreadsheet_path,
       sheet = current_sheet,
       range = matrix_range,
@@ -981,7 +938,7 @@ scot_tyfs_list <- build_all_tyfs(raw_cis = ns_ci_score_matrix,
                                 tir_constant = ns_tir_constant)
 
 
-## CALCULATE NATURAL CAPITAL ASSETS
+#### CALCULATE NATURAL CAPITAL ASSETS ####
 
 # FUNCTION build_ncai_matrix builds a matrix of actual natural capital in one
 # year as per the year sheets "2000", "2002", etc.:
@@ -1160,7 +1117,17 @@ calc_ncai <- function(total_assets_matrix_list,
 scot_overall_index <- calc_ncai(scot_corrected_ncai_year_matrices)
 
 # This can be compared to the first entry (named "overall") in the imported
-# ns_index_breakdowns:
+# ns_index_breakdowns. We need to import the indexes from the corrected version
+# of the spreadsheet:
+ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
+  read_the_indices(
+    indices_range = rng,
+    sheet_path = ns_corrected_sheets_path,
+    sheet = 73
+  )
+}) %>%
+  setNames(index_breakdown_labels)
+
 test_ns_overall_index <- ns_index_breakdowns[["overall"]] %>%
   setNames(names(scot_overall_index)) %>%
   # NB displayed raw total in NS sheet is divided by 100 so, for comparison:
@@ -1172,7 +1139,7 @@ test_ns_overall_index <- ns_index_breakdowns[["overall"]] %>%
 
 test_scot_overall_index <- scot_overall_index %>%
   select(-raw_index)
-all.equal(test_scot_overall_index, test_ns_overall)
+all.equal(test_scot_overall_index, test_ns_overall_index)
 
 
 ## Calculating NCAI, broken down by service type:
@@ -1235,30 +1202,30 @@ all.equal(scot_index_by_bh, ns_index_by_bh)
 # Yes.
 
 
-#### PLOTTING INDICES ####
+#### PLOT INDICES ####
 
 # We can plot the main index.
 # Datasets for plotting...
 # Just the overall index:
 main_index_for_plot <- scot_overall_index %>%
   rownames_to_column(var = "year") %>%
-  mutate(year = as.numeric(year))
+  mutate(
+    year = as.numeric(year),
+    service_type = "overall")
 
 # Breakdown by ecosystem service type + main trend
-by_st_for_plot <- scot_index_by_st %>%
+by_st_for_plot <- scot_index_by_st[st_labels] %>%
+  lapply(rownames_to_column, var = "year") %>%
   bind_rows(.id = "service_type") %>%
-  rownames_to_column(var = "year") %>%
-  mutate(year = as.numeric(substr(year, 1, 4))) %>%
-  bind_rows(main_index_for_plot %>%
-              mutate(service_type = "overall"))
+  mutate(year = as.numeric(year)) %>%
+  bind_rows(main_index_for_plot)
 
 # Breakdown by broad habitat + main trend
-by_bh_for_plot <- scot_index_by_bh %>%
+by_bh_for_plot <- scot_index_by_bh[broad_habitat_labels] %>%
+  lapply(rownames_to_column, var = "year") %>%
   bind_rows(.id = "service_type") %>%
-  rownames_to_column(var = "year") %>%
-  mutate(year = as.numeric(substr(year, 1, 4))) %>%
-  bind_rows(main_index_for_plot %>%
-              mutate(service_type = "overall"))
+  mutate(year = as.numeric(year)) %>%
+  bind_rows(main_index_for_plot)
 
 # The Overall Index
 # (NatureScot graph plots the unsmoothed values)
@@ -1282,7 +1249,7 @@ ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
        x = NULL,
        y = "Index (Year 2000 = 100)") +
   # Theming:
-  theme("classic") +
+  theme() +
   theme(
     panel.grid.major.x = element_blank(),     # No vertical lines
     panel.grid.minor.x = element_blank(),
@@ -1293,6 +1260,14 @@ ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
     axis.text = element_text(color = "black", size = 11),
     panel.background = element_rect(fill = "white", color = NA)
   )
+# Save it:
+ggsave(
+  filename = "ncai_overall_trend.png",
+  plot = last_plot(),       # Optional: defaults to the last plot displayed
+  width = 10,               # Width in inches
+  height = 6,               # Height in inches
+  dpi = 300                 # High resolution for reports
+)
 
 
 # The index by service type with main index for reference:
@@ -1346,6 +1321,14 @@ ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = service_type)) +
     legend.position = "right",
     axis.text = element_text(color = "black")
   )
+# Save it:
+ggsave(
+  filename = "ncai_by_ecosystem_service_type.png",
+  plot = last_plot(),       # Optional: defaults to the last plot displayed
+  width = 10,               # Width in inches
+  height = 6,               # Height in inches
+  dpi = 300                 # High resolution for reports
+)
 
 
 # The index by broad habitat with main index for reference:
@@ -1354,7 +1337,7 @@ ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = service_type)) +
   geom_line(linewidth = 1.1) +
 
   # Diamond markers on overall line
-  geom_point(data = filter(by_st_for_plot, service_type == "overall"),
+  geom_point(data = filter(by_bh_for_plot, service_type == "overall"),
              shape = 18, size = 3) +
 
   # Colours roughly in line with NatureScot
@@ -1413,3 +1396,11 @@ ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = service_type)) +
     legend.position = "right",
     axis.text = element_text(color = "black")
   )
+# Save it:
+ggsave(
+  filename = "ncai_by_broad_habitat.png",
+  plot = last_plot(),       # Optional: defaults to the last plot displayed
+  width = 10,               # Width in inches
+  height = 6,               # Height in inches
+  dpi = 300                 # High resolution for reports
+)
