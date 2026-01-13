@@ -11,6 +11,7 @@ library(tibble)
 library(readr)
 library(readxl)
 library(slider)
+library(ggplot2)
 
 #### DEFINE LABELS AND LISTS FOR NS DATA ####
 
@@ -1231,3 +1232,50 @@ ns_index_by_bh <- ns_index_breakdowns[names(bh_label_subsets)]
 
 # Are they equal?
 all.equal(scot_index_by_bh, ns_index_by_bh)
+# Yes.
+
+
+#### PLOTTING INDICES ####
+
+# We can plot the main index.
+# Dataset for plotting:
+main_index_for_plot <- scot_overall_index %>%
+  rownames_to_column(var = "year") %>%
+  mutate(year = as.numeric(year))
+
+# NatureScot graph plots the unsmoothed index:
+ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
+  # Line:
+  geom_line(color = "#003366", linewidth = 1.2) +
+  # Recreate similar scale:
+  scale_y_continuous(
+    limits = c(90, 110),
+    breaks = seq(90, 110, by = 2),
+    expand = c(0, 0)
+  ) +
+  # Similar X axis labelling:
+  scale_x_continuous(
+    breaks = seq(2000, 2022, by = 3),
+    minor_breaks = seq(2000, 2022, by = 1),
+    expand = c(0, 0.5)
+  ) +
+  # Labelling:
+  labs(title = "Overall Natural Capital Asset Index 2000 to 2022",
+       x = NULL,
+       y = "Index (Year 2000 = 100)") +
+  # Theming:
+  theme("classic") +
+  theme(
+    panel.grid.major.x = element_blank(),     # No vertical lines
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "grey80"), # Light horizontal lines
+    axis.line.x = element_line(color = "black"),
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(color = "black", size = 11),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+# The index by service type with main index for reference:
+# Dataset for plotting:
