@@ -1238,12 +1238,30 @@ all.equal(scot_index_by_bh, ns_index_by_bh)
 #### PLOTTING INDICES ####
 
 # We can plot the main index.
-# Dataset for plotting:
+# Datasets for plotting...
+# Just the overall index:
 main_index_for_plot <- scot_overall_index %>%
   rownames_to_column(var = "year") %>%
   mutate(year = as.numeric(year))
 
-# NatureScot graph plots the unsmoothed index:
+# Breakdown by ecosystem service type + main trend
+by_st_for_plot <- scot_index_by_st %>%
+  bind_rows(.id = "service_type") %>%
+  rownames_to_column(var = "year") %>%
+  mutate(year = as.numeric(substr(year, 1, 4))) %>%
+  bind_rows(main_index_for_plot %>%
+              mutate(service_type = "overall"))
+
+# Breakdown by broad habitat + main trend
+by_bh_for_plot <- scot_index_by_bh %>%
+  bind_rows(.id = "service_type") %>%
+  rownames_to_column(var = "year") %>%
+  mutate(year = as.numeric(substr(year, 1, 4))) %>%
+  bind_rows(main_index_for_plot %>%
+              mutate(service_type = "overall"))
+
+# The Overall Index
+# (NatureScot graph plots the unsmoothed values)
 ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
   # Line:
   geom_line(color = "#003366", linewidth = 1.2) +
@@ -1278,4 +1296,120 @@ ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
 
 
 # The index by service type with main index for reference:
-# Dataset for plotting:
+ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = service_type)) +
+  # Lines
+  geom_line(linewidth = 1.1) +
+
+  # Diamond markers on overall line
+  geom_point(data = filter(by_st_for_plot, service_type == "overall"),
+             shape = 18, size = 3) +
+
+  # Colours roughly in line with NatureScot
+  scale_color_manual(values = c(
+    "overall" = "#003366",                   # Dark Blue
+    "provisioning" = "#660033",              # Maroon/Purple
+    "regulation_and_maintenance" = "#FF6600", # Orange
+    "cultural" = "#339999"                   # Teal
+  ),
+  labels = c("Overall", "Provisioning", "Regulation & maintenance", "Cultural")) +
+
+  # Adjust the axes
+  scale_y_continuous(
+    limits = c(90, 110),
+    breaks = seq(90, 110, by = 5),
+    expand = c(0, 0)
+  ) +
+  scale_x_continuous(
+    breaks = seq(2000, 2022, by = 3),
+    minor_breaks = seq(2000, 2022, by = 1),
+    expand = c(0, 0.5)
+  ) +
+
+  # Labels
+  labs(
+    title = "NCAI 2000 to 2022 by type of ecosystem service",
+    x = NULL,
+    y = "Index (Year 2000 = 100)",
+    color = NULL
+  ) +
+  # Theming
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "grey85"), # Subtle horizontal lines
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    legend.position = "right",
+    axis.text = element_text(color = "black")
+  )
+
+
+# The index by broad habitat with main index for reference:
+ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = service_type)) +
+  # Lines
+  geom_line(linewidth = 1.1) +
+
+  # Diamond markers on overall line
+  geom_point(data = filter(by_st_for_plot, service_type == "overall"),
+             shape = 18, size = 3) +
+
+  # Colours roughly in line with NatureScot
+  scale_color_manual(
+    values = c(
+      "woodland"      = "#339999",  # Teal/Green
+      "freshwater"    = "#404040",  # Dark Grey
+      "coastal"       = "#FF6600",  # Orange
+      "overall"       = "#003366",  # Dark Blue
+      "grasslands"    = "#660033",  # Maroon
+      "moorland"      = "#9980CC",  # Purple/Lavender
+      "wetlands"      = "#FFCC00",  # Yellow
+      "cropland"      = "#0070C0"   # Bright Blue
+    ),
+    labels = c(
+      "woodland"      = "Woodland",
+      "freshwater"    = "Inland surface waters",
+      "coastal"       = "Coastal",
+      "overall"       = "Overall trend",
+      "grasslands"    = "Grasslands",
+      "moorland"      = "Heathland",
+      "wetlands"      = "Mires, bogs, fens",
+      "cropland"      = "Agriculture & cultivated"
+    )
+  ) +
+
+  # Adjust the axes
+  scale_y_continuous(
+    limits = c(85, 120),
+    breaks = seq(85, 120, by = 5),
+    expand = c(0, 0)
+  ) +
+  scale_x_continuous(
+    breaks = seq(2000, 2021, by = 3),
+    expand = c(0, 0.5)
+  ) +
+
+  # Labels
+  labs(
+    title = "NCAI 2000 to 2022 by type of habitat",
+    x = NULL,
+    y = "Index (Year 2000 = 100)",
+    color = NULL
+  ) +
+  # Theming
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(color = "grey85"), # Subtle horizontal lines
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    legend.position = "right",
+    axis.text = element_text(color = "black")
+  )
