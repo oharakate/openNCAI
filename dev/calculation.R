@@ -1,6 +1,6 @@
 ## Recreating Scotland's NCAI in R
-# Kate O'Hara, Chris Littleboy
-# 03-12-2025
+## Kate O'Hara, Chris Littleboy
+## 03-12-2025
 
 
 #### SETUP ####
@@ -15,90 +15,84 @@ library(ggplot2)
 
 
 #### DEFINE LABELS AND LISTS FOR NS DATA ####
-# We require a list of the names of ecosystem service TYPEs:
-st_labels <- c("provisioning", "regulation_and_maintenance", "cultural")
+# We require a list of character vectors detailing the names of ecosystem
+# services and the ecoesystem service type group they belong to:
+es_label_tree <- list(
+  provisioning = c(
+    "cultivated_crops",
+    "reared_animals",
+    "wild_animals_plants_algae",
+    "aquaculture_animals_plants_algae",
+    "water_drinking",
+    "materials_direct_animals_plants_algae",
+    "materials_agricultural_animals_plants_algae",
+    "genetic_material",
+    "water_non-drinking",
+    "plant_energy",
+    "animal_energy",
+    "animal_mechanical_energy"
+  ),
+  regulation_and_maintenance = c(
+    "waste_mediation_biota",
+    "waste_mediation_ecosystem",
+    "erosion_mediation",
+    "flood_protection",
+    "storm_protection",
+    "pollination_dispersal",
+    "nursery_population_habitat",
+    "pest_disease_control",
+    "soil_formation_composition",
+    "water_chemistry",
+    "climate"
+  ),
+  cultural = c(
+    "physical_experience",
+    "heritage_educational",
+    "aesthetic_entertainment",
+    "symbolic_sacred_religious",
+    "existence_bequest"
+  )
+)
 
-# For each ecosystem service type, we require a list of the ecosystem services
-# within it:
-provisioning_labels <- c("cultivated_crops",
-                         "reared_animals",
-                         "wild_animals_plants_algae",
-                         "aquaculture_animals_plants_algae",
-                         "water_drinking",
-                         "materials_direct_animals_plants_algae",
-                         "materials_agricultural_animals_plants_algae",
-                         "genetic_material",
-                         "water_non-drinking",
-                         "plant_energy",
-                         "animal_energy",
-                         "animal_mechanical_energy")
-regulationandmaintenance_labels <- c("waste_mediation_biota",
-                                     "waste_mediation_ecosystem",
-                                     "erosion_mediation",
-                                     "flood_protection",
-                                     "storm_protection",
-                                     "pollination_dispersal",
-                                     "nursery_population_habitat",
-                                     "pest_disease_control",
-                                     "soil_formation_composition",
-                                     "water_chemistry",
-                                     "climate")
-cultural_labels <- c("physical_experience",
-                     "heritage_educational",
-                     "aesthetic_entertainment",
-                     "symbolic_sacred_religious",
-                     "existence_bequest")
+# From this we take the service type labels:
+es_type_labels <- names(es_label_tree)
 
-# We require the list of all ecosystem services, in the same order:
-all_service_labels <- c(provisioning_labels,
-                        regulationandmaintenance_labels,
-                        cultural_labels)
+# And a list of all ecosystem services, in the same order:
+all_es_labels <- unlist(es_label_tree, use.names = FALSE)
 
-# We also need a list of the label subsets:
-st_label_subsets <- list(provisioning_labels,
-                         regulationandmaintenance_labels,
-                         cultural_labels) %>%
-  setNames(st_labels)
 
-# We require a list of the habitat categories:
-habitat_codes <- c("b1", "b2", "b3", "c", "d1", "d2", "d4", "d5",
-                   "e1", "e2", "e4","e5", "e7",
-                   "f2","f3","f4","f9",
-                   "g1","g3","g4","g5","g6",
-                   "h2", "h3","i1","i2",
-                   "j1","j2","j3","j4","k")
-
-# We require a list of broad habitats by which the index is broken down:
-broad_habitat_labels <- c("coastal",
-                          "freshwater",
-                          "wetlands",
-                          "grasslands",
-                          "moorland",
-                          "woodland",
-                          "cropland")
-
-# We require a list of character vectors, detailing habitat_types and the broad
-# habitat type they belong to:
-bh_label_subsets <- list(
+# We require a list of character vectors, detailing broad habitat types and
+# the habitats they encompass:
+habitats_label_tree <- list(
   coastal = c("b1", "b2", "b3"),
   freshwater = c("c"),
   wetlands = c("d1", "d2", "d4", "d5"),
   grasslands = c("e1", "e2", "e4","e5", "e7"),
   moorland = c("f2","f3","f4","f9"),
   woodland = c("g1","g3","g4","g5","g6"),
-  cropland = c("i1","i2")
+  unvegetated = c("h2", "h3"),
+  cropland = c("i1","i2"),
+  artificial = c("j1", "j2", "j3", "j4"),
+  montane = c("k")
 )
-# NB Scotland's breakdowns do not include the unvegetated 'H' group or the
-# Montane 'K' group.
+# From this we take the broad habitat labels as a character vector:
+broad_habitat_labels <- names(habitats_label_tree)
+# And the complete set of habitat codes:
+all_habitat_labels <- unlist(habitats_label_tree, use.names = FALSE)
 
-# We create a list of all index breakdowns:
-index_breakdown_labels <- c("overall", st_labels, broad_habitat_labels)
 
 # And their locations in the spreadsheet:
 index_breakdown_ranges <- c("B2:D24",
                             "B30:D52", "G30:I52", "L30:N52",
                             "B59:D81", "G59:I81", "L59:N81", "Q59:S81",
                             "V59:X81", "AA59:AC81", "AF59:AH81")
+
+
+# We require a character vector of Condition Indicator IDs:
+ns_ci_ids <- c("2", "4", "6", "8", "10", "16", "18", "22", "23", "24", "28",
+               "30", "34", "39", "43", "45", "48", "54", "55", "56", "57",
+               "59", "63", "64", "65", "66", "67", "71", "72", "83", "87",
+               "90", "93", "97", "98", "99", "100", "104")
 
 # We require the list of years to be calculated:
 ns_year_list <- as.character(2000:2022)
@@ -141,16 +135,21 @@ ns_st_importance_scores <- readxl::read_xlsx(
   .name_repair = "minimal" # quietens reporting on name repair
 ) %>%
   as.data.frame() %>%
-  setNames("score")
+  setNames("score") %>%
+  mutate(service_type = es_type_labels) %>%
+  column_to_rownames("service_type")
 
 
 # The within-service-type importance scores are recorded at these ranges:
 ns_importance_ranges <- c("D13:D24", "D29:D39", "D44:D48")
-names(ns_importance_ranges) <- st_labels
+names(ns_importance_ranges) <- es_type_labels
 
 # Import these into a list of dataframes:
-ns_within_scores_list <- lapply(ns_importance_ranges, function(rng) {
-  readxl::read_xlsx(
+ns_within_scores_list <- lapply(names(ns_importance_ranges), function(st_name) {
+
+  rng <- ns_importance_ranges[st_name]
+
+  scores_df <-readxl::read_xlsx(
     path = ns_sheets_path,
     sheet = 4,
     range = rng,
@@ -161,7 +160,14 @@ ns_within_scores_list <- lapply(ns_importance_ranges, function(rng) {
   ) %>%
     as.data.frame() %>%
     setNames("score")
+
+  # Apply service labels
+  rownames(scores_df) <- es_label_tree[[st_name]]
+
+  return(scores_df)
 })
+# Label the list with service type labels:
+names(ns_within_scores_list) <- es_type_labels
 
 
 
@@ -171,17 +177,19 @@ ns_within_scores_list <- lapply(ns_importance_ranges, function(rng) {
 ns_indicator_directory <- readxl::read_xlsx(
   path = ns_sheets_path,
   sheet = 8,
-  range = "N2:R106",
-  col_names = TRUE,
+  range = "A3:R106",
+  col_names = FALSE,
   col_types = NULL,
-  trim_ws = TRUE
+  trim_ws = TRUE,
+  .name_repair = "unique"
 ) %>%
   as.data.frame() %>%
-  setNames(c(st_labels,
-             "comments",
+  select(1, 14, 15, 16, 18) %>%
+  setNames(c("ns_ci_num",
+             es_type_labels,
              "used")) %>%
-  select(-comments) %>%
-  filter(used == "Yes")
+  filter(used == "Yes") %>%
+  mutate(ns_ci_num = as.character(ns_ci_num))
 
 
 # Total Indicator Relevances sheet
@@ -195,7 +203,7 @@ ns_tir <- readxl::read_xlsx(
   .name_repair = "minimal"
 ) %>%
   as.data.frame() %>%
-  setNames(all_service_labels)
+  setNames(all_es_labels)
 
 
 
@@ -243,9 +251,9 @@ ns_habitat_extent <- readxl::read_xlsx(
 # Function read_the_ci_scores() gets the CI scores from NS sheets:
 read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
                                sheet_list, # list of sheets containing CI scores
-                               vector_range # SINGLE-COLUMN range where scores
+                               vector_range, # SINGLE-COLUMN range where scores
                                # are; must be same in each sheet.
-) {
+                               ci_ids) {
 
   # Initialise list of score vectors
   list_of_vectors <-  list()
@@ -266,16 +274,14 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
     )
 
     vec <- as.numeric(raw_score_data[[1]])
-    list_of_vectors[[paste0("ind", idx)]] <- vec
+    list_of_vectors[[as.character(ci_ids[idx])]] <- vec
 
     # Confirmation message:
-    cat("Processed column", idx, "(Sheet", actual_sheet_index, ")\n")
+    cat("Processed Sheet", actual_sheet_index, "(CI ID:", ci_ids[idx], ")\n")
   }
 
-  # Make list of vecs into df:
-  ci_scores_df <- as.data.frame(list_of_vectors)
-
-  return(ci_scores_df)
+  return(as.data.frame(list_of_vectors, check.names = FALSE))
+  # check.names = FALSE prevents R trying to rename
 
 }
 
@@ -283,7 +289,8 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
 # Import the Condition Indicators from NS sheet:
 ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
                                          sheet_list = 9:46,
-                                         vector_range = "I36:I58")
+                                         vector_range = "I36:I58",
+                                         ci_ids = ns_ci_ids)
 
 
 
@@ -320,8 +327,8 @@ ns_year_sheets_ids <- 50:72
 ns_all_year_sheets <- lapply(X = ns_year_sheets_ids,
                              FUN = read_ns_year_sheet,
                              path = ns_sheets_path,
-                             service_labels = all_service_labels,
-                             habitat_labels = habitat_codes)
+                             service_labels = all_es_labels,
+                             habitat_labels = all_habitat_labels)
 
 # e.g. this should look like the year 2000:
 # View(ns_all_year_sheets[[1]])
@@ -373,10 +380,10 @@ ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
 
 # Apply labels
 colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
-  all_service_labels
+  all_es_labels
 
 rownames(ns_espb) <- rownames(ns_esppu) <- rownames(ns_wellbeing_base) <-
-  rownames(ns_habitat_extent) <- habitat_codes
+  rownames(ns_habitat_extent) <- all_habitat_labels
 
 colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 
@@ -409,20 +416,20 @@ colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 ns_habitats_to_adjust = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
                        rep("i2",6), rep("j1",5), rep("j2",5))
 ns_services_to_adjust = c("erosion_mediation", "soil_formation_composition",
-                       cultural_labels,
-                       cultural_labels,
-                       cultural_labels,
-                       "climate",
-                       "climate",
-                       cultural_labels,
-                       cultural_labels,
-                       cultural_labels)
+                          es_label_tree[["cultural"]],
+                          es_label_tree[["cultural"]],
+                          es_label_tree[["cultural"]],
+                          "climate",
+                          "climate",
+                          es_label_tree[["cultural"]],
+                          es_label_tree[["cultural"]],
+                          es_label_tree[["cultural"]])
 
 # Function make_custom_divisor_matrix() takes these and outputs a matrix of
 # custom weights:
 make_custom_divisor_matrix <- function(
-    habitat_codes,
-    all_service_labels,
+    all_habitat_labels,
+    all_es_labels,
     # long-form paired lists of habitat and service types to adjust:
     habitats_to_adjust,
     services_to_adjust,
@@ -431,8 +438,8 @@ make_custom_divisor_matrix <- function(
 ) {
 
   # Make a grid with all combinations of habitat and service.
-  htst1 <- expand.grid(habitat = habitat_codes,
-                       service_type = all_service_labels,
+  htst1 <- expand.grid(habitat = all_habitat_labels,
+                       service_type = all_es_labels,
                        stringsAsFactors = FALSE)
 
   # Make a df which records all the cells to be adjusted:
@@ -462,8 +469,8 @@ make_custom_divisor_matrix <- function(
 
 # Make the matrix of ScotNCAI adjustments to the weights:
 ns_custom_divisor_matrix <- make_custom_divisor_matrix(
-  habitat_codes = habitat_codes,
-  all_service_labels = all_service_labels,
+  all_habitat_labels = all_habitat_labels,
+  all_es_labels = all_es_labels,
   habitats_to_adjust = ns_habitats_to_adjust,
   services_to_adjust = ns_services_to_adjust,
   usual_divisor = 5,
@@ -522,7 +529,6 @@ calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) 
     STATS = origin_year_vec,
     FUN = "*"
   )
-  # rownames(espb) <- habitat_labels # Unneccesary?
 
   return(espb)
 }
@@ -531,7 +537,6 @@ calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) 
 scot_espb = calc_espb(habitat_extent = ns_habitat_extent,
                       esppu_weights = scot_esppu_weights,
                       year_list = ns_year_list
-                      # ,habitat_labels = habitat_codes #unneccesary?
                       )
 
 # Does the calculated scot_espb match the published ns_espb?
@@ -551,7 +556,8 @@ all.equal(ns_espb, scot_espb)
 # Output is used in importance_rtw_within().
 importance_rtw_between <- function(between_scores) {
   # between_scores is a vector of between-service-type importance scores
-  between_weights <- between_scores / sum(between_scores) * 100
+  between_weights <- (between_scores$score / sum(between_scores$score)) * 100
+  names(between_weights) <- rownames(between_scores)
 
   return(between_weights)
 }
@@ -585,46 +591,58 @@ calc_importance_weights <- function (between_scores, within_scores_list) {
   b_weights <- importance_rtw_between(between_scores)
 
   # Map over the list and the indices simultaneously
-  ww_subset_list <- lapply(seq_along(within_scores_list), function(i) {
+  iw_subset_list <- lapply(names(within_scores_list), function(service_type) {
 
-    importance_rtw_within(
-      within_scores   = within_scores_list[[i]],
-      between_weights = b_weights,
-      index           = i
-    )
+    w_scores <- within_scores_list[[service_type]]
+
+    importance_weights <- (w_scores$score / sum(w_scores$score)) *
+      b_weights[service_type]
+
+    names(importance_weights) <- rownames(w_scores)
+    return(importance_weights)
   })
 
   # Restore the names (prov, regu, cult) to the new list
-  names(ww_subset_list) <- names(within_scores_list)
+  names(iw_subset_list) <- names(within_scores_list)
 
-  return(ww_subset_list)
+  return(iw_subset_list)
 }
 
 
 # Calculate Scotland's importance within-service-type weights:
 scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
                                                     ns_within_scores_list)
+scot_imp_weights_subsets
 
 ## FUNCTION bind_imp_weights()
 # Rejoins within-service-type weights back into one weight vector, applying
 # between-service-type weights.
 # Require list of importance within weight dataframes (output from
 # imp_rtw_within() ) and list of all the service labels
-bind_importance_weights <- function(within_weights_list, all_service_labels) {
+bind_importance_weights <- function(within_weights_list, all_es_labels) {
 
-  within_weights_list %>%
-    unlist(use.names = FALSE) %>%
-    t() %>%
-    as.data.frame() %>%
-    setNames(all_service_labels)
+  # Flatten service-type sets of weights into a single vector
+  combined_vector <- unlist(within_weights_list, use.names = FALSE)
+
+  # Check: does the length match our labels?
+  if(length(combined_vector) != length(all_es_labels)) {
+    stop("Weight count does not match total service labels!")
+  }
+
+  # Convert to a single-row dataframe with correct names
+  as.data.frame(t(combined_vector)) %>%
+    setNames(all_es_labels)
 }
 
 # Rejoin the within-weight objects and pivot wide:
 scot_importance_weights <- bind_importance_weights(
   within_weights_list = scot_imp_weights_subsets,
-  all_service_labels = all_service_labels
+  all_es_labels = all_es_labels
 )
 
+# These should sum to 100:
+sum(scot_importance_weights)
+# They do.
 
 
 ## FUNCTION calc_wellbeing_base() multiplies the importance weights by the ESPB
@@ -679,7 +697,7 @@ all.equal(ns_wellbeing_base, scot_wellbeing_base)
 
 # FUNCTION get_cirm_list() use data from the NatureScot spreadsheet to build a
 # list of binary CI relevance matrices:
-get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
+get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range, ci_ids) {
 
   # Loop through each sheet in the list
   list_of_dfs <- lapply(sheet_list, function(current_sheet) {
@@ -695,7 +713,7 @@ get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
       .name_repair = "minimal"
     ) %>%
       as.data.frame() %>%
-      setNames(all_service_labels)
+      setNames(all_es_labels)
 
     data[] <- lapply(data, function(x) ifelse(!is.na(x) & x > 0, 1, 0))
 
@@ -703,7 +721,8 @@ get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
     return(as.data.frame(data))
 
   })
-
+  # Apply names and make sure as character:
+  names(list_of_dfs) <- as.character(ci_ids)
   # Return the full list of CIRMs
   return(list_of_dfs)
 }
@@ -711,8 +730,8 @@ get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range) {
 # Get list of relevance matrices for Scotland indicators
 ns_cirms_list <- get_cirm_list(spreadsheet_path = ns_sheets_path,
                                sheet_list = 9:46,
-                               matrix_range = "F4:AG34")
-
+                               matrix_range = "F4:AG34",
+                               ci_ids = ns_ci_ids)
 
 
 
@@ -724,6 +743,14 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_di
   # Use lapply to iterate over the indices of the cirm_list
   final_ciwm_list <- lapply(seq_along(cirm_list), function(ci_num) {
 
+    # Failsafe to check that CIRM list and indicator directory are aligned
+    current_id <- names(cirm_list)[ci_num]
+    dir_id <- as.character(indicator_directory$ns_ci_num[ci_num])
+    if (current_id != dir_id) {
+      stop(paste0("Sync Error: List item ", ci_num, " is ID '", current_id,
+                  "' but Directory row ", ci_num, " is ID '", dir_id, "'"))
+    }
+
     # Extract the specific CIRM matrix for this iteration (e.g., ind1, ind2)
     cirm_object <- cirm_list[[ci_num]]
 
@@ -733,19 +760,15 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_di
     # Iterate through the actual names in st_list
     for (i in seq_along(st_list)) {
 
-      # 1. Get the column labels for the CIRM subset
+      # Get the column labels for the CIRM subset
       current_labels <- label_subsets_list[[i]]
-
-      # 2. Get the weight name from st_list (e.g., "provisioning_weight")
+      # Get the weight name from st_list
       weight_col_name <- st_list[[i]]
-
-      # 3. Pull the numeric weight from indicator_directory
+      # Pull the numeric weight from indicator_directory
       # Row = current indicator (ci_num), Column = current weight type
-      weight <- as.numeric(indicator_directory[ci_num, weight_col_name])
-
-      # 4. Multiply subset of columns by weight
+      weight <- indicator_directory[[weight_col_name]][ci_num]
+      # Multiply subset of columns by weight
       sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
-
       # Store in our parts list
       ciwm_parts[[i]] <- sub_ciwm
     }
@@ -755,15 +778,14 @@ build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_di
   })
   # Maintain list names
   names(final_ciwm_list) <- names(cirm_list)
-
   return(final_ciwm_list)
 }
 
 
 # Build list of Condition Indicator Weighted Relevance matrices:
 ns_all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
-                                  st_list = st_labels,
-                                  label_subsets_list = st_label_subsets,
+                                  st_list = es_type_labels,
+                                  label_subsets_list = es_label_tree,
                                   indicator_directory = ns_indicator_directory)
 
 
@@ -1001,7 +1023,7 @@ scot_ncai_year_matrices <- build_all_ncai_matrices(
   wellbeing_base = ns_wellbeing_base,
   habitat_extent = ns_habitat_extent,
   year_one = ns_year_list[[1]],
-  habitat_labels = habitat_codes
+  habitat_labels = all_habitat_labels
 )
 
 # In some years we manage to recreate the NatureScot results, but not others.
@@ -1033,14 +1055,15 @@ ns_corrected_sheets_path <- file.path("dev", "ncai_corrected.xlsx")
 # matrix:
 ns_corrected_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_corrected_sheets_path,
                                                    sheet_list = 9:46,
-                                                   vector_range = "I36:I58")
+                                                   vector_range = "I36:I58",
+                                                   ci_ids = ns_ci_ids)
 
 # And the corrected version of the year sheets:
 ns_corrected_all_year_sheets <- lapply(X = ns_year_sheets_ids,
                                        FUN = read_ns_year_sheet,
                                        path = ns_corrected_sheets_path,
-                                       service_labels = all_service_labels,
-                                       habitat_labels = habitat_codes)
+                                       service_labels = all_es_labels,
+                                       habitat_labels = all_habitat_labels)
 
 rownames(ns_corrected_ci_score_matrix) <- ns_year_list
 
@@ -1057,7 +1080,7 @@ scot_corrected_ncai_year_matrices <- build_all_ncai_matrices(
   wellbeing_base = ns_wellbeing_base,
   habitat_extent = ns_habitat_extent,
   year_one = ns_year_list[[1]],
-  habitat_labels = habitat_codes
+  habitat_labels = all_habitat_labels
 )
 
 # Compare results again:
@@ -1140,18 +1163,18 @@ test_ns_overall_index <- ns_index_breakdowns[["overall"]] %>%
 test_scot_overall_index <- scot_overall_index %>%
   select(-raw_index)
 all.equal(test_scot_overall_index, test_ns_overall_index)
+remove(test_scot_overall_index)
+remove(test_ns_overall_index)
 
 
 ## Calculating NCAI, broken down by service type:
-# We want to calculate breakdowns of the index, by service type and broad
-# habitat type.
-# FUNCTION calc_ncai_by_st() will allow breakdown of the index by groups of
+# FUNCTION calc_ncai_by_st() allows breakdown of the index by groups of
 # columns (services) passed in as a list, named by service type:
 calc_ncai_by_st <- function(total_assets_matrix_list,
-                            label_subsets_list,
+                            es_label_tree_list,
                             ...) {
 
-  lapply(label_subsets_list, function(subset_labels) {
+  lapply(es_label_tree_list, function(subset_labels) {
 
     filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
       m[, subset_labels, drop = FALSE]
@@ -1164,10 +1187,10 @@ calc_ncai_by_st <- function(total_assets_matrix_list,
 # For Scotland, the index broken down by service type is:
 scot_index_by_st <- calc_ncai_by_st(
   total_assets_matrix_list = scot_corrected_ncai_year_matrices,
-  label_subsets_list = st_label_subsets)
+  es_label_tree_list = es_label_tree)
 
 # We can compare with the index breakdowns in the NatureScot sheet:
-ns_index_by_st <- ns_index_breakdowns[names(st_label_subsets)]
+ns_index_by_st <- ns_index_breakdowns[names(es_label_tree)]
 
 # Are they equal?
 all.equal(scot_index_by_st, ns_index_by_st)
@@ -1175,11 +1198,13 @@ all.equal(scot_index_by_st, ns_index_by_st)
 
 
 ## Calculating NCAI, broken down by broad habitats:
+# FUNCTION calc_ncai_by_bh() allows breakdown of the index by groups of rows
+# (habitats):
 calc_ncai_by_bh <- function(total_assets_matrix_list,
-                            label_subsets_list,
+                            habitats_label_tree,
                             ...) {
 
-  lapply(label_subsets_list, function(subset_labels) {
+  lapply(habitats_label_tree, function(subset_labels) {
 
     filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
       m[subset_labels, , drop = FALSE]
@@ -1189,16 +1214,25 @@ calc_ncai_by_bh <- function(total_assets_matrix_list,
   })
 }
 
-# For Scotland, the index broken down by service type is:
+# For Scotland, the index broken down by broad habitat is:
 scot_index_by_bh <- calc_ncai_by_bh(
   total_assets_matrix_list = scot_corrected_ncai_year_matrices,
-  label_subsets_list = bh_label_subsets)
+  habitats_label_tree = habitats_label_tree)
 
-# We can compare with the index breakdowns in the NatureScot sheet:
-ns_index_by_bh <- ns_index_breakdowns[names(bh_label_subsets)]
+# We can compare with the index breakdowns in the NatureScot sheet.
+# In NatureScot's spreadsheet, breakdowns of the NCAI are calculated for a
+# selection of the broad habitats (H unvegetated and K montane groups are
+# not calculated/reported), so we make a list of the broad habitats in use in
+# the NatureScot sheet
+# We create a list of all breakdowns in use:
+ns_bh_breakdowns <- c(broad_habitat_labels[c(1:6, 8)])
+# And get that subset from the imports:
+ns_index_by_bh <- ns_index_breakdowns[ns_bh_breakdowns]
+# We take the similar subset from those we just calculated:
+scot_breakdowns_to_test <- scot_index_by_bh[c(1:6, 8)]
 
 # Are they equal?
-all.equal(scot_index_by_bh, ns_index_by_bh)
+all.equal(scot_breakdowns_to_test, ns_index_by_bh)
 # Yes.
 
 
@@ -1211,19 +1245,20 @@ main_index_for_plot <- scot_overall_index %>%
   rownames_to_column(var = "year") %>%
   mutate(
     year = as.numeric(year),
-    service_type = "overall")
+    breakdown = "overall")
 
 # Breakdown by ecosystem service type + main trend
-by_st_for_plot <- scot_index_by_st[st_labels] %>%
+by_st_for_plot <- scot_index_by_st[es_type_labels] %>%
   lapply(rownames_to_column, var = "year") %>%
-  bind_rows(.id = "service_type") %>%
+  bind_rows(.id = "breakdown") %>%
   mutate(year = as.numeric(year)) %>%
   bind_rows(main_index_for_plot)
 
 # Breakdown by broad habitat + main trend
-by_bh_for_plot <- scot_index_by_bh[broad_habitat_labels] %>%
+# Use the subsetted data with only the broad habitats graphed by NS
+by_bh_for_plot <- scot_breakdowns_to_test[ns_bh_breakdowns] %>%
   lapply(rownames_to_column, var = "year") %>%
-  bind_rows(.id = "service_type") %>%
+  bind_rows(.id = "breakdown") %>%
   mutate(year = as.numeric(year)) %>%
   bind_rows(main_index_for_plot)
 
@@ -1262,7 +1297,7 @@ ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
   )
 # Save it:
 ggsave(
-  filename = "ncai_overall_trend.png",
+  filename = file.path("dev", "ncai_overall_trend.png"),
   plot = last_plot(),       # Optional: defaults to the last plot displayed
   width = 10,               # Width in inches
   height = 6,               # Height in inches
@@ -1271,12 +1306,12 @@ ggsave(
 
 
 # The index by service type with main index for reference:
-ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = service_type)) +
+ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = breakdown)) +
   # Lines
   geom_line(linewidth = 1.1) +
 
   # Diamond markers on overall line
-  geom_point(data = filter(by_st_for_plot, service_type == "overall"),
+  geom_point(data = filter(by_st_for_plot, breakdown == "overall"),
              shape = 18, size = 3) +
 
   # Colours roughly in line with NatureScot
@@ -1323,7 +1358,7 @@ ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = service_type)) +
   )
 # Save it:
 ggsave(
-  filename = "ncai_by_ecosystem_service_type.png",
+  filename = file.path("dev", "ncai_by_ecosystem_service_type.png"),
   plot = last_plot(),       # Optional: defaults to the last plot displayed
   width = 10,               # Width in inches
   height = 6,               # Height in inches
@@ -1332,12 +1367,12 @@ ggsave(
 
 
 # The index by broad habitat with main index for reference:
-ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = service_type)) +
+ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = breakdown)) +
   # Lines
   geom_line(linewidth = 1.1) +
 
   # Diamond markers on overall line
-  geom_point(data = filter(by_bh_for_plot, service_type == "overall"),
+  geom_point(data = filter(by_bh_for_plot, breakdown == "overall"),
              shape = 18, size = 3) +
 
   # Colours roughly in line with NatureScot
@@ -1398,9 +1433,143 @@ ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = service_type)) +
   )
 # Save it:
 ggsave(
-  filename = "ncai_by_broad_habitat.png",
+  filename = file.path("dev", "ncai_by_broad_habitat.png"),
   plot = last_plot(),       # Optional: defaults to the last plot displayed
   width = 10,               # Width in inches
   height = 6,               # Height in inches
   dpi = 300                 # High resolution for reports
 )
+
+
+#### HABITAT SHEETS AT THE END ####
+# In these sheets we find, for each broad habitat:
+# A table with a row for each year and a column containing indexed condition
+# scores for each indicator relevant to that broad habitat.
+
+# Across the top of that table is a vector of values recording the 'influence'
+# of each condition indicator.
+# At the bottom is calculated the 'influence since 2000' for each indicator.
+# This = (latest value - year one value) * influence.
+# And a similar statistic for 'since 2019'.
+
+# Where does the 'influence' figure come from?
+# It's the sum of the row totals for all rows in that broad habitat from the
+# second table of the CI sheets.
+# That table is found to the right of the
+# main one in the CI sheets and the cell values are calculated as:
+# (ciwm cell / tir cell)
+# * wellbeing base cell
+# / sum of wellbeing base rows in that habitat.
+
+# Look at indicator 67 since this is relevant to both grassland (multi-row)
+# and cropland (single row).
+
+# There is a further table to the right of that where cell values are
+# calculated as:
+# (ciwm cell / tir cell)
+# * wellbeing base cell
+# / sum of that service column in wellbeing base.
+
+# We then also have a breakdown by level-2 habitat type, where there is more
+# than one in the broad habitat.
+
+# For now, we will leave the relevances. They are certainly calculable, but
+# let's work on transposing the indexed CI scores and plotting.
+
+# We are going to need to know which indicators are relevant to each broad
+# habitat.
+# FUNCTION indicators_to_get() reads the whole list of CIWMs and returns a list
+# of indicator IDs relevant to a broad habitat:
+indicators_to_get <- function(broad_habitat,
+                              habitats_label_tree,
+                              all_ciwms_list,
+                              all_habitat_labels) {
+
+  # Identify habitat rows within the broad habitat type:
+  bh_row_group <- habitats_label_tree[[broad_habitat]]
+
+  indicators_to_get <- sapply(all_ciwms_list, function(ciwm) {
+    # Ensure rownames are set:
+    rownames(ciwm) <- all_habitat_labels
+    # Calculate sum of relevant row sums
+    s <- sum(ciwm[bh_row_group, ], na.rm = TRUE)
+    # Return true if not NA & > 0.
+    return(!is.na(s) && s > 0)
+  })
+
+  # Return names of relevant indicators:
+  return(names(all_ciwms_list[indicators_to_get]))
+}
+
+# E.g. this shoudl return the list of relvant CI IDs for cropland.
+# test_indicators_to_get <- indicators_to_get(
+#   broad_habitat = "cropland",
+#   habitats_label_tree = habitats_label_tree,
+#   all_ciwms_list = ns_all_ciwms_list,
+#   all_habitat_labels)
+
+build_bh_condition_tables <- function(habitats_label_tree,
+                                      all_ciwms_list,
+                                      ci_score_matrix,
+                                      all_habitat_labels,
+                                      year_list,
+                                      year_one = year_list[[1]],
+                                      habitats_to_process =
+                                        names(habitats_label_tree)) {
+
+  # Check if custom year one is in the list
+  baseline_row_index <- match(year_one, year_list)
+
+  if (is.na(baseline_row_index)) {
+    stop("The provided year_one is not found in the year_list.")
+  }
+
+  # For each habitat, subset the CI scores matrix to just the relevant
+  # indicators:
+  bh_condition_tables <- lapply(habitats_to_process, function(bh) {
+
+    relevant_indicators <- indicators_to_get(
+      broad_habitat = bh,
+      habitats_label_tree = habitats_label_tree,
+      all_ciwms_list = all_ciwms_list,
+      all_habitat_labels = all_habitat_labels
+    )
+
+    valid_columns <- intersect(relevant_indicators, colnames(ci_score_matrix))
+    subset_matrix <- ci_score_matrix[, valid_columns, drop = FALSE]
+
+    # Name rows by year
+    rownames(subset_matrix) <- year_list
+
+    # Index scores on year one
+    indexed_matrix <- as.data.frame(lapply(subset_matrix, function(col) {
+      # Divide every value in the column by the value at the baseline year
+      col / col[baseline_row_index] * 100
+    }))
+
+    # Make sure names are restored
+    rownames(indexed_matrix) <- year_list
+    colnames(indexed_matrix) <- valid_columns
+
+    return(indexed_matrix)
+
+  })
+  names(bh_condition_tables) <- habitats_to_process
+
+  return(bh_condition_tables)
+}
+
+# Get the tables for all broad habitats, as per NatureScot spreadsheet:
+test_scot_bh_condition_tables <- build_bh_condition_tables(
+  habitats_label_tree = habitats_label_tree,
+  all_ciwms_list = ns_all_ciwms_list,
+  ci_score_matrix = ns_ci_score_matrix,
+  all_habitat_labels = all_habitat_labels,
+  year_list = ns_year_list
+)
+test_scot_bh_condition_tables[[1]]
+
+
+
+
+
