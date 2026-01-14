@@ -1560,16 +1560,53 @@ build_bh_condition_tables <- function(habitats_label_tree,
 }
 
 # Get the tables for all broad habitats, as per NatureScot spreadsheet:
-test_scot_bh_condition_tables <- build_bh_condition_tables(
+scot_bh_condition_tables <- build_bh_condition_tables(
   habitats_label_tree = habitats_label_tree,
   all_ciwms_list = ns_all_ciwms_list,
   ci_score_matrix = ns_ci_score_matrix,
   all_habitat_labels = all_habitat_labels,
   year_list = ns_year_list
 )
-test_scot_bh_condition_tables[[1]]
+scot_bh_condition_tables[[1]]
 
+# And we would be able to plot these as per the plot top right in the Coastal
+# sheet...
+# Reshape data:
+coastal_plot_data <- scot_bh_condition_tables[["coastal"]] %>%
+  tibble::rownames_to_column(var = "year") %>%
+  mutate(year = as.numeric(year)) %>%
+  pivot_longer(
+    cols = -year,
+    names_to = "indicator_id",
+    values_to = "index_value"
+  )
 
+# Here is a basic and not-tidied up version of the Coastal indicators plot:
+ggplot(coastal_plot_data, aes(x = year, y = index_value, color = indicator_id)) +
+  geom_line(size = 1) +
+  geom_point() +
+  # Add a horizontal line at 100 to show the baseline clearly
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "Indicator Trends: Coastal Habitat",
+    subtitle = "Indexed to Year One (100)",
+    x = "Year",
+    y = "Index Value",
+    color = "Indicator ID"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
+# Save it:
+ggsave(
+  filename = file.path("dev", "coastal_indicator_trends.png"),
+  plot = last_plot(),       # Optional: defaults to the last plot displayed
+  width = 10,               # Width in inches
+  height = 4,               # Height in inches
+  dpi = 300                 # High resolution for reports
+)
 
-
+# Still could look at adding things like the influence figures for the
+# indicators in these sheets and the calculation which arises from them.
+# The table further to the right is designed to look at individual habitats,
+# Though it's notable that only a few of these change.
