@@ -3,6 +3,10 @@
 ## 03-12-2025
 
 
+## NOTES
+# REMEMBER TO WRITE A WRAPPER FUNCTION WHICH DOES ALL NATURE SCOT IMPORT BUSINESS.
+# NEXT STEP do packaging and report writing.
+
 #### SETUP ####
 
 library(dplyr)
@@ -80,14 +84,6 @@ broad_habitat_labels <- names(habitats_label_tree)
 # And the complete set of habitat codes:
 all_habitat_labels <- unlist(habitats_label_tree, use.names = FALSE)
 
-
-# And their locations in the spreadsheet:
-index_breakdown_ranges <- c("B2:D24",
-                            "B30:D52", "G30:I52", "L30:N52",
-                            "B59:D81", "G59:I81", "L59:N81", "Q59:S81",
-                            "V59:X81", "AA59:AC81", "AF59:AH81")
-
-
 # We require a character vector of Condition Indicator IDs:
 ns_ci_ids <- c("2", "4", "6", "8", "10", "16", "18", "22", "23", "24", "28",
                "30", "34", "39", "43", "45", "48", "54", "55", "56", "57",
@@ -100,6 +96,7 @@ ns_year_list <- as.character(2000:2022)
 
 
 
+
 #### IMPORT EXISTING DATA FROM NS SHEETS ####
 # Get Scotland data from NatureScot spreadsheet which we will aim to replicate:
 
@@ -107,9 +104,11 @@ ns_year_list <- as.character(2000:2022)
 ns_sheets_path <- file.path("dev", "ncai.xlsx")
 ns_sheets_index <- excel_sheets(ns_sheets_path)
 print(ns_sheets_index)
+# NB to get the character vector of CI names we could do:
+# ns_sheets_index[9:46]
+
 
 # EXISTING WEIGHTS (decided at the outset and do not change from year to year)
-
 # Ecosystem service providing potential per SPU (ESPPU)
 # (sheet "ES Potential per SPU"):
 ns_esppu <- read_xlsx(ns_sheets_path,
@@ -123,7 +122,6 @@ ns_esppu <- read_xlsx(ns_sheets_path,
 
 
 # Importance scores (sheet "ES Potential (Weighting)"):
-
 # Between service-type scores:
 ns_st_importance_scores <- readxl::read_xlsx(
   path = ns_sheets_path,
@@ -140,7 +138,7 @@ ns_st_importance_scores <- readxl::read_xlsx(
   column_to_rownames("service_type")
 
 
-# The within-service-type importance scores are recorded at these ranges:
+# Within-service-type scores:
 ns_importance_ranges <- c("D13:D24", "D29:D39", "D44:D48")
 names(ns_importance_ranges) <- es_type_labels
 
@@ -206,9 +204,7 @@ ns_tir <- readxl::read_xlsx(
   setNames(all_es_labels)
 
 
-
 # EXISTING BASES (calculated at the outset and do not change from year to year)
-
 # Ecosystem service potential base (ESPB) (sheet "ES Potential Base")
 ns_espb <- read_xlsx(ns_sheets_path,
                      sheet = 6,
@@ -229,8 +225,6 @@ ns_wellbeing_base <- read_xlsx(ns_sheets_path,
                 .name_repair = "minimal"
                 ) %>%
   as.data.frame()
-
-
 
 
 # DYNAMIC DATA (data about the extent and condition of habitat fed in yearly)
@@ -330,7 +324,7 @@ ns_all_year_sheets <- lapply(X = ns_year_sheets_ids,
                              service_labels = all_es_labels,
                              habitat_labels = all_habitat_labels)
 
-# e.g. this should look like the year 2000:
+# e.g. the following should look like the year 2000 sheet:
 # View(ns_all_year_sheets[[1]])
 
 # FUNCTION read_the_indices() gets the overall NCA index sets from "Final NCAI",
@@ -356,6 +350,16 @@ read_the_indices <- function(indices_range,
 
   return(index_set)
 }
+
+# We need the locations of the index breakdowns in the spreadsheet:
+index_breakdown_ranges <- c("B2:D24",
+                            "B30:D52", "G30:I52", "L30:N52",
+                            "B59:D81", "G59:I81", "L59:N81", "Q59:S81",
+                            "V59:X81", "AA59:AC81", "AF59:AH81")
+
+# And we need their labels:
+index_breakdown_labels <- c("overall", es_type_labels, broad_habitat_labels[c(1:6, 8)])
+
 
 ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
   read_the_indices(
@@ -550,37 +554,9 @@ all.equal(ns_espb, scot_espb)
 # importance weights (the "Scotland weights"), and multiplying these by the
 # ESPB.
 
-# # FUNCTION imp_rtw_between()
-# Gets between-service-provision-type IMPORTANCE weights from a dataframe of
-# raw ecosystem-service-type importance scores.
-# Output is used in importance_rtw_within().
-importance_rtw_between <- function(between_scores) {
-  # between_scores is a vector of between-service-type importance scores
-  between_weights <- (between_scores$score / sum(between_scores$score)) * 100
-  names(between_weights) <- rownames(between_scores)
 
-  return(between_weights)
-}
-
-
-## FUNCTION importance_rtw_within()
-# Gets within-service-type importance weights from a dataframe of raw individual
-# ecosystem service importance scores, using between weights output from
-# importance_rtw_between().
-# Used in calc_importance_weights() below.
-importance_rtw_within <- function(within_scores, between_weights, index) {
-
-  within_weights  <- within_scores / sum(within_scores) * between_weights[index, 1]
-
-  return(within_weights)
-}
-
-
-## FUNCTION calc_importance_weights()
-# Calculates importance weights, using within- and between-service-type weights.
-# Loops through the list of ecosystem service types, calculating importance
-# weights and returning a list of weight subset objects.
-
+#### FUNCTION calc_importance_weights()
+# Calculates importance weights, using within- and between-service-type SCORES.
 # Requires the vector of between-service-type scores, and a list of the
 # within-service-type-score objects.
 # Returns a list of numeric vectors of service-type subsets of importance
@@ -588,18 +564,17 @@ importance_rtw_within <- function(within_scores, between_weights, index) {
 calc_importance_weights <- function (between_scores, within_scores_list) {
 
   # Calculate the between weights
-  b_weights <- importance_rtw_between(between_scores)
+  b_weights <- (between_scores$score / sum(between_scores$score)) * 100
+  names(b_weights) <- rownames(between_scores)
 
   # Map over the list and the indices simultaneously
   iw_subset_list <- lapply(names(within_scores_list), function(service_type) {
-
     w_scores <- within_scores_list[[service_type]]
 
     importance_weights <- (w_scores$score / sum(w_scores$score)) *
       b_weights[service_type]
 
-    names(importance_weights) <- rownames(w_scores)
-    return(importance_weights)
+    return(setNames(importance_weights, rownames(w_scores)))
   })
 
   # Restore the names (prov, regu, cult) to the new list
@@ -609,16 +584,15 @@ calc_importance_weights <- function (between_scores, within_scores_list) {
 }
 
 
-# Calculate Scotland's importance within-service-type weights:
+# Calculate Scotland's importance weights:
 scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
                                                     ns_within_scores_list)
-scot_imp_weights_subsets
+
 
 ## FUNCTION bind_imp_weights()
 # Rejoins within-service-type weights back into one weight vector, applying
 # between-service-type weights.
-# Require list of importance within weight dataframes (output from
-# imp_rtw_within() ) and list of all the service labels
+# Require list of importance within weight dataframes and list of all the service labels
 bind_importance_weights <- function(within_weights_list, all_es_labels) {
 
   # Flatten service-type sets of weights into a single vector
@@ -634,6 +608,8 @@ bind_importance_weights <- function(within_weights_list, all_es_labels) {
     setNames(all_es_labels)
 }
 
+
+
 # Rejoin the within-weight objects and pivot wide:
 scot_importance_weights <- bind_importance_weights(
   within_weights_list = scot_imp_weights_subsets,
@@ -641,7 +617,7 @@ scot_importance_weights <- bind_importance_weights(
 )
 
 # These should sum to 100:
-sum(scot_importance_weights)
+# sum(scot_importance_weights)
 # They do.
 
 
@@ -997,7 +973,11 @@ build_ncai_matrix <- function(tyf, wellbeing_base, habitat_extent, target_year, 
 
 # FUNCTION build_all_nca_matrices() builds the year sheet for every year in the
 # year list:
-build_all_ncai_matrices <- function(tyf_list, wellbeing_base, habitat_extent, year_one, habitat_labels) {
+build_all_ncai_matrices <- function(tyf_list,
+                                    wellbeing_base,
+                                    habitat_extent,
+                                    year_one,
+                                    habitat_labels) {
 
   # Iterate over the names (years) of the tyf_list
   all_ncai <- lapply(names(tyf_list), function(yr) {
@@ -1038,7 +1018,7 @@ comparison_results
 
 # After close inspection we are able to pinpoint transcription errors in the
 # spreadsheet.
-# 1. In year sheet "2022" the cell formulae includes multiplication by the
+# 1. In year sheet "2022" the cell formula includes multiplication by the
 # habitat extent data for year 2021 (Z44, Z45, etc. in sheet "Ecosystem Area")
 # instead of 2022 (should be AA44, AA45, etc.)
 
@@ -1501,7 +1481,7 @@ indicators_to_get <- function(broad_habitat,
   return(names(all_ciwms_list[indicators_to_get]))
 }
 
-# E.g. this shoudl return the list of relvant CI IDs for cropland.
+# E.g. this should return the list of relvant CI IDs for cropland.
 # test_indicators_to_get <- indicators_to_get(
 #   broad_habitat = "cropland",
 #   habitats_label_tree = habitats_label_tree,
@@ -1583,7 +1563,7 @@ coastal_plot_data <- scot_bh_condition_tables[["coastal"]] %>%
 
 # Here is a basic and not-tidied up version of the Coastal indicators plot:
 ggplot(coastal_plot_data, aes(x = year, y = index_value, color = indicator_id)) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   geom_point() +
   # Add a horizontal line at 100 to show the baseline clearly
   geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
@@ -1606,7 +1586,4 @@ ggsave(
   dpi = 300                 # High resolution for reports
 )
 
-# Still could look at adding things like the influence figures for the
-# indicators in these sheets and the calculation which arises from them.
-# The table further to the right is designed to look at individual habitats,
-# Though it's notable that only a few of these change.
+
