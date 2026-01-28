@@ -31,12 +31,12 @@
 
 # Load packages for development
 library(devtools)
-library(gitcreds)
-library(covr)
-library(dplyr)
-library(tidyr)
-library(terra)
-library(sf)
+# library(gitcreds)
+# library(covr)
+# library(dplyr)
+# library(tidyr)
+# library(terra)
+# library(sf)
 
 
 #### ONE-TIME PACKAGE SETUP TASKS ####
@@ -44,10 +44,16 @@ library(sf)
 # create_package("~/habitats/openNCAI")
 
 # Declare these dependencies
-# use_package("sf")
-# use_package("terra")
-# use_package("tidyr")
-# use_package("dplyr")
+use_package("sf")
+use_package("terra")
+use_package("tidyr")
+use_package("dplyr")
+use_package("tidyr")
+use_package("tibble")
+use_package("readr")
+use_package("readxl")
+use_package("slider")
+use_package("ggplot2")
 
 # Use Git
 # usethis::use_git_config(
@@ -82,7 +88,7 @@ library(sf)
 
 
 #### Putting functions into the package ####
-# load_shape()
+### load_shape() ####
 use_r("load_shape")
 load_all()
 
@@ -93,7 +99,7 @@ load_shape("inst/extdata/test_aoi.shp")
 
 use_test("load_shape")
 test_file("tests/testthat/test-load_shape.R")
-package_coverage()
+
 
 # At the end of session, remember to:
 # Do Code > Insert roxygen skeleton inside the function
@@ -107,7 +113,7 @@ document()
 check()
 
 
-## harmonise_crs()
+#### harmonise_crs()####
 
 use_r("harmonise_crs")
 # Remember to put in the roxygen skeleton
@@ -124,7 +130,7 @@ load_all()
 check()
 # Commit and push here.
 
-## crop_to_aoi()
+#### crop_to_aoi() ####
 use_r("crop_to_aoi")
 load_all()
 document()
@@ -136,7 +142,42 @@ test_file("tests/testthat/test-crop_to_aoi.R")
 
 document()
 check()
+# Commit and push here.
 
+#### template()####
+
+use_r("FUNCTION_NAME")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+
+# Tests
+use_test("FUNCTION_NAME")
+load_all()
+test_file("tests/testthat/test-FUNCTION_NAME.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### template()####
+
+use_r("FUNCTION_NAME")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+
+# Tests
+use_test("FUNCTION_NAME")
+load_all()
+test_file("tests/testthat/test-FUNCTION_NAME.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
 
 # End things
 # We can install the package with

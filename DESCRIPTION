@@ -4,7 +4,7 @@ Title: Calculates a Natural Capital Assets Indicator for a particular area of in
 Version: 0.1.0
 Author: Kate O'Hara
 Maintainer: Kate O'Hara <k.a.ohara@stir.ac.uk>
-Description: This package is a translation of the NCAI procedure from Excel into R. 
+Description: Calculates natural capital assets. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -12,8 +12,13 @@ URL: https://github.com/oharakate/openNCAI
 BugReports: https://github.com/oharakate/openNCAI/issues
 Imports: 
     dplyr,
+    ggplot2,
+    readr,
+    readxl,
     sf,
+    slider,
     terra,
+    tibble,
     tidyr
 RoxygenNote: 7.3.3
 Suggests: 
