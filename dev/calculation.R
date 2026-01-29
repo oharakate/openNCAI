@@ -58,6 +58,7 @@ es_label_tree <- list(
   )
 )
 
+# These can be extracted if arguments to functions are just the label tree:
 # From this we take the service type labels:
 es_type_labels <- names(es_label_tree)
 

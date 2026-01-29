@@ -1,0 +1,99 @@
+## FUNCTION calc_espb() calculates the ecosystem service potential base. It
+# takes the habitat extent data, year list, and ESPPU weights, and multiplies
+# each habitat/service combination potential weight by the year one area of that
+# habitat.
+
+#' Calculate Ecosystem Service Potential Base (ESPB)
+#' Multiply the ecosystem service provision potential per unit (ESPPU) by the
+#' habitat extent in year one of the index.
+#'
+#' @param habitat_extent A data frame containing data representing the extent
+#' (area) of each habitat in each year of the index. Rows = habitats. Colums =
+#' years. There must be a column to match the first year of year list. Row
+#' order must match the expanded  habitats label tree.
+#' @param esppu_weights A data frame containing the ecosystem service provision
+#' potential per unit weights. Row order must match the expanded habitats label
+#' tree and column order must match the expanded ES label tree.
+#' @param year_list A vector (character or numeric) of the years over which the
+#' index is to be calculated. Data corresponding to the first year of this
+#' list is used to calculate the 'bases' against which subsequent years are
+#' indexed.
+#' @param habitats_label_tree A named list of character vectors where
+#' each list name represents a broad habitat category, typically a EUNIS level
+#' 1 habitat (e.g. "coastal") and the associated character vector contains the
+#' labels or codes of the habitat sub-types - typically EUNIS level two
+#' habitats - falling within that category (e.g., c("b1", "b2") or
+#' c("coastal_dunes_sandy_shores", "coastal_shingle")). Syntactical names only
+#' (no spaces or special characters).
+#' The habitats label tree defines the relevant habitats for calculating the
+#' NCAI and will be used to label the returned data frame.
+#' @param es_label_tree A named list of character vectors where each list
+#' name represents a label name for a type group of ecosystem services
+#' (e.g. 'provisioning') and the associated character vector contains the
+#' labels for the ecosystem services in that group (e.g. 'cultivated_crops').
+#' Syntactical names only (no spaces or special characters).
+#' The ES label tree defines the relevant ecosystem services for calculating
+#' the NCAI and will be used to label the returned data frame.
+#'
+#' @return A labelled data frame with the same dimensions as 'esppu_weights'.
+#' @export
+#'
+#' @examples # 1. Define Label Trees (Expanded total = 3 habitats, 2 services)
+#' h_tree <- list(
+#'   coastal = c("b1", "b2"),
+#'   woodland = c("g1")
+#' )
+#'
+#' es_tree <- list(
+#'   provisioning = c("crops", "timber")
+#' )
+#'
+#' # 2. Setup Habitat Extent (3 rows for the 3 sub-habitats)
+#' # Use check.names = FALSE so '2026' doesn't become 'X2026'
+#' extent <- data.frame(
+#'   `2026` = c(100, 150, 200),
+#'   `2027` = c(110, 140, 210),
+#'   check.names = FALSE
+#' )
+#'
+#' # 3. Setup ESPPU Weights (3 rows for habitats, 2 columns for services)
+#' weights <- data.frame(
+#'   crops = c(0.12, 0.1, 0.0),
+#'   timber = c(0.0, 0.0, 0.9)
+#' )
+#'
+#' # 4. Define Year List
+#' years <- c("2026", "2027")
+#'
+#' # 5. Run Calculation
+#' espb_result <- calc_espb(extent, weights, years, h_tree, es_tree)
+#'
+#' # The resulting dataframe will have row names: "b1", "b2", "g1"
+#' # and column names: "crops", "timber"
+#' print(espb_result)
+calc_espb <- function(habitat_extent,
+                      esppu_weights,
+                      year_list,
+                      habitats_label_tree,
+                      es_label_tree) {
+
+  # Check dataframe dimensions and label trees match:
+  if (length(unlist(habitats_label_tree, use.names = FALSE)) != nrow(habitat_extent)) {
+    stop("Number of habitat names in habitats_label_tree must match rows in habitat_extent.")
+  }
+
+  # Pull the vector for original year (accommodate string or numeric):
+  year_one <- as.character(year_list[1])
+  origin_year_vec <- dplyr::pull(habitat_extent, var = year_one)
+  # These habitat extent values are multiplied by their esppu weightings:
+  espb <- as.data.frame(
+    dplyr::mutate(
+      esppu_weights,
+      dplyr::across(
+        dplyr::where(is.numeric), ~ .x * origin_year_vec
+      )
+    ))
+
+  return(label_ncai_matrix(espb, habitats_label_tree, es_label_tree))
+
+}

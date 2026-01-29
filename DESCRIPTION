@@ -11,15 +11,7 @@ LazyData: true
 URL: https://github.com/oharakate/openNCAI
 BugReports: https://github.com/oharakate/openNCAI/issues
 Imports: 
-    dplyr,
-    ggplot2,
-    readr,
-    readxl,
-    sf,
-    slider,
-    terra,
-    tibble,
-    tidyr
+  dplyr
 RoxygenNote: 7.3.3
 Suggests: 
     testthat (>= 3.0.0)

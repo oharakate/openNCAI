@@ -44,16 +44,15 @@ library(devtools)
 # create_package("~/habitats/openNCAI")
 
 # Declare these dependencies
-use_package("sf")
-use_package("terra")
-use_package("tidyr")
+# use_package("sf")
+# use_package("terra")
+# use_package("tidyr")
 use_package("dplyr")
-use_package("tidyr")
-use_package("tibble")
-use_package("readr")
-use_package("readxl")
-use_package("slider")
-use_package("ggplot2")
+# use_package("tibble")
+# use_package("readr")
+# use_package("readxl")
+# use_package("slider")
+# use_package("ggplot2")
 
 # Use Git
 # usethis::use_git_config(
@@ -88,96 +87,85 @@ use_package("ggplot2")
 
 
 #### Putting functions into the package ####
-### load_shape() ####
-use_r("load_shape")
-load_all()
 
-# Call this on some test data
-load_shape("inst/extdata/test_data.shp")
-load_shape("inst/extdata/test_aoi.shp")
-# Looks OK.
+#### label_ncai_matrix()####
 
-use_test("load_shape")
-test_file("tests/testthat/test-load_shape.R")
-
-
-# At the end of session, remember to:
-# Do Code > Insert roxygen skeleton inside the function
-# And edit it
-
-# Also, to get update the manual
-
-document()
-
-# Check the package:
-check()
-
-
-#### harmonise_crs()####
-
-use_r("harmonise_crs")
+use_r("label_ncai_matrix")
 # Remember to put in the roxygen skeleton
 load_all()
+run_examples(pkg = ".", test = "label_ncai_matrix")
 document()
 
 # Tests
-use_test("harmonise_crs")
+use_test("label_ncai_matrix")
 load_all()
-test_file("tests/testthat/test-harmonise_crs.R")
+test_file("tests/testthat/test-label_ncai_matrix.R")
 document()
 
 load_all()
 check()
 # Commit and push here.
 
-#### crop_to_aoi() ####
-use_r("crop_to_aoi")
-load_all()
-document()
 
-# tests
-use_test("crop_to_aoi")
-load_all()
-test_file("tests/testthat/test-crop_to_aoi.R")
+#### esppu_scores_to_weights()####
 
-document()
-check()
-# Commit and push here.
-
-#### template()####
-
-use_r("FUNCTION_NAME")
+use_r("esppu_scores_to_weights")
 # Remember to put in the roxygen skeleton
 load_all()
+run_examples(pkg = ".", test = "dev/f_esppu_scores_to_weights")
 document()
 
 # Tests
-use_test("FUNCTION_NAME")
+use_test("esppu_scores_to_weights")
 load_all()
-test_file("tests/testthat/test-FUNCTION_NAME.R")
+test_file("tests/testthat/test-esppu_scores_to_weights.R")
+document()
+
+load_all()
+check()
+  # Commit and push here.
+ ## THINK ABOUT LABELLING THIS DF?
+
+
+#### calc_espb()####
+
+use_r("calc_espb")
+# Remember to put in the roxygen skeleton
+load_all()
+run_examples(pkg = ".", test = "calc_espb")
+document()
+
+# Tests
+use_test("calc_espb")
+load_all()
+test_file("tests/testthat/test-calc_espb.R")
 document()
 
 load_all()
 check()
 # Commit and push here.
+
 
 
 #### template()####
 
-use_r("FUNCTION_NAME")
+use_r("X")
 # Remember to put in the roxygen skeleton
 load_all()
+run_examples(pkg = ".", test = "X")
 document()
 
 # Tests
-use_test("FUNCTION_NAME")
+use_test("X")
 load_all()
-test_file("tests/testthat/test-FUNCTION_NAME.R")
+test_file("tests/testthat/test-X.R")
 document()
 
 load_all()
 check()
 # Commit and push here.
+
+
 
 # End things
 # We can install the package with
@@ -185,3 +173,63 @@ install()
 library(openNCAI)
 # And then get rid to continue developing with
 remove.packages("openNCAI")
+
+
+
+#### DATAPREP FUNCTIONS THAT WERE REMOVED FOR NOW ####
+
+# ### load_shape() ####
+# use_r("load_shape")
+# load_all()
+#
+# # Call this on some test data
+# load_shape("inst/extdata/test_data.shp")
+# load_shape("inst/extdata/test_aoi.shp")
+# # Looks OK.
+#
+# use_test("load_shape")
+# test_file("tests/testthat/test-load_shape.R")
+#
+#
+# # At the end of session, remember to:
+# # Do Code > Insert roxygen skeleton inside the function
+# # And edit it
+#
+# # Also, to get update the manual
+#
+# document()
+#
+# # Check the package:
+# check()
+#
+#
+# #### harmonise_crs()####
+#
+# use_r("harmonise_crs")
+# # Remember to put in the roxygen skeleton
+# load_all()
+# document()
+#
+# # Tests
+# use_test("harmonise_crs")
+# load_all()
+# test_file("tests/testthat/test-harmonise_crs.R")
+# document()
+#
+# load_all()
+# check()
+# # Commit and push here.
+#
+# #### crop_to_aoi() ####
+# use_r("crop_to_aoi")
+# load_all()
+# document()
+#
+# # tests
+# use_test("crop_to_aoi")
+# load_all()
+# test_file("tests/testthat/test-crop_to_aoi.R")
+#
+# document()
+# check()
+# # Commit and push here.
