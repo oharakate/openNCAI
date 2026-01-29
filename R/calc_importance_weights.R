@@ -59,18 +59,18 @@ calc_importance_weights <- function(between_scores,
                                     within_colname = "score",
                                     es_label_tree) {
 
-  # 1. Calculate between-group weights
-  # Sum check to avoid NaN if all between-scores are zero
+  # Calculate between-group weights
+  # Handle all-zero scores
   b_total <- sum(between_scores[[between_colname]], na.rm = TRUE)
   if (b_total == 0) stop("Total of between_scores cannot be zero.")
 
   b_weights <- (between_scores[[between_colname]] / b_total) * 100
   names(b_weights) <- names(es_label_tree)
 
-  # 2. Align list names to ensure mapping works
+  # Align list names to ensure mapping works
   names(within_scores_list) <- names(es_label_tree)
 
-  # 3. Calculate within-group weights
+  # Calculate within-group weights
   iw_subset_list <- lapply(names(es_label_tree), function(service_type) {
 
     w_scores <- within_scores_list[[service_type]]
@@ -91,7 +91,7 @@ calc_importance_weights <- function(between_scores,
       importance_weights <- (w_scores[[within_colname]] / w_total) * b_weights[service_type]
     }
 
-    # Returning as a data frame is usually safer for your other functions
+    # Return as data frame
     return(data.frame(
       weight = importance_weights,
       row.names = service_labels

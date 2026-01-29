@@ -58,7 +58,7 @@ b_scores <- data.frame(
 )
 
 # Define individual service importance (raw scores, no row names needed)
-w_list <- list(provisioning = data.frame(score = c(0.5, 0.5)),
+  w_list <- list(provisioning = data.frame(score = c(0.5, 0.5)),
   regulating = data.frame(score = c(0.8, 0.2))
 )
 

@@ -1,5 +1,5 @@
 test_that("calc_importance_weights scales correctly and applies labels", {
-  # 1. Setup metadata
+  # Setup metadata
   es_tree <- list(
     provisioning = c("crops", "timber"),
     cultural = c("recreation")
@@ -24,7 +24,7 @@ test_that("calc_importance_weights scales correctly and applies labels", {
     es_label_tree = es_tree
   )
 
-  # 3. Verify Math
+  # 3. Verify arithmetic
   # provisioning total (60) * (8/10) = 48
   expect_equal(res$provisioning["crops", "weight"], 48)
   # provisioning total (60) * (2/10) = 12
@@ -36,7 +36,7 @@ test_that("calc_importance_weights scales correctly and applies labels", {
   total_weight <- sum(unlist(lapply(res, function(df) df$weight)))
   expect_equal(total_weight, 100)
 
-  # 5. Verify Row Labels were applied from the tree
+  # 5. Verify row Labels were applied from the tree
   expect_equal(rownames(res$provisioning), c("crops", "timber"))
 })
 

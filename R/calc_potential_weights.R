@@ -50,7 +50,7 @@
 #'   divisor = 10,
 #'   habitats_label_tree = hab_labels,
 #'   es_label_tree = es_labels
-#'   )
+#' )
 #'
 #' # Using a custom matrix
 #' custom_div <- data.frame(service1 = c(10, 10), service2 = c(5, 5))

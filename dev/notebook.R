@@ -174,7 +174,7 @@ run_examples(pkg = ".", test = "bind_importance_weights")
 document()
 
 # Tests
-use_test("X")
+use_test("bind_importance_weights")
 load_all()
 test_file("tests/testthat/test-bind_importance_weights.R")
 document()
