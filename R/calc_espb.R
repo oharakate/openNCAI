@@ -1,8 +1,3 @@
-## FUNCTION calc_espb() calculates the ecosystem service potential base. It
-# takes the habitat extent data, year list, and ESPPU weights, and multiplies
-# each habitat/service combination potential weight by the year one area of that
-# habitat.
-
 #' Calculate Ecosystem Service Potential Base (ESPB)
 #' Multiply the ecosystem service provision potential per unit (ESPPU) by the
 #' habitat extent in year one of the index.

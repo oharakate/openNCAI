@@ -1,9 +1,4 @@
-## FUNCTION esppu_scores_to_weights()
-# Takes dataframe object of ESSPU scores (matrix habitats/ecosystem services)
-# and converts it to weights by dividing by a common denominator, or a matrix
-# in shape habitat/ecosystem service of custom divisors.
-
-#' Transform ESPPU Scores to Weights
+#' Calculate Potential Weights from ESPPU Scores
 #'
 #' This function converts ecosystem service provision potential per unit
 #' scores to weights by dividing by a common denominator, or a matrix of
@@ -51,7 +46,7 @@
 #' es_labels = c("cultivated_crops", water_drinking")
 #'
 #' # Using a universal divisor
-#' esppu_scores_to_weights(scores,
+#' calc_potential_weights(scores,
 #'   divisor = 10,
 #'   habitats_label_tree = hab_labels,
 #'   es_label_tree = es_labels
@@ -59,8 +54,8 @@
 #'
 #' # Using a custom matrix
 #' custom_div <- data.frame(service1 = c(10, 10), service2 = c(5, 5))
-#' esppu_scores_to_weights(scores, custom_divisor_matrix = custom_div)
-esppu_scores_to_weights <- function(
+#' calc_potential_weights(scores, custom_divisor_matrix = custom_div)
+calc_potential_weights <- function(
     esppu,
     divisor = NULL,
     custom_divisor_matrix = NULL,

@@ -109,16 +109,16 @@ check()
 
 #### esppu_scores_to_weights()####
 
-use_r("esppu_scores_to_weights")
+use_r("calc_potential_weights")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "dev/f_esppu_scores_to_weights")
+run_examples(pkg = ".", test = "calc_potential_weights")
 document()
 
 # Tests
-use_test("esppu_scores_to_weights")
+use_test("calc_potential_weights")
 load_all()
-test_file("tests/testthat/test-esppu_scores_to_weights.R")
+test_file("tests/testthat/test-calc_potential_weights.R")
 document()
 
 load_all()
@@ -139,6 +139,44 @@ document()
 use_test("calc_espb")
 load_all()
 test_file("tests/testthat/test-calc_espb.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### calc_importance_weights()####
+
+use_r("calc_importance_weights")
+# Remember to put in the roxygen skeleton
+load_all()
+run_examples(pkg = ".", test = "calc_importance_weights")
+document()
+
+# Tests
+use_test("calc_importance_weights")
+load_all()
+test_file("tests/testthat/test-calc_importance_weights.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### bind_importance_weights()####
+
+use_r("bind_importance_weights")
+# Remember to put in the roxygen skeleton
+load_all()
+run_examples(pkg = ".", test = "bind_importance_weights")
+document()
+
+# Tests
+use_test("X")
+load_all()
+test_file("tests/testthat/test-bind_importance_weights.R")
 document()
 
 load_all()
