@@ -184,6 +184,23 @@ check()
 # Commit and push here.
 
 
+#### template()####
+
+use_r("calc_wellbeing_base")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+
+# Tests
+use_test("calc_wellbeing_base")
+load_all()
+test_file("tests/testthat/test-calc_wellbeing_base.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
 
 #### template()####
 

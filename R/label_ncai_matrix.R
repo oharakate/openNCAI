@@ -1,4 +1,4 @@
-#' Label NCAI Habitat/Ecosystem Service Matrix
+#' @title Label NCAI Habitat/Ecosystem Service Matrix
 #' This function takes a habitat/ecosystem service matrix of values used in
 #' openNCAI and returns it as a data frame with the habitat and ecosystem
 #' service labels applied.
@@ -6,21 +6,13 @@
 #' @param matrix A matrix of values, e.g. scores, weights, where rows are
 #' habitats and columns are ecosystem services
 ##' @param habitats_label_tree A named list of character vectors where
-#' each list name represents a broad habitat category, typically a EUNIS level
-#' 1 habitat (e.g. "coastal") and the associated character vector contains the
-#' labels or codes of the habitat sub-types - typically EUNIS level two
-#' habitats - falling within that category (e.g., c("b1", "b2") or
-#' c("coastal_dunes_sandy_shores", "coastal_shingle")). Syntactical names only
-#' (no spaces or special characters).
-#' The habitats label tree defines the relevant habitats for calculating the
-#' NCAI and will be used to label the returned data frame.
+#' each list name representing the hierarchy of ecosystem services within
+#' ecosystem service type group. Syntactical names only (no spaces or
+#' special characters).
 #' @param es_label_tree A named list of character vectors where each list
-#' name represents a label name for a type group of ecosystem services
-#' (e.g. 'provisioning') and the associated character vector contains the
-#' labels for the ecosystem services in that group (e.g. 'cultivated_crops').
+#' name representing the hierarchy of habitats (character vectors, typically
+#' EUNIS level 2) broad habitats (list names, typically EUNIS level 1).
 #' Syntactical names only (no spaces or special characters).
-#' The ES label tree defines the relevant ecosystem services for calculating
-#' the NCAI and will be used to label the returned data frame.
 #'
 #' @return A labelled data frame.
 #' @export
@@ -45,7 +37,10 @@
 #' )
 #'
 #' # 4. Apply the labels
-#' labeled_df <- label_ncai_matrix(raw_values, h_tree, es_tree)
+#' labeled_df <- label_ncai_matrix(matrix = raw_values,
+#'                                 habitats_label_tree = h_tree,
+#'                                 es_label_tree = es_tree)
+#'
 #'
 #' # View the result
 #' print(labeled_df)
@@ -66,10 +61,10 @@ label_ncai_matrix <- function(matrix,
     stop("Number of ES labels must match matrix columns.")
   }
 
-  matrix <- as.data.frame(matrix)
-  rownames(matrix) <- flat_h
-  colnames(matrix) <- flat_es
+  out <- as.data.frame(matrix)
+  rownames(out) <- flat_h
+  colnames(out) <- flat_es
 
-  return(matrix)
+  return(out)
 
 }

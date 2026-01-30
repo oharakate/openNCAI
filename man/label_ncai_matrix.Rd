@@ -14,22 +14,14 @@ label_ncai_matrix(matrix, habitats_label_tree, es_label_tree)
 habitats and columns are ecosystem services}
 
 \item{habitats_label_tree}{A named list of character vectors where
-each list name represents a broad habitat category, typically a EUNIS level
-1 habitat (e.g. "coastal") and the associated character vector contains the
-labels or codes of the habitat sub-types - typically EUNIS level two
-habitats - falling within that category (e.g., c("b1", "b2") or
-c("coastal_dunes_sandy_shores", "coastal_shingle")). Syntactical names only
-(no spaces or special characters).
-The habitats label tree defines the relevant habitats for calculating the
-NCAI and will be used to label the returned data frame.}
+each list name representing the hierarchy of ecosystem services within
+ecosystem service type group. Syntactical names only (no spaces or
+special characters).}
 
 \item{es_label_tree}{A named list of character vectors where each list
-name represents a label name for a type group of ecosystem services
-(e.g. 'provisioning') and the associated character vector contains the
-labels for the ecosystem services in that group (e.g. 'cultivated_crops').
-Syntactical names only (no spaces or special characters).
-The ES label tree defines the relevant ecosystem services for calculating
-the NCAI and will be used to label the returned data frame.}
+name representing the hierarchy of habitats (character vectors, typically
+EUNIS level 2) broad habitats (list names, typically EUNIS level 1).
+Syntactical names only (no spaces or special characters).}
 }
 \value{
 A labelled data frame.
@@ -60,7 +52,10 @@ raw_values <- matrix(
 )
 
 # 4. Apply the labels
-labeled_df <- label_ncai_matrix(raw_values, h_tree, es_tree)
+labeled_df <- label_ncai_matrix(matrix = raw_values,
+                                habitats_label_tree = h_tree,
+                                es_label_tree = es_tree)
+
 
 # View the result
 print(labeled_df)

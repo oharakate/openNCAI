@@ -13,13 +13,13 @@
 #' @param within_scores_list A named list of data frames. Each list element
 #' represents a service type and contains a data frame of scores for individual
 #' services. List names must align with the service types in `es_label_tree`.
-#' Row names in these data frames are not required as they are applied from
-#' `es_label_tree`.
 #' @param within_colname Character. The name of the numeric column in the
 #' data frames within `within_scores_list`. Defaults to "score".
-#' @param es_label_tree A named list of character vectors defining the
-#' hierarchy and labels of ecosystem services. This tree is used to label the
-#' resulting weight data frames.
+#' @param es_label_tree A named list of character vectors representing the
+#' hierarchy of habitats (as character vectors, typically
+#' EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
+#' Level 1). Syntactical names only (no spaces or special characters). Used to
+#' apply names and row names to the data frames in the list.
 #'
 #' @return A named list of data frames, where each data frame contains a
 #' `weight` column and row names derived from `es_label_tree`. The total of
