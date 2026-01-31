@@ -10,8 +10,8 @@
 #### SETUP ####
 
 library(dplyr)
-library(tidyr)
 library(tibble)
+library(tidyr)
 library(readr)
 library(readxl)
 library(slider)
@@ -21,7 +21,7 @@ library(ggplot2)
 #### DEFINE LABELS AND LISTS FOR NS DATA ####
 # We require a list of character vectors detailing the names of ecosystem
 # services and the ecoesystem service type group they belong to:
-es_label_tree <- list(
+ns_es_labels <- list(
   provisioning = c(
     "cultivated_crops",
     "reared_animals",
@@ -58,17 +58,10 @@ es_label_tree <- list(
   )
 )
 
-# These can be extracted if arguments to functions are just the label tree:
-# From this we take the service type labels:
-es_type_labels <- names(es_label_tree)
-
-# And a list of all ecosystem services, in the same order:
-all_es_labels <- unlist(es_label_tree, use.names = FALSE)
-
 
 # We require a list of character vectors, detailing broad habitat types and
 # the habitats they encompass:
-habitats_label_tree <- list(
+ns_habitat_labels <- list(
   coastal = c("b1", "b2", "b3"),
   freshwater = c("c"),
   wetlands = c("d1", "d2", "d4", "d5"),
@@ -80,10 +73,6 @@ habitats_label_tree <- list(
   artificial = c("j1", "j2", "j3", "j4"),
   montane = c("k")
 )
-# From this we take the broad habitat labels as a character vector:
-broad_habitat_labels <- names(habitats_label_tree)
-# And the complete set of habitat codes:
-all_habitat_labels <- unlist(habitats_label_tree, use.names = FALSE)
 
 # We require a character vector of Condition Indicator IDs:
 ns_ci_ids <- c("2", "4", "6", "8", "10", "16", "18", "22", "23", "24", "28",
@@ -100,6 +89,14 @@ ns_year_list <- as.character(2000:2022)
 
 #### IMPORT EXISTING DATA FROM NS SHEETS ####
 # Get Scotland data from NatureScot spreadsheet which we will aim to replicate:
+
+# Get lists of services, service types, habitats and broad habitats from the
+# label trees:
+ns_service_types <- names(ns_es_labels)
+ns_all_service_labels <- unlist(ns_es_labels, use.names = FALSE)
+ns_broad_habitats <- names(ns_habitat_labels)
+ns_all_habitat_labels <- unlist(ns_habitat_labels, use.names = FALSE)
+
 
 # Index of sheets in the NatureScot spreadsheet:
 ns_sheets_path <- file.path("dev", "ncai.xlsx")
@@ -123,50 +120,50 @@ ns_esppu <- read_xlsx(ns_sheets_path,
 
 
 # Importance scores (sheet "ES Potential (Weighting)"):
-# Between service-type scores:
-ns_st_importance_scores <- readxl::read_xlsx(
+# Between service-type:
+ns_between_importance_scores <- readxl::read_xlsx(
   path = ns_sheets_path,
   sheet = 4,
   range = "D6:D8",
-  col_names = FALSE,
+  col_names = "score",
   col_types = "numeric",
-  trim_ws = TRUE,
-  .name_repair = "minimal" # quietens reporting on name repair
+  trim_ws = TRUE
 ) %>%
-  as.data.frame() %>%
-  setNames("score") %>%
-  mutate(service_type = es_type_labels) %>%
-  column_to_rownames("service_type")
-
+  # Use the label tree to label these:
+  mutate(service_type = ns_service_types) %>%
+  # Make it into a named list:
+  { setNames(as.list(.$score), .$service_type) }
 
 # Within-service-type scores:
+# Start with a list of ranges in the spreadsheet, named per service type:
 ns_importance_ranges <- c("D13:D24", "D29:D39", "D44:D48")
-names(ns_importance_ranges) <- es_type_labels
+names(ns_importance_ranges) <- ns_service_types
 
 # Import these into a list of dataframes:
-ns_within_scores_list <- lapply(names(ns_importance_ranges), function(st_name) {
+ns_within_importance_scores_list <- lapply(names(ns_importance_ranges), function(service_type) {
 
-  rng <- ns_importance_ranges[st_name]
+  rng <- ns_importance_ranges[service_type]
 
-  scores_df <-readxl::read_xlsx(
+  # Read the specific range for the current service type
+  scores_vec <- readxl::read_xlsx(
     path = ns_sheets_path,
     sheet = 4,
     range = rng,
-    col_names = FALSE,
+    col_names = "score", # Name the column immediately
     col_types = "numeric",
-    trim_ws = TRUE,
-    .name_repair = "minimal"
+    trim_ws = TRUE
   ) %>%
-    as.data.frame() %>%
-    setNames("score")
+    dplyr::pull(score) # Extract as a simple numeric vector
 
-  # Apply service labels
-  rownames(scores_df) <- es_label_tree[[st_name]]
+  # Apply the specific service labels to the vector, again using the label tree
+  names(scores_vec) <- ns_es_labels[[service_type]]
 
-  return(scores_df)
+  # Convert to a list so it matches the nested list requirement
+  return(as.list(scores_vec))
 })
-# Label the list with service type labels:
-names(ns_within_scores_list) <- es_type_labels
+
+# Label the top level of the list with service type names:
+names(ns_within_importance_scores_list) <- ns_service_types
 
 
 
@@ -185,7 +182,7 @@ ns_indicator_directory <- readxl::read_xlsx(
   as.data.frame() %>%
   select(1, 14, 15, 16, 18) %>%
   setNames(c("ns_ci_num",
-             es_type_labels,
+             ns_service_types,
              "used")) %>%
   filter(used == "Yes") %>%
   mutate(ns_ci_num = as.character(ns_ci_num))
@@ -202,7 +199,7 @@ ns_tir <- readxl::read_xlsx(
   .name_repair = "minimal"
 ) %>%
   as.data.frame() %>%
-  setNames(all_es_labels)
+  setNames(ns_all_service_labels)
 
 
 # EXISTING BASES (calculated at the outset and do not change from year to year)
@@ -237,7 +234,7 @@ ns_habitat_extent <- readxl::read_xlsx(
     col_names = FALSE,
     col_types = "numeric",
     trim_ws = TRUE,
-    .name_repair = "minimal" #quietens reporting on name repair
+    .name_repair = "minimal"
   ) %>%
   as.data.frame()
 
@@ -247,7 +244,7 @@ ns_habitat_extent <- readxl::read_xlsx(
 read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
                                sheet_list, # list of sheets containing CI scores
                                vector_range, # SINGLE-COLUMN range where scores
-                               # are; must be same in each sheet.
+                                             # are; must be same in each sheet.
                                ci_ids) {
 
   # Initialise list of score vectors
@@ -265,7 +262,7 @@ read_the_ci_scores <- function(sheet_path, # path to the spreadsheet
       col_names = FALSE,
       col_types = "numeric",
       trim_ws = TRUE,
-      .name_repair = "minimal" #quietens reporting on name repair
+      .name_repair = "minimal"
     )
 
     vec <- as.numeric(raw_score_data[[1]])
@@ -292,7 +289,7 @@ ns_ci_score_matrix <- read_the_ci_scores(sheet_path = ns_sheets_path,
 # RESULTS DATA - sheets calculated using base weights and dynamic data:
 # Function read_ns_year_sheet() gets the main matrices of (non-indexed) natural
 # capital from one of the year named sheets (e.g. "2000"):
-read_ns_year_sheet <- function(sheet, path, service_labels, habitat_labels) {
+read_ns_year_sheet <- function(sheet, path, es_label_tree, habitats_label_tree) {
 
   year_sheet <- readxl::read_xlsx(
     path = path,
@@ -304,8 +301,8 @@ read_ns_year_sheet <- function(sheet, path, service_labels, habitat_labels) {
     .name_repair = "minimal" #quietens reporting on name repair
   ) %>%
     as.data.frame() %>% #make sure DF
-    setNames(service_labels) #give same column names
-  rownames(year_sheet) <- habitat_labels
+    setNames(unlist(es_label_tree, use.names = FALSE)) #give same column names
+  rownames(year_sheet) <- unlist(habitats_label_tree, use.names = FALSE)
 
   # NAs to 0 as before
   year_sheet[is.na(year_sheet)] <- 0
@@ -322,8 +319,8 @@ ns_year_sheets_ids <- 50:72
 ns_all_year_sheets <- lapply(X = ns_year_sheets_ids,
                              FUN = read_ns_year_sheet,
                              path = ns_sheets_path,
-                             service_labels = all_es_labels,
-                             habitat_labels = all_habitat_labels)
+                             es_label_tree = ns_es_labels,
+                             habitats_label_tree = ns_habitat_labels)
 
 # e.g. the following should look like the year 2000 sheet:
 # View(ns_all_year_sheets[[1]])
@@ -359,7 +356,7 @@ index_breakdown_ranges <- c("B2:D24",
                             "V59:X81", "AA59:AC81", "AF59:AH81")
 
 # And we need their labels:
-index_breakdown_labels <- c("overall", es_type_labels, broad_habitat_labels[c(1:6, 8)])
+index_breakdown_labels <- c("overall", ns_service_types, ns_broad_habitats[c(1:6, 8)])
 
 
 ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
@@ -378,17 +375,15 @@ ns_index_breakdowns <- lapply(index_breakdown_ranges, function(rng) {
 
 
 
-
-
 #### APPLY LABELS TO IMPORTED DATA ####
 
 
 # Apply labels
 colnames(ns_espb) <- colnames(ns_esppu) <- colnames(ns_wellbeing_base) <-
-  all_es_labels
+  ns_all_service_labels
 
 rownames(ns_espb) <- rownames(ns_esppu) <- rownames(ns_wellbeing_base) <-
-  rownames(ns_habitat_extent) <- all_habitat_labels
+  rownames(ns_habitat_extent) <- ns_all_habitat_labels
 
 colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 
@@ -401,9 +396,8 @@ colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 #### CALCULATE BASES ####
 
 ## RECREATE THE ECOSYSTEM SERVICE POTENTIAL BASE
-
 # In the NatureScot spreadhsheet, ESPPU contains scores out of 5 indicating the
-# likely of a service-providing unit to deliver its potential. So we will
+# likelihood of a service-providing unit to deliver its potential. So we will
 # divide everything in that sheet by the max score 5 to get an ESPPU weight...
 
 # EXCEPT in the case of the cells (habitat/ecosystem service combinations) in
@@ -412,8 +406,12 @@ colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 # the point of dividing by max score: instead of 5, scores for these cells
 # should be divided by 1.
 #
+# openNCAI's calc_espb() function can use a common denominator or can accept a
+# custom divisor matrix so that the divisor is unique for every combination
+# of habitat and ecosystem service.
+#
 # We build a matrix which records the custom divisor for each habitat/service
-# type combination.
+# type combination...
 
 # For Nature Scot's custom divisor matrix, these paired character
 # vectors identify all habitat/service-type combinations where the divisor is
@@ -421,17 +419,18 @@ colnames(ns_habitat_extent) <- rownames(ns_ci_score_matrix) <- ns_year_list
 ns_habitats_to_adjust = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
                        rep("i2",6), rep("j1",5), rep("j2",5))
 ns_services_to_adjust = c("erosion_mediation", "soil_formation_composition",
-                          es_label_tree[["cultural"]],
-                          es_label_tree[["cultural"]],
-                          es_label_tree[["cultural"]],
+                          ns_es_labels[["cultural"]],
+                          ns_es_labels[["cultural"]],
+                          ns_es_labels[["cultural"]],
                           "climate",
                           "climate",
-                          es_label_tree[["cultural"]],
-                          es_label_tree[["cultural"]],
-                          es_label_tree[["cultural"]])
+                          ns_es_labels[["cultural"]],
+                          ns_es_labels[["cultural"]],
+                          ns_es_labels[["cultural"]])
+
 
 # Function make_custom_divisor_matrix() takes these and outputs a matrix of
-# custom weights:
+# custom weights (assuming only the constant and one custom value are used):
 make_custom_divisor_matrix <- function(
     all_habitat_labels,
     all_es_labels,
@@ -451,8 +450,8 @@ make_custom_divisor_matrix <- function(
   # htst2 is similar htst1, but only contains the combinations where we want a
   # different divisor:
   htst2 <- data.frame(
-    habitat = habitats_to_adjust,
-    service_type = services_to_adjust,
+    habitat = ns_habitats_to_adjust,
+    service_type = ns_services_to_adjust,
     divisor = custom_divisor,
     stringsAsFactors = FALSE
   )
@@ -474,8 +473,8 @@ make_custom_divisor_matrix <- function(
 
 # Make the matrix of ScotNCAI adjustments to the weights:
 ns_custom_divisor_matrix <- make_custom_divisor_matrix(
-  all_habitat_labels = all_habitat_labels,
-  all_es_labels = all_es_labels,
+  all_habitat_labels = ns_all_habitat_labels,
+  all_es_labels = ns_all_service_labels,
   habitats_to_adjust = ns_habitats_to_adjust,
   services_to_adjust = ns_services_to_adjust,
   usual_divisor = 5,
@@ -484,178 +483,78 @@ ns_custom_divisor_matrix <- make_custom_divisor_matrix(
 
 
 
-## FUNCTION esppu_scores_to_weights()
-# Takes dataframe object of ESSPU scores (matrix habitats/ecosystem services)
-# and converts it to weights by dividing by a common denominator, or a matrix
-# in shape habitat/ecosystem service of custom divisors.
-esppu_scores_to_weights <- function(
-    esppu, # dataframe habitat type / ecosystem service
-    divisor = NULL, # divisor for calculating weights from scores
-    custom_divisor_matrix = NULL # dataframe habitat type / ecosystem service
-                                # containing custom divisors
-    ) {
-
-  # Divide all scores by universal divisor if no customisations
-  if (is.null(custom_divisor_matrix)) {
-    esppu_aw <- esppu / divisor
-  } else {
-  # Or use custom divisor per habitat/ecosystem service combination
-    if (!all(dim(esppu) == dim(custom_divisor_matrix))) {
-      stop("Dimensions of esppu and custom_divisor_matrix must match.")
-    }
-    esppu_aw  <- esppu / custom_divisor_matrix
-  }
-
-  return(esppu_aw)
-}
-
-# For the Scottish data:
-scot_esppu_weights <- esppu_scores_to_weights(
-  esppu = ns_esppu,
-  divisor = 5,
-  custom_divisor_matrix = ns_custom_divisor_matrix)
+# Now we can use openNCAI::calc_potential_weights() along with our custom
+# divisor matrix to convert the exemplary service potential scores (sheet 3
+# "ES Potential per SPU) to weights, by dividing by the number specified in our
+# custom divisor matrix (normall 5, except for the cells marked in red in sheet
+# 6 "ES Potential Base").
+made_esppu_weights <- openNCAI::calc_potential_weights(esppu = ns_esppu,
+                                 custom_divisor_matrix = ns_custom_divisor_matrix,
+                                 habitats_label_tree = ns_habitat_labels,
+                                 es_label_tree = ns_es_labels
+                                )
 
 
+## We use these weights and the Scottish habitat extent data with
+# openNCAI::calc_espb() to recreate the Ecosystem Service Potential Base (ESPB):
+made_espb <- openNCAI::calc_espb(habitat_extent = ns_habitat_extent,
+                                 esppu_weights = made_esppu_weights,
+                                 year_list = ns_year_list,
+                                 habitats_label_tree = ns_habitat_labels,
+                                 es_label_tree = ns_es_labels)
+# The ESPB can be  understood as the ecosystem services provided by Scotland's
+# habitats in year  one of the index.
 
-## FUNCTION calc_espb() calculates the ecosystem service potential base. It
-# takes the habitat extent data, year list, and ESPPU weights, and multiplies
-# each habitat/service combination potential weight by the year one area of that
-# habitat.
-calc_espb <- function(habitat_extent, esppu_weights, year_list, habitat_labels) {
-
-  year_one <- year_list[1]
-  # Pull the vector for original year:
-  origin_year_vec <- habitat_extent %>%
-    pull(year_one)
-  # These habitat extent values are multiplied by their esppu weightings:
-  espb <- sweep(
-    x = esppu_weights,
-    MARGIN = 1,
-    STATS = origin_year_vec,
-    FUN = "*"
-  )
-
-  return(espb)
-}
-
-# For Scotland:
-scot_espb = calc_espb(habitat_extent = ns_habitat_extent,
-                      esppu_weights = scot_esppu_weights,
-                      year_list = ns_year_list
-                      )
-
-# Does the calculated scot_espb match the published ns_espb?
-all.equal(ns_espb, scot_espb)
+# Does our made_espb match the published ns_espb?
+all.equal(ns_espb, made_espb)
 # Yes.
 
 
 
-## RECREATING THE WELLBEING BASE
-## The wellbeing base is recreated using the between- and within-service-type
-# importance weights (the "Scotland weights"), and multiplying these by the
-# ESPB.
+## RECREATING THE WELL-BEING BASE
+# The well-being base uses the importance scores found in sheet 4 "ES
+# Potential (Weighting), which denote the importance of ecosystem services.
+# The importance weights are informed by expert opinion (and a public survey?)
+# and are expressed both within and between ecosystem service type groups.
+# E.g. Between ecosystem service types, the Regulation & Maintenance group is
+# assigned a score of 20/20 as the most important, and relative to this both
+# the Provisioning and Cultural services are scored 10/20. Dividing these
+# scores by the sum of 40 results in weights of 50%, 25% and 25% respectively.
 
+# Within each service type group, a similar approach is applied, with the most
+# important service given a score of 20/20 and other services given a relative
+# score out of 20. The scores are converted to weights which combine the
+# within- and between-service-type group importances. The result is a vector
+# weights, one per ecosystem service, which sums to 100.
 
-#### FUNCTION calc_importance_weights()
-# Calculates importance weights, using within- and between-service-type SCORES.
-# Requires the vector of between-service-type scores, and a list of the
-# within-service-type-score objects.
-# Returns a list of numeric vectors of service-type subsets of importance
-# weights.
-calc_importance_weights <- function (between_scores, within_scores_list) {
-
-  # Calculate the between weights
-  b_weights <- (between_scores$score / sum(between_scores$score)) * 100
-  names(b_weights) <- rownames(between_scores)
-
-  # Map over the list and the indices simultaneously
-  iw_subset_list <- lapply(names(within_scores_list), function(service_type) {
-    w_scores <- within_scores_list[[service_type]]
-
-    importance_weights <- (w_scores$score / sum(w_scores$score)) *
-      b_weights[service_type]
-
-    return(setNames(importance_weights, rownames(w_scores)))
-  })
-
-  # Restore the names (prov, regu, cult) to the new list
-  names(iw_subset_list) <- names(within_scores_list)
-
-  return(iw_subset_list)
-}
-
-
-# Calculate Scotland's importance weights:
-scot_imp_weights_subsets <- calc_importance_weights(ns_st_importance_scores,
-                                                    ns_within_scores_list)
-
-
-## FUNCTION bind_imp_weights()
-# Rejoins within-service-type weights back into one weight vector, applying
-# between-service-type weights.
-# Require list of importance within weight dataframes and list of all the service labels
-bind_importance_weights <- function(within_weights_list, all_es_labels) {
-
-  # Flatten service-type sets of weights into a single vector
-  combined_vector <- unlist(within_weights_list, use.names = FALSE)
-
-  # Check: does the length match our labels?
-  if(length(combined_vector) != length(all_es_labels)) {
-    stop("Weight count does not match total service labels!")
-  }
-
-  # Convert to a single-row dataframe with correct names
-  as.data.frame(t(combined_vector)) %>%
-    setNames(all_es_labels)
-}
-
-
-
-# Rejoin the within-weight objects and pivot wide:
-scot_importance_weights <- bind_importance_weights(
-  within_weights_list = scot_imp_weights_subsets,
-  all_es_labels = all_es_labels
+# openNCAI takes the between-service-type scores and the within-service-type
+# scores. The between weights should be a named list of weight per service type.
+# The within weights is passed as a named list of named lists, where the top
+# level names are the service types, and each object holds a named list of
+# individual service scores. The es_label_tree is used to check that all
+# expected scores are present.
+made_importance_weights <- openNCAI::calc_importance_weights(
+  between_scores = ns_between_importance_scores,
+  within_scores = ns_within_importance_scores_list,
+  es_label_tree = ns_es_labels
 )
 
 # These should sum to 100:
-# sum(scot_importance_weights)
+sum(made_importance_weights)
 # They do.
 
 
-## FUNCTION calc_wellbeing_base() multiplies the importance weights by the ESPB
-# to generate the Wellbeing Base, a matrix of shape habitat/service type.
-calc_wellbeing_base <- function(espb, importance_weights) {
-
-  # Express ESPB as proportion of habitat total contribution
-  espb_totals <- colSums(espb)
-  espb_as_prop <- sweep(
-    x = espb,
-    MARGIN = 2,
-    STATS = espb_totals,
-    FUN = "/"
-  )
-
-  # Multiply by within-service-type importance weights
-  wellbeing_base <- sweep(
-    x = espb_as_prop,
-    MARGIN = 2,
-    STATS = as.numeric(importance_weights),
-    FUN = "*"
-  )
-
-  # Multiply by 100
-  wellbeing_base <- wellbeing_base * 100
-
-  return(wellbeing_base)
-
-}
-
-# Calculate Scotland's Wellbeing Base:
-scot_wellbeing_base <- calc_wellbeing_base(espb = scot_espb,
-                               importance_weights = scot_importance_weights)
+# To recreate the Well-being Base (sheet 7), we use
+# openNCAI::calc_wellbeing_base(), which multiplies the importance weights by
+# the Ecosystem Service Potential Base. We pass in the label tree so that
+# the returned data frame is labelled.
+made_wellbeing_base <- openNCAI::calc_wellbeing_base(espb = made_espb,
+                              importance_weights = made_importance_weights,
+                              habitats_label_tree = ns_habitat_labels,
+                              es_label_tree = ns_es_labels)
 
 # Is the calculated wellbeing base equal to NatureScot's wellbeing base?
-all.equal(ns_wellbeing_base, scot_wellbeing_base)
+all.equal(ns_wellbeing_base, made_wellbeing_base)
 # Yes.
 
 

@@ -225,6 +225,7 @@ check()
 # End things
 # We can install the package with
 install()
+
 library(openNCAI)
 # And then get rid to continue developing with
 remove.packages("openNCAI")
