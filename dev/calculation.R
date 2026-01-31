@@ -91,20 +91,19 @@ ns_year_list <- as.character(2000:2022)
 # Get Scotland data from NatureScot spreadsheet which we will aim to replicate:
 
 # Get lists of services, service types, habitats and broad habitats from the
-# label trees:
+# label trees, for labelling imports:
 ns_service_types <- names(ns_es_labels)
 ns_all_service_labels <- unlist(ns_es_labels, use.names = FALSE)
 ns_broad_habitats <- names(ns_habitat_labels)
 ns_all_habitat_labels <- unlist(ns_habitat_labels, use.names = FALSE)
 
 
-# Index of sheets in the NatureScot spreadsheet:
+# Location of NatureScot spreadsheet and index of sheets:
 ns_sheets_path <- file.path("dev", "ncai.xlsx")
 ns_sheets_index <- excel_sheets(ns_sheets_path)
 print(ns_sheets_index)
 # NB to get the character vector of CI names we could do:
 # ns_sheets_index[9:46]
-
 
 # EXISTING WEIGHTS (decided at the outset and do not change from year to year)
 # Ecosystem service providing potential per SPU (ESPPU)
@@ -131,7 +130,7 @@ ns_between_importance_scores <- readxl::read_xlsx(
 ) %>%
   # Use the label tree to label these:
   mutate(service_type = ns_service_types) %>%
-  # Make it into a named list:
+  # Make it into a named list to suit calc_importance_weights:
   { setNames(as.list(.$score), .$service_type) }
 
 # Within-service-type scores:
@@ -158,7 +157,8 @@ ns_within_importance_scores_list <- lapply(names(ns_importance_ranges), function
   # Apply the specific service labels to the vector, again using the label tree
   names(scores_vec) <- ns_es_labels[[service_type]]
 
-  # Convert to a list so it matches the nested list requirement
+  # Convert to a list so it matches the nested list requirement of
+  # calc_importance_weights:
   return(as.list(scores_vec))
 })
 
