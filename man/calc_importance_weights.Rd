@@ -2,73 +2,57 @@
 % Please edit documentation in R/calc_importance_weights.R
 \name{calc_importance_weights}
 \alias{calc_importance_weights}
-\title{Calculate Ecosystem Service Importance Weights}
+\title{Calculate Importance Weights using Hierarchical Named Lists}
 \usage{
-calc_importance_weights(
-  between_scores,
-  between_colname = "score",
-  within_scores_list,
-  within_colname = "score",
-  es_label_tree
-)
+calc_importance_weights(between_scores, within_scores, es_label_tree)
 }
 \arguments{
-\item{between_scores}{A data frame containing the importance scores for broad
-ecosystem service categories (e.g., Provisioning, Regulating). Rows must
-correspond to the top-level names in `es_label_tree`.}
+\item{between_scores}{A named list of numeric values where names match the
+top-level categories in \code{es_label_tree}.}
 
-\item{between_colname}{Character. The name of the numeric column in
-`between_scores` containing the scores. Defaults to "score".}
-
-\item{within_scores_list}{A named list of data frames. Each list element
-represents a service type and contains a data frame of scores for individual
-services. List names must align with the service types in `es_label_tree`.}
-
-\item{within_colname}{Character. The name of the numeric column in the
-data frames within `within_scores_list`. Defaults to "score".}
+\item{within_scores}{A named list where each element is itself a named
+list (or named vector) of numeric scores. The top-level names must match
+the categories in \code{es_label_tree}, and the inner names must match the
+specific ecosystem service labels.}
 
 \item{es_label_tree}{A named list of character vectors representing the
-hierarchy of habitats (as character vectors, typically
-EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
-Level 1). Syntactical names only (no spaces or special characters). Used to
-apply names and row names to the data frames in the list.}
+hierarchy of ecosystem services. This acts as the "source of truth" for
+ordering and selecting scores.}
 }
 \value{
-A named list of data frames, where each data frame contains a
-`weight` column and row names derived from `es_label_tree`. The total of
-all weights across the entire list will sum to 100.
+A single-row data frame where columns are the individual ecosystem
+  services and the values are their calculated importance weights,
+  scaled by both between-group and within-group priorities.
 }
 \description{
-Calculate the importance weights (both within- and between-ecosystem-service-type)
-from Ecosystem Service (ES) importance scores. This function scales scores so
-that the total weight across all services sums to 100, partitioned by the
-relative importance of the service types defined in `es_label_tree`.
+This function calculates the final importance weights for ecosystem services
+by combining between-group scores (broad categories) and within-group scores
+(specific services). It uses a name-aware approach, matching list names
+to the provided label tree to ensure scores are applied to the correct categories.
+}
+\details{
+The function first normalizes the between-group scores to 100. For each
+category, it then normalizes the within-group scores and multiplies them
+by the category's broad weight. If a category has a total score of zero,
+all services within it are assigned a weight of 0.
 }
 \examples{
-# Define labels
+# 1. Define the Hierarchy
 es_tree <- list(
   provisioning = c("crops", "timber"),
   regulating = c("carbon", "flood")
 )
 
-# Define broad category importance (e.g., Regulating is twice as important)
-b_scores <- data.frame(
-  score = c(1, 2),
-  row.names = c("provisioning", "regulating")
+# 2. Define Scores as named lists
+# Note: The order of list elements does not matter as long as names match
+b_scores <- list(regulating = 1, provisioning = 3)
+
+w_scores <- list(
+  provisioning = list(timber = 5, crops = 10),
+  regulating = list(carbon = 1, flood = 0)
 )
 
-# Define individual service importance (raw scores, no row names needed)
-  w_list <- list(provisioning = data.frame(score = c(0.5, 0.5)),
-  regulating = data.frame(score = c(0.8, 0.2))
-)
-
-# Calculate weights
-weights <- calc_importance_weights(
-  between_scores = b_scores,
-  within_scores_list = w_list,
-  es_label_tree = es_tree
-)
-
-# View results
-print(weights)
+# 3. Run the calculation
+importance_df <- calc_importance_weights(b_scores, w_scores, es_tree)
+print(importance_df)
 }

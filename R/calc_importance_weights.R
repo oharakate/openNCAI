@@ -1,103 +1,117 @@
-#' Calculate Ecosystem Service Importance Weights
+#' Calculate Importance Weights using Hierarchical Named Lists
 #'
-#' Calculate the importance weights (both within- and between-ecosystem-service-type)
-#' from Ecosystem Service (ES) importance scores. This function scales scores so
-#' that the total weight across all services sums to 100, partitioned by the
-#' relative importance of the service types defined in `es_label_tree`.
+#' This function calculates the final importance weights for ecosystem services
+#' by combining between-group scores (broad categories) and within-group scores
+#' (specific services). It uses a name-aware approach, matching list names
+#' to the provided label tree to ensure scores are applied to the correct categories.
 #'
-#' @param between_scores A data frame containing the importance scores for broad
-#' ecosystem service categories (e.g., Provisioning, Regulating). Rows must
-#' correspond to the top-level names in `es_label_tree`.
-#' @param between_colname Character. The name of the numeric column in
-#' `between_scores` containing the scores. Defaults to "score".
-#' @param within_scores_list A named list of data frames. Each list element
-#' represents a service type and contains a data frame of scores for individual
-#' services. List names must align with the service types in `es_label_tree`.
-#' @param within_colname Character. The name of the numeric column in the
-#' data frames within `within_scores_list`. Defaults to "score".
+#' @param between_scores A named list of numeric values where names match the
+#'   top-level categories in \code{es_label_tree}.
+#' @param within_scores A named list where each element is itself a named
+#'   list (or named vector) of numeric scores. The top-level names must match
+#'   the categories in \code{es_label_tree}, and the inner names must match the
+#'   specific ecosystem service labels.
 #' @param es_label_tree A named list of character vectors representing the
-#' hierarchy of habitats (as character vectors, typically
-#' EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
-#' Level 1). Syntactical names only (no spaces or special characters). Used to
-#' apply names and row names to the data frames in the list.
+#'   hierarchy of ecosystem services. This acts as the "source of truth" for
+#'   ordering and selecting scores.
 #'
-#' @return A named list of data frames, where each data frame contains a
-#' `weight` column and row names derived from `es_label_tree`. The total of
-#' all weights across the entire list will sum to 100.
+#' @return A single-row data frame where columns are the individual ecosystem
+#'   services and the values are their calculated importance weights,
+#'   scaled by both between-group and within-group priorities.
+#'
+#' @details
+#' The function first normalizes the between-group scores to 100. For each
+#' category, it then normalizes the within-group scores and multiplies them
+#' by the category's broad weight. If a category has a total score of zero,
+#' all services within it are assigned a weight of 0.
+#'
 #' @export
 #'
 #' @examples
-#' # Define labels
+#' # 1. Define the Hierarchy
 #' es_tree <- list(
 #'   provisioning = c("crops", "timber"),
 #'   regulating = c("carbon", "flood")
 #' )
 #'
-#' # Define broad category importance (e.g., Regulating is twice as important)
-#' b_scores <- data.frame(
-#'   score = c(1, 2),
-#'   row.names = c("provisioning", "regulating")
+#' # 2. Define Scores as named lists
+#' # Note: The order of list elements does not matter as long as names match
+#' b_scores <- list(regulating = 1, provisioning = 3)
+#'
+#' w_scores <- list(
+#'   provisioning = list(timber = 5, crops = 10),
+#'   regulating = list(carbon = 1, flood = 0)
 #' )
 #'
-#' # Define individual service importance (raw scores, no row names needed)
-#'   w_list <- list(provisioning = data.frame(score = c(0.5, 0.5)),
-#'   regulating = data.frame(score = c(0.8, 0.2))
-#' )
-#'
-#' # Calculate weights
-#' weights <- calc_importance_weights(
-#'   between_scores = b_scores,
-#'   within_scores_list = w_list,
-#'   es_label_tree = es_tree
-#' )
-#'
-#' # View results
-#' print(weights)
+#' # 3. Run the calculation
+#' importance_df <- calc_importance_weights(b_scores, w_scores, es_tree)
+#' print(importance_df)
 calc_importance_weights <- function(between_scores,
-                                    between_colname = "score",
-                                    within_scores_list,
-                                    within_colname = "score",
+                                    within_scores,
                                     es_label_tree) {
 
-  # Calculate between-group weights
-  # Handle all-zero scores
-  b_total <- sum(between_scores[[between_colname]], na.rm = TRUE)
+  # 1. Calculate between-group weights
+  # Extract scores matching the tree category names
+  b_scores_vec <- unlist(between_scores[names(es_label_tree)])
+
+  # Check for missing categories in between scores (in case of unlist behaviour)
+  if (any(is.na(b_scores_vec)) || length(b_scores_vec) != length(es_label_tree)) {
+    missing_b <- setdiff(names(es_label_tree), names(between_scores))
+    stop(paste0("between_scores is missing required categories: ",
+                paste(missing_b, collapse = ", ")))
+  }
+
+  b_total <- sum(b_scores_vec, na.rm = TRUE)
   if (b_total == 0) stop("Total of between_scores cannot be zero.")
 
-  b_weights <- (between_scores[[between_colname]] / b_total) * 100
-  names(b_weights) <- names(es_label_tree)
+  # Relative weight of each broad group (e.g., Provisioning = 75%)
+  b_weights <- (b_scores_vec / b_total) * 100
 
-  # Align list names to ensure mapping works
-  names(within_scores_list) <- names(es_label_tree)
+  # 2. Calculate within-group weights.
+  combined_vector <- unlist(lapply(names(es_label_tree), function(service_type) {
 
-  # Calculate within-group weights
-  iw_subset_list <- lapply(names(es_label_tree), function(service_type) {
+    # Check if the service_type category exists at all in the list
+    if (!service_type %in% names(within_scores)) {
+      stop(paste0("Category '", service_type, "' not found in within_scores."))
+    }
 
-    w_scores <- within_scores_list[[service_type]]
+    # Get score set and labels for this category
+    w_scores_input <- within_scores[[service_type]]
     service_labels <- es_label_tree[[service_type]]
 
-    # Make sure the number of scores matches the number of labels in the tree
-    if (nrow(w_scores) != length(service_labels)) {
-      stop(paste0("Number of scores for '", service_type,
-                  "' does not match the number of labels in es_label_tree."))
+    # Check input labels are correct
+    extracted_scores <- w_scores_input[service_labels]
+    if (any(sapply(extracted_scores, is.null)) || any(is.na(unlist(extracted_scores)))) {
+      stop(paste0("Specific service labels for '", service_type,
+                  "' were not found in within_scores."))
     }
 
-    w_total <- sum(w_scores[[within_colname]], na.rm = TRUE)
+    # Get total for labels defined in the tree
+    w_scores <- unlist(w_scores_input[service_labels])
+    w_total <- sum(w_scores, na.rm = TRUE)
 
-    # Handle the case where a category has only zero scores
+    # 3. Calculate final weights:
+    # (within-group proportion) * (between-group weight)
     if (w_total == 0) {
-      importance_weights <- rep(0, nrow(w_scores))
+      importance_weights <- rep(0, length(w_scores))
     } else {
-      importance_weights <- (w_scores[[within_colname]] / w_total) * b_weights[service_type]
+      importance_weights <- (w_scores / w_total) * b_weights[service_type]
     }
 
-    # Return as data frame
-    return(data.frame(
-      weight = importance_weights,
-      row.names = service_labels
-    ))
-  })
+    return(importance_weights)
+  }))
 
-  names(iw_subset_list) <- names(es_label_tree)
-  return(iw_subset_list)
+  # Final formatting
+  all_es_labels <- unlist(es_label_tree, use.names = FALSE)
+
+  # Catch any remaining mismatch of length
+  if (length(combined_vector) != length(all_es_labels)) {
+    stop("Weight calculation resulted in a dimension mismatch.")
+  }
+
+  # Convert the flattened vector into a single-row data frame
+  out <- as.data.frame(t(combined_vector))
+  colnames(out) <- all_es_labels
+
+  return(out)
 }
