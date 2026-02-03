@@ -13,14 +13,14 @@ label_ncai_matrix(matrix, habitats_label_tree, es_label_tree)
 \item{matrix}{A matrix of values, e.g. scores, weights, where rows are
 habitats and columns are ecosystem services}
 
-\item{habitats_label_tree}{A named list of character vectors where
-each list name representing the hierarchy of ecosystem services within
-ecosystem service type group. Syntactical names only (no spaces or
-special characters).}
+\item{habitats_label_tree}{A named list of character vectors representing the
+hierarchy of habitats (as character vectors, typically
+EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
+Level 1). Syntactical names only (no spaces or special characters).}
 
-\item{es_label_tree}{A named list of character vectors where each list
-name representing the hierarchy of habitats (character vectors, typically
-EUNIS level 2) broad habitats (list names, typically EUNIS level 1).
+\item{es_label_tree}{A named list of character vectors representing
+the hierarchy of ecosystem services (as character vectors) within
+service type group (as list object names).
 Syntactical names only (no spaces or special characters).}
 }
 \value{

@@ -166,9 +166,52 @@ ns_within_importance_scores_list <- lapply(names(ns_importance_ranges), function
 names(ns_within_importance_scores_list) <- ns_service_types
 
 
+# Condition Indicator (CI) relevance matrices - for each CI, we make a
+# relevance matrix (rows = habitats, columns = ecosystem services) with a
+# binary indicator in each cell of whether that CI is relevant to that habitat/
+# service combination. This will be used along with the Indicator Directory
+# sheet to build the numbered CI relevance weights sheets.
+
+# FUNCTION get_cirm_list() use data from the NatureScot spreadsheet to build a
+# list of binary CI relevance matrices:
+get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range, ci_ids) {
+
+  # Loop through each sheet in the list
+  list_of_dfs <- lapply(sheet_list, function(current_sheet) {
+
+    # Read the data
+    data <- readxl::read_xlsx(
+      path = spreadsheet_path,
+      sheet = current_sheet,
+      range = matrix_range,
+      col_names = FALSE,
+      col_types = "numeric",
+      trim_ws = TRUE,
+      .name_repair = "minimal"
+    ) %>%
+      as.data.frame() %>%
+      setNames(ns_all_service_labels)
+
+    data[] <- lapply(data, function(x) ifelse(!is.na(x) & x > 0, 1, 0))
+
+    # Convert to dataframe
+    return(as.data.frame(data))
+
+  })
+  # Apply names and make sure as character:
+  names(list_of_dfs) <- as.character(ci_ids)
+  # Return the full list of CIRMs
+  return(list_of_dfs)
+}
+
+# Get list of relevance matrices for Scotland indicators
+ns_cirms_list <- get_cirm_list(spreadsheet_path = ns_sheets_path,
+                               sheet_list = 9:46,
+                               matrix_range = "F4:AG34",
+                               ci_ids = ns_ci_ids)
 
 
-# Indicator Directory - relevance of Condition Indicators (CIs) to ecosystem
+# Indicator Directory - relevance of CIs to ecosystem
 # service types:
 ns_indicator_directory <- readxl::read_xlsx(
   path = ns_sheets_path,
@@ -200,6 +243,7 @@ ns_tir <- readxl::read_xlsx(
 ) %>%
   as.data.frame() %>%
   setNames(ns_all_service_labels)
+rownames(ns_tir) <- ns_all_habitat_labels
 
 
 # EXISTING BASES (calculated at the outset and do not change from year to year)
@@ -562,112 +606,21 @@ all.equal(ns_wellbeing_base, made_wellbeing_base)
 ## PROCESS CONDITION SCORES
 
 ## CALCULATING THE WEIGHTED INDICATORS MATRICES
-# In the first table of sheets "2", "4", etc. - the condition indicator sheets -
-# we find the condition indicator (CI) weight matrices (in shape
-# habitat/ecosystem service).
+# Relevance weights for each Condition Indicator, per ecosystem service type
+# are recorded in the Indicator Driectory (ns_indicator_directory). For each
+# indicator, the weight is multiplied by the list Condition Indicator Relevance
+# Matrices, to give a list of Condition Indicator Weight Matrices.
 
-# These could be best created by starting with a CI binary relevance matrix
-# which records whether a CI is relevant to each habitat/ecoystem service
-# combination. This can be multiplied by the appropriate weight from the
-# Indicator Directory.
-
-# FUNCTION get_cirm_list() use data from the NatureScot spreadsheet to build a
-# list of binary CI relevance matrices:
-get_cirm_list <- function(spreadsheet_path, sheet_list, matrix_range, ci_ids) {
-
-  # Loop through each sheet in the list
-  list_of_dfs <- lapply(sheet_list, function(current_sheet) {
-
-    # Read the data
-    data <- readxl::read_xlsx(
-      path = spreadsheet_path,
-      sheet = current_sheet,
-      range = matrix_range,
-      col_names = FALSE,
-      col_types = "numeric",
-      trim_ws = TRUE,
-      .name_repair = "minimal"
-    ) %>%
-      as.data.frame() %>%
-      setNames(all_es_labels)
-
-    data[] <- lapply(data, function(x) ifelse(!is.na(x) & x > 0, 1, 0))
-
-    # Convert to dataframe
-    return(as.data.frame(data))
-
-  })
-  # Apply names and make sure as character:
-  names(list_of_dfs) <- as.character(ci_ids)
-  # Return the full list of CIRMs
-  return(list_of_dfs)
-}
-
-# Get list of relevance matrices for Scotland indicators
-ns_cirms_list <- get_cirm_list(spreadsheet_path = ns_sheets_path,
-                               sheet_list = 9:46,
-                               matrix_range = "F4:AG34",
-                               ci_ids = ns_ci_ids)
-
-
-
-## FUNCTION build_ciwm_list() converts the CI relevance matrix list to CI
-# CI weight matrices, by multiplying in the correct relevance weight from the
-# Indicator Directory:
-build_ciwm_list <- function(cirm_list, st_list, label_subsets_list, indicator_directory) {
-
-  # Use lapply to iterate over the indices of the cirm_list
-  final_ciwm_list <- lapply(seq_along(cirm_list), function(ci_num) {
-
-    # Failsafe to check that CIRM list and indicator directory are aligned
-    current_id <- names(cirm_list)[ci_num]
-    dir_id <- as.character(indicator_directory$ns_ci_num[ci_num])
-    if (current_id != dir_id) {
-      stop(paste0("Sync Error: List item ", ci_num, " is ID '", current_id,
-                  "' but Directory row ", ci_num, " is ID '", dir_id, "'"))
-    }
-
-    # Extract the specific CIRM matrix for this iteration (e.g., ind1, ind2)
-    cirm_object <- cirm_list[[ci_num]]
-
-    # List to store weighted sub-matrices for this specific indicator
-    ciwm_parts <- list()
-
-    # Iterate through the actual names in st_list
-    for (i in seq_along(st_list)) {
-
-      # Get the column labels for the CIRM subset
-      current_labels <- label_subsets_list[[i]]
-      # Get the weight name from st_list
-      weight_col_name <- st_list[[i]]
-      # Pull the numeric weight from indicator_directory
-      # Row = current indicator (ci_num), Column = current weight type
-      weight <- indicator_directory[[weight_col_name]][ci_num]
-      # Multiply subset of columns by weight
-      sub_ciwm <- cirm_object[, current_labels, drop = FALSE] * weight
-      # Store in our parts list
-      ciwm_parts[[i]] <- sub_ciwm
-    }
-
-    # Combine parts side-by-side to recreate the full CIRM dimensions
-    return(dplyr::bind_cols(ciwm_parts))
-  })
-  # Maintain list names
-  names(final_ciwm_list) <- names(cirm_list)
-  return(final_ciwm_list)
-}
-
-
-# Build list of Condition Indicator Weighted Relevance matrices:
-ns_all_ciwms_list <- build_ciwm_list(cirm_list = ns_cirms_list,
-                                  st_list = es_type_labels,
-                                  label_subsets_list = es_label_tree,
-                                  indicator_directory = ns_indicator_directory)
-
+# Function build_ciwm_list() does this:
+ns_all_ciwms_list <- openNCAI::build_ciwm_list(
+  cirm_list = ns_cirms_list,
+  indicator_directory = ns_indicator_directory,
+  es_label_tree = ns_es_labels,
+  habitats_label_tree = ns_habitat_labels)
 
 # E.g.
 # View(ns_all_ciwms_list[[3]])
-# Should look like first table in sheet '6' and it does.
+# Should look like first table in sheet '6'.
 
 
 # From the list of CIWMs, we need to recreate the Total Indicator
@@ -691,11 +644,11 @@ calc_tir <- function(all_ciwms_list, tir_constant) {
 
 # For Scotland:
 ns_tir_constant = 2
-scot_tir <- calc_tir(all_ciwms_list = ns_all_ciwms_list,
+made_tir <- calc_tir(all_ciwms_list = ns_all_ciwms_list,
                      tir_constant = ns_tir_constant)
 
 # This should recreate NS sheet "Total Indicator Relevances" (imported above):
-all.equal(scot_tir, ns_tir)
+all.equal(made_tir, ns_tir)
 # It does.
 
 

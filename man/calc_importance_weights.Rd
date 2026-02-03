@@ -15,9 +15,10 @@ list (or named vector) of numeric scores. The top-level names must match
 the categories in \code{es_label_tree}, and the inner names must match the
 specific ecosystem service labels.}
 
-\item{es_label_tree}{A named list of character vectors representing the
-hierarchy of ecosystem services. This acts as the "source of truth" for
-ordering and selecting scores.}
+\item{es_label_tree}{A named list of character vectors representing
+the hierarchy of ecosystem services (as character vectors) within
+service type group (as list object names).
+Syntactical names only (no spaces or special characters).}
 }
 \value{
 A single-row data frame where columns are the individual ecosystem
@@ -28,7 +29,8 @@ A single-row data frame where columns are the individual ecosystem
 This function calculates the final importance weights for ecosystem services
 by combining between-group scores (broad categories) and within-group scores
 (specific services). It uses a name-aware approach, matching list names
-to the provided label tree to ensure scores are applied to the correct categories.
+to the provided label tree to ensure scores are applied to the correct
+categories.
 }
 \details{
 The function first normalizes the between-group scores to 100. For each

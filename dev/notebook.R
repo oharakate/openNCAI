@@ -202,12 +202,32 @@ check()
 # Commit and push here.
 
 
+#### build_ciwm_list()####
+
+use_r("build_ciwm_list")
+# Remember to put in the roxygen skeleton
+load_all()
+?build_ciwm_list
+document()
+
+# Tests
+use_test("build_ciwm_list")
+load_all()
+test_file("tests/testthat/test-build_ciwm_list.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+
 #### template()####
 
 use_r("X")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "X")
+?X
 document()
 
 # Tests
@@ -219,6 +239,7 @@ document()
 load_all()
 check()
 # Commit and push here.
+
 
 
 

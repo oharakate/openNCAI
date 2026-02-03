@@ -11,16 +11,16 @@
 #' each ecosystem service.
 #' @param importance_weights A vector of weights denoting the importance of
 #' each ecosystem service in the area of interest.
-#' @param habitats_label_tree A named list of character vectors representing
-#' the hierarchy of ecosystem services (as character vectors) within
-#' service type group (as list object names).
-#' Syntactical names only (no spaces or special characters).
-#' The habitats label tree is optional and if supplied will be used to label
-#' the returned data frame.
-#' @param es_label_tree A named list of character vectors representing the
+#' @param habitats_label_tree A named list of character vectors representing the
 #' hierarchy of habitats (as character vectors, typically
 #' EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
 #' Level 1). Syntactical names only (no spaces or special characters).
+#' The habitats label tree is optional and if supplied will be used to label
+#' the returned data frame.
+#' @param es_label_tree A named list of character vectors representing
+#' the hierarchy of ecosystem services (as character vectors) within
+#' service type group (as list object names).
+#' Syntactical names only (no spaces or special characters).
 #' The ES label tree is optional and if supplied will be used to label the
 #' returned data frame.
 #'

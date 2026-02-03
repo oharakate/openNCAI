@@ -2,8 +2,7 @@
 % Please edit documentation in R/calc_espb.R
 \name{calc_espb}
 \alias{calc_espb}
-\title{Calculate Ecosystem Service Potential Base (ESPB)
-Multiply the ecosystem service provision potential per unit (ESPPU) by the
+\title{Multiply the ecosystem service provision potential per unit (ESPPU) by the
 habitat extent in year one of the index.}
 \usage{
 calc_espb(
@@ -29,20 +28,16 @@ index is to be calculated. Data corresponding to the first year of this
 list is used to calculate the 'bases' against which subsequent years are
 indexed.}
 
-\item{habitats_label_tree}{A named list of character vectors where
-each list name represents a broad habitat category, typically a EUNIS level
-1 habitat (e.g. "coastal") and the associated character vector contains the
-labels or codes of the habitat sub-types - typically EUNIS level two
-habitats - falling within that category (e.g., c("b1", "b2") or
-c("coastal_dunes_sandy_shores", "coastal_shingle")). Syntactical names only
-(no spaces or special characters).
+\item{habitats_label_tree}{A named list of character vectors representing the
+hierarchy of habitats (as character vectors, typically
+EUNIS Level 2) within broad habitats (as list object names, typically EUNIS
+Level 1). Syntactical names only (no spaces or special characters).
 The habitats label tree defines the relevant habitats for calculating the
 NCAI and will be used to label the returned data frame.}
 
-\item{es_label_tree}{A named list of character vectors where each list
-name represents a label name for a type group of ecosystem services
-(e.g. 'provisioning') and the associated character vector contains the
-labels for the ecosystem services in that group (e.g. 'cultivated_crops').
+\item{es_label_tree}{A named list of character vectors representing
+the hierarchy of ecosystem services (as character vectors) within
+service type group (as list object names).
 Syntactical names only (no spaces or special characters).
 The ES label tree defines the relevant ecosystem services for calculating
 the NCAI and will be used to label the returned data frame.}
@@ -51,7 +46,6 @@ the NCAI and will be used to label the returned data frame.}
 A labelled data frame with the same dimensions as 'esppu_weights'.
 }
 \description{
-Calculate Ecosystem Service Potential Base (ESPB)
 Multiply the ecosystem service provision potential per unit (ESPPU) by the
 habitat extent in year one of the index.
 }
