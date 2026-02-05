@@ -1,0 +1,44 @@
+---
+title: "Replicating Scotland's NCAI"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{replicating_scotlands_ncai}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(openNCAI)
+```
+
+## Introduction
+
+Scotland's **Natural Capital Asset Index (NCAI)** is designed by NatureScot to monitor the value of Scotland's Natural Capital Assets. This vignette, written to demonstrate the package to our NatureScot colleagues, demonstrates how to use the `openNCAI` package to replicate the index calculations.
+
+## Data Preparation
+
+To begin, we import data from NatureScot's original spreadsheet containing the index calculations to year 2022. A copy of the spreadsheet is included in the `extdata` directory. The get_ns_data() command is not exported with the publicly available package, but can be accessed with the 'triple colon' notation, like this: `openNCAI:::get_ns_data()`.
+
+NOTE TO SELF - we also have the option of exporting but hiding from the help by adding `@keywords internal` to the Roxygen comments. 
+
+```{r import_data}
+# Locate the template within the package
+path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
+
+# Import all trees, scores, and matrices
+# The year_list represents the temporal coverage of the account
+ns_data <- openNCAI:::import_ns_data(path, year_list = 2000:2022)
+```
+
+The function imports a list of objects:
+
+```{r show_nsdata_list}
+print(names(ns_data))
+```
