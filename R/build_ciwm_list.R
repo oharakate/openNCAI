@@ -40,7 +40,7 @@ build_ciwm_list <- function(cirm_list,
     mat <- as.matrix(cirm_list[[ci_id]])
 
     # Get weights for this specific Indicator
-    row_idx <- match(ci_id, indicator_directory$ns_ci_num)
+    row_idx <- match(ci_id, indicator_directory$ci_id)
     if (is.na(row_idx)) stop(paste0("Indicator '", ci_id, "' not found in directory."))
 
     # Build weight vector

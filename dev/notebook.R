@@ -48,9 +48,11 @@ library(devtools)
 # use_package("terra")
 # use_package("tidyr")
 use_package("dplyr")
+use_package("readxl")
+use_package("janitor")
+use_package("stats")
+use_package("tidyr")
 # use_package("tibble")
-# use_package("readr")
-# use_package("readxl")
 # use_package("slider")
 # use_package("ggplot2")
 
@@ -84,6 +86,10 @@ use_package("dplyr")
 ####
 
 
+#### Building the NS vignette ####
+use_vignette("replicating_scotlands_ncai")
+
+
 
 
 #### Putting functions into the package ####
@@ -93,7 +99,6 @@ use_package("dplyr")
 use_r("label_ncai_matrix")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "label_ncai_matrix")
 document()
 
 # Tests
@@ -107,12 +112,21 @@ check()
 # Commit and push here.
 
 
+#### get_ns_data() ####
+use_r("get_ns_data")
+load_all()
+document()
+check()
+use_test("get_ns_data")
+load_all()
+test_file("tests/testthat/test-get_ns_data.R")
+
+
 #### esppu_scores_to_weights()####
 
 use_r("calc_potential_weights")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "calc_potential_weights")
 document()
 
 # Tests
