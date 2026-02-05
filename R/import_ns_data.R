@@ -1,8 +1,36 @@
 #' Import and Process Natural Capital Account Data
 #'
+#' This is the primary wrapper function for importing data from the NatureScot NCAI
+#' Excel template. It extracts habitat classifications, ecosystem service weights,
+#' condition indicators, and yearly measurements, bundling them into a structured
+#' list for subsequent index calculations.
+#'
 #' @param path A string representing the file path to the .xlsx data source.
-#' @param year_list A list of years, default = 2000:2022, numeric or character.
-#' @param tir_constant Numeric constant to avoid zero divisions. Default is 2.
+#' @param year_list A vector of years to include in the account (e.g., 2000:2022).
+#'   Can be numeric or character.
+#' @param tir_constant A numeric constant added to the Total Indicator Relevances
+#'   to avoid zero divisions. Default is 2.
+#'
+#' @return A named list containing 17 components:
+#' \itemize{
+#'   \item \code{ns_year_list}: Character vector of years.
+#'   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
+#'   \item \code{ns_broad_habitats}: Character vector of broad habitat names.
+#'   \item \code{ns_all_habitat_labels}: Flat character vector of all detailed habitat labels.
+#'   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
+#'   \item \code{ns_service_types}: Character vector of the three main service types.
+#'   \item \code{ns_all_service_labels}: Flat character vector of all service labels.
+#'   \item \code{ns_esppu}: Data frame of Ecosystem Service Potential Per Unit scores.
+#'   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
+#'   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
+#'   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
+#'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
+#'   \item \code{ns_ci_ids}: Character vector of unique condition indicator IDs.
+#'   \item \code{ns_cirms_list}: List of binary Condition Indicator Relevance Matrices.
+#'   \item \code{ns_tir_constant}: The value of the \code{tir_constant} used.
+#'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
+#'   \item \code{ns_ci_score_matrix}: Data frame of yearly scores for each condition indicator.
+#' }
 #' @export
 import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   year_list <- as.character(year_list)
@@ -104,7 +132,7 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
       ci_id = janitor::make_clean_names(paste(.data$raw_name, .data$raw_code, sep = "_"), case = "snake"),
       dplyr::across(dplyr::all_of(service_types), as.numeric)
     ) %>%
-    dplyr::select(.data$ci_id, dplyr::all_of(service_types))
+    dplyr::select("ci_id", dplyr::all_of(service_types))
 
   ci_ids <- as.character(indicator_directory$ci_id)
 
@@ -157,6 +185,12 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   ))
 }
 
+#' Extract and Clean Habitat Classification Tree
+#'
+#' @param path Path to Excel source.
+#' @param sheet Sheet index.
+#' @param bh_range Range for broad habitats.
+#' @param dh_ranges Vector of ranges for detailed habitats.
 #' @keywords internal
 get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
   broad_habitats <- readxl::read_xlsx(
@@ -182,6 +216,13 @@ get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
   return(habitat_tree)
 }
 
+#' Extract and Clean Ecosystem Service Tree
+#'
+#' @param path Path to Excel source.
+#' @param sheet Sheet index.
+#' @param est_range Range for ES categories.
+#' @param es_code_ranges Vector of ranges for ES codes.
+#' @param es_name_ranges Vector of ranges for ES names.
 #' @keywords internal
 get_ns_es_tree <- function(path, sheet, est_range, es_code_ranges, es_name_ranges) {
   es_categories <- readxl::read_xlsx(path = path, sheet = sheet, range = est_range,
@@ -208,6 +249,12 @@ get_ns_es_tree <- function(path, sheet, est_range, es_code_ranges, es_name_range
   return(es_tree)
 }
 
+#' Extract Ecosystem Service Importance Scores
+#'
+#' @param path Path to Excel source.
+#' @param sheet Sheet index.
+#' @param importance_ranges Named list of Excel ranges for each service type.
+#' @param es_tree The cleaned ES label tree.
 #' @keywords internal
 get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
   importance_scores_list <- lapply(names(importance_ranges), function(service_type) {
@@ -222,6 +269,13 @@ get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
   return(importance_scores_list)
 }
 
+#' Extract List of Condition Indicator Relevance Matrices (CIRMs)
+#'
+#' @param path Path to Excel source.
+#' @param sheet_list Vector of sheet indices to iterate through.
+#' @param matrix_range Excel range for the binary matrices.
+#' @param ci_ids Vector of indicator IDs.
+#' @param all_service_labels Flat vector of all service labels.
 #' @keywords internal
 get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids, all_service_labels) {
   list_of_dfs <- lapply(sheet_list, function(current_sheet) {
@@ -237,6 +291,14 @@ get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids, all_service
   return(list_of_dfs)
 }
 
+#' Generate Custom Divisor Matrix
+#'
+#' @param all_habitat_labels Vector of habitat labels.
+#' @param all_es_labels Vector of service labels.
+#' @param habitats_to_adjust Vector of habitat shorthands (e.g., "b1").
+#' @param services_to_adjust Vector of service keywords for partial matching.
+#' @param usual_divisor Numeric default divisor (e.g., 5).
+#' @param custom_divisor Numeric adjustment divisor (e.g., 1).
 #' @keywords internal
 make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
                                        habitats_to_adjust, services_to_adjust,
@@ -253,11 +315,20 @@ make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
   }
 
   htst_wide <- htst %>%
-    tidyr::pivot_wider(names_from = .data$service_type, values_from = .data$divisor)
+    tidyr::pivot_wider(
+      names_from = "service_type", # Use strings here
+      values_from = "divisor"      # Use strings here
+    )
 
-  return(htst_wide %>% dplyr::select(-.data$habitat))
+  return(htst_wide %>% dplyr::select(-"habitat"))
 }
 
+#' Read Yearly Condition Indicator Scores
+#'
+#' @param path Path to Excel source.
+#' @param sheet_list Vector of sheet indices.
+#' @param vector_range Range for the single-column score vectors.
+#' @param ci_ids Vector of indicator IDs.
 #' @keywords internal
 read_the_ci_scores <- function(path, sheet_list, vector_range, ci_ids) {
   list_of_vectors <- list()

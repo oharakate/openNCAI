@@ -113,14 +113,21 @@ check()
 
 
 #### get_ns_data() ####
-use_r("get_ns_data")
+use_r("import_ns_data")
 load_all()
 document()
 check()
-use_test("get_ns_data")
+use_test("import_ns_data")
 load_all()
-test_file("tests/testthat/test-get_ns_data.R")
+test_file("tests/testthat/test-import_ns_data.R")
 
+#### get_ns_testing_data ####
+use_r("import_ns_testing_data")
+use_test("import_ns_testing_data")
+load_all()
+document()
+test_file("tests/testthat/test-import_ns_testing_data.R")
+check()
 
 #### esppu_scores_to_weights()####
 
@@ -179,26 +186,8 @@ check()
 # Commit and push here.
 
 
-#### bind_importance_weights()####
 
-use_r("bind_importance_weights")
-# Remember to put in the roxygen skeleton
-load_all()
-run_examples(pkg = ".", test = "bind_importance_weights")
-document()
-
-# Tests
-use_test("bind_importance_weights")
-load_all()
-test_file("tests/testthat/test-bind_importance_weights.R")
-document()
-
-load_all()
-check()
-# Commit and push here.
-
-
-#### template()####
+#### calc_wellbeing_base()####
 
 use_r("calc_wellbeing_base")
 # Remember to put in the roxygen skeleton
