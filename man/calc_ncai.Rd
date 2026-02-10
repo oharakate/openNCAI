@@ -2,7 +2,7 @@
 % Please edit documentation in R/calc_ncai.R
 \name{calc_ncai}
 \alias{calc_ncai}
-\title{Calculate Natural Capital Asset Index (NCAI)}
+\title{Calculate the Natural Capital Asset Index (NCAI)}
 \usage{
 calc_ncai(
   total_assets_matrix_list,
@@ -11,28 +11,37 @@ calc_ncai(
 )
 }
 \arguments{
-\item{total_assets_matrix_list}{A named list of annual asset data frames
-(output from \code{build_all_ncai_matrices}).}
+\item{total_assets_matrix_list}{A named list of matrices, where each matrix
+represents the total assets for a specific year. The names of the list
+must correspond to the years (e.g., "2000", "2001").}
 
-\item{smoothing_weights}{A numeric vector of weights for the 5-year smoothing
-window. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
+\item{smoothing_weights}{A numeric vector of weights used for the trailing
+5-year weighted smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 
-\item{year_one}{The year to be used as the index base (100). Defaults to the
-first name in the list.}
+\item{year_one}{Character or Numeric. The year used as the baseline
+(where index = 100). Defaults to the first name in
+\code{total_assets_matrix_list}.}
 }
 \value{
-A data frame with years as row names and three columns:
-  \item{raw_total}{The sum of all asset values for that year.}
-  \item{raw_index}{The total indexed against the base year (base = 100).}
-  \item{smoothed_index}{The 5-year weighted moving average of the raw index.}
+A data frame containing:
+\itemize{
+  \item \code{raw_total}: The absolute sum of assets for each year.
+  \item \code{raw_index}: The index value relative to the baseline year.
+  \item \code{smoothed_index}: The weighted 5-year trailing smoothed trend.
+}
 }
 \description{
-Aggregates annual asset matrices into a single time-series index. This function
-calculates raw totals, a raw index relative to a base year, and a 5-year
-weighted smoothed index according to the NatureScot methodology.
+This function calculates the raw and smoothed Natural Capital
+Asset Index from a list of yearly asset matrices. It anchors the index
+to a specific baseline year and applies a weighted trailing moving average.
 }
 \details{
-The smoothing process uses a 5-year trailing window (current year plus 4 years prior).
-Weights are applied such that more recent years have a greater influence on
-the smoothed value.
+\strong{Smoothing and Baseline Years:}
+The smoothed index is calculated using a 5-year trailing window via a
+weighted moving average (using the \code{slider} package). If \code{year_one}
+is set to a year other than the first year of the dataset, the
+\code{smoothed_index} value for that baseline year will likely not be
+exactly 100. This is because the smoothing reflects the trend of the
+preceding 4 years. The \code{raw_index} will always remain anchored at 100
+for the \code{year_one}.
 }

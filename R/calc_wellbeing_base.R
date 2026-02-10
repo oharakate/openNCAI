@@ -6,9 +6,9 @@
 #' service. Label trees may be passed in for optional labelling of the output
 #' data frame.
 #'
-#' @param espb A matrix of habitat (rows) by ecosystem service (columns)
-#' containing weights to denote the potential of each habitat to provide
-#' each ecosystem service.
+#' @param espb A matrix (or data frame) of habitat (rows) by ecosystem service
+#' (columns) containing weights to denote the potential of each habitat to
+#' provide each ecosystem service, calculated for the baseline year (Year One).
 #' @param importance_weights A vector of weights denoting the importance of
 #' each ecosystem service in the area of interest.
 #' @param habitats_label_tree A named list of character vectors representing the

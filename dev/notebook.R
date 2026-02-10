@@ -301,7 +301,7 @@ check()
 # Commit and push here.
 
 
-#### template()####
+#### calc_ncai()####
 
 use_r("calc_ncai")
 # Remember to put in the roxygen skeleton
@@ -320,6 +320,25 @@ document()
 load_all()
 check()
 # Commit and push here.#### template()####
+
+
+#### get_ncai() ####
+use_r("get_ncai")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?get_ncai
+
+# Tests
+use_test("get_ncai")
+load_all()
+test_file("tests/testthat/test-get_ncai.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
 
 
 #### template() ####

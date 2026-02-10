@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_all_tyfs.R
 \name{build_all_tyfs}
 \alias{build_all_tyfs}
-\title{Build All Total Yearly Flows (TYFs)}
+\title{Build All Total Yearly Flow Matrices (TYFs)}
 \usage{
 build_all_tyfs(raw_cis, year_list, ciwms_list, tir, tir_constant)
 }

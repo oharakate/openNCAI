@@ -4,7 +4,12 @@
 \alias{calc_ncai_by_bh}
 \title{Calculate NCAI Broken Down by Broad Habitat}
 \usage{
-calc_ncai_by_bh(total_assets_matrix_list, habitats_label_tree, ...)
+calc_ncai_by_bh(
+  total_assets_matrix_list,
+  habitats_label_tree,
+  year_one = NULL,
+  ...
+)
 }
 \arguments{
 \item{total_assets_matrix_list}{A named list of annual asset data frames.}

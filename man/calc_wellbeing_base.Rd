@@ -12,9 +12,9 @@ calc_wellbeing_base(
 )
 }
 \arguments{
-\item{espb}{A matrix of habitat (rows) by ecosystem service (columns)
-containing weights to denote the potential of each habitat to provide
-each ecosystem service.}
+\item{espb}{A matrix (or data frame) of habitat (rows) by ecosystem service
+(columns) containing weights to denote the potential of each habitat to
+provide each ecosystem service, calculated for the baseline year (Year One).}
 
 \item{importance_weights}{A vector of weights denoting the importance of
 each ecosystem service in the area of interest.}

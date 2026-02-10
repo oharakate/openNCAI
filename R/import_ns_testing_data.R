@@ -160,7 +160,7 @@ read_the_indices <- function(indices_range,
   ) %>%
     as.data.frame() %>%
     setNames(c("raw_total", "raw_index", "smoothed_index"))
-  row.names(index_set) <- year_list
+  row.names(index_set) <- as.character(year_list)
 
   return(index_set)
 }

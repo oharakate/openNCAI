@@ -10,6 +10,8 @@
 #' @param habitat_extent A data frame where rows represent habitats and
 #'   columns represent total extent per year.
 #' @param year_one The base year (e.g., 2000) used for indexing extent.
+#' @param year_list The list of years over which the index is calculated.
+#' By default, \code{year_one} is taken as the first item in this list.
 #' @param habitat_labels A character vector of habitat names to be applied
 #'   to the resulting data frames.
 #'
@@ -19,8 +21,13 @@
 build_all_ncai_matrices <- function(tyf_list,
                                     wellbeing_base,
                                     habitat_extent,
-                                    year_one,
+                                    year_one = NULL,
+                                    year_list,
                                     habitat_labels) {
+
+  if (is.null(year_one)) {
+    year_one = as.character(year_list[[1]])
+  }
 
   # Iterate over the years provided in the tyf_list
   all_ncai <- lapply(names(tyf_list), function(yr) {
@@ -63,7 +70,11 @@ build_all_ncai_matrices <- function(tyf_list,
 #'
 #' @return A data frame of natural capital assets for the target year.
 #' @keywords internal
-build_ncai_matrix <- function(tyf, wellbeing_base, habitat_extent, target_year, year_one) {
+build_ncai_matrix <- function(tyf,
+                              wellbeing_base,
+                              habitat_extent,
+                              target_year,
+                              year_one) {
 
   # Convert to characters for safe indexing
   target_str <- as.character(target_year)

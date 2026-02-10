@@ -15,11 +15,13 @@ build_ciwm_list(
 \item{cirm_list}{A named list of data frames. Names are condition indicator
 labels. Data frames hold a matrix of binary values denoting whether the
 Condition Indicator is relevant to each habitat/service combination. Names
-must match the labels in \code{indicator_directory}.}
+must match the labels inthe \code{ci_id} column of \code{indicator_directory}.}
 
 \item{indicator_directory}{A data frame containing weights
 denoting the relevance of each condition indicator to each ecosystem service
-type. Must include a column of condition indicator labels for matching.}
+type. Must include a column of condition indicator labels for matching
+called \code{ci_id}. Weight columns must match the top level names from the
+\code{es_label_tree}.}
 
 \item{es_label_tree}{A named list of character vectors representing
 the hierarchy of ecosystem services (as character vectors) within

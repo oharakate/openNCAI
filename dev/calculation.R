@@ -42,6 +42,75 @@ names(ns_test_data_objects)
 list2env(ns_test_data_objects, envir = .GlobalEnv)
 
 
+#### Calculate everything with the big function ####
+ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
+                         ci_score_matrix = ns_ci_score_matrix,
+                         habitats_label_tree = ns_habitats_label_tree,
+                         es_label_tree = ns_es_label_tree,
+                         year_list = ns_year_list,
+                         esppu_scores = ns_esppu,
+                         custom_divisor_matrix = ns_custom_divisor_matrix,
+                         between_importance_scores = ns_between_importance_scores,
+                         within_importance_scores = ns_within_importance_scores,
+                         cirms_list = ns_cirms_list,
+                         indicator_directory = ns_indicator_directory,
+                         return = "everything")
+
+# Check making ESPB works:
+# Does our made_espb match the published ref_espb?
+all.equal(ncai_objects$espb, ref_espb)
+
+# Check making Wellbeing Base works:
+# Is the calculated wellbeing base equal to NatureScot's wellbeing base?
+all.equal(ncai_objects$wellbeing_base, ref_wellbeing_base)
+# Yes.
+
+# Total Yearly Flow is not displayed in NatureScot method, but we use it to
+# get the total yearly asset matrices and we can check those:
+# Check if our calculations match those of NatureScot across the years:
+comparison_results <- mapply(function(list1, list2) {
+  all.equal(list1, list2)
+}, ncai_objects$yearly_asset_matrices[1:23],
+ref_all_year_sheets[1:23],
+SIMPLIFY = FALSE)
+# They do:
+comparison_results
+
+# The overall index is found at:
+ncai_objects$overall_index
+# This can be compared to the first entry (named "overall") in the imported
+# ns_index_breakdowns.
+# BUT NOTE THAT displayed raw total in NS sheet is divided by 100 so,
+# for comparison:
+test_ref_overall_index <- ref_index_breakdowns[["overall"]] |>
+  dplyr::mutate(raw_total = raw_total * 100) |>
+  # Also, and we don't know if this is a mistake or not, no raw index is shown
+  # for the overall index. Instead the smoothed value is displayed in that
+  # column, so let's deselect that column in both for testing:
+  dplyr::select(-raw_index)
+
+test_our_overall_index <- ncai_objects$overall_index |>
+  dplyr::select(-raw_index)
+all.equal(test_our_overall_index, test_ref_overall_index)
+remove(test_our_overall_index)
+remove(test_ref_overall_index)
+
+# Check if our index broken down by ecosystem service type matches the ref:
+# Are they equal?
+ref_index_by_st <- ref_index_breakdowns[names(ns_es_label_tree)]
+all.equal(ncai_objects$index_by_st, ref_index_by_st)
+# Yes.
+
+# Same check for index broken down by broad habitat:
+# Not all broad habitat breakdowns are there in the reference set:
+names(ref_index_breakdowns)
+# Make a list of the ones we can compare:
+ns_bh_breakdowns <- names(ref_index_breakdowns[5:11])
+ref_index_by_bh <- ref_index_breakdowns[ns_bh_breakdowns]
+all.equal(ncai_objects$index_by_bh[ns_bh_breakdowns], ref_index_by_bh)
+# All matching.
+
+# The function works!
 
 #### CALCULATE BASES ####
 

@@ -1,4 +1,4 @@
-#' Build All Total Yearly Flows (TYFs)
+#' Build All Total Yearly Flow Matrices (TYFs)
 #'
 #' Orchestrates the full process of generating the Total Yearly Flow matrices for
 #' every year in the series. It builds the indicator-specific contribution

@@ -8,7 +8,8 @@ build_all_ncai_matrices(
   tyf_list,
   wellbeing_base,
   habitat_extent,
-  year_one,
+  year_one = NULL,
+  year_list,
   habitat_labels
 )
 }
@@ -22,6 +23,9 @@ build_all_ncai_matrices(
 columns represent total extent per year.}
 
 \item{year_one}{The base year (e.g., 2000) used for indexing extent.}
+
+\item{year_list}{The list of years over which the index is calculated.
+By default, \code{year_one} is taken as the first item in this list.}
 
 \item{habitat_labels}{A character vector of habitat names to be applied
 to the resulting data frames.}
