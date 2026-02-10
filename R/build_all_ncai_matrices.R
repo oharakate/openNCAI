@@ -1,0 +1,96 @@
+#' Build All Natural Capital Asset Matrices
+#'
+#' Orchestrates the generation of asset matrices for every year in the series.
+#' Each matrix represents the final "Year Sheet" in the NatureScot account
+#' methodology, combining condition, wellbeing, and extent.
+#'
+#' @param tyf_list A named list of Total Yearly Flow (TYF) matrices (one per year).
+#' @param wellbeing_base A matrix representing the base wellbeing values
+#'   (Spatial/Service relevance scores).
+#' @param habitat_extent A data frame where rows represent habitats and
+#'   columns represent total extent per year.
+#' @param year_one The base year (e.g., 2000) used for indexing extent.
+#' @param habitat_labels A character vector of habitat names to be applied
+#'   to the resulting data frames.
+#'
+#' @return A named list of data frames, one for each year. Each data frame
+#'   displays the calculated natural capital assets by habitat and service.
+#' @export
+build_all_ncai_matrices <- function(tyf_list,
+                                    wellbeing_base,
+                                    habitat_extent,
+                                    year_one,
+                                    habitat_labels) {
+
+  # Iterate over the years provided in the tyf_list
+  all_ncai <- lapply(names(tyf_list), function(yr) {
+
+    ncai_df <- build_ncai_matrix(
+      tyf = tyf_list[[yr]],
+      wellbeing_base = wellbeing_base,
+      habitat_extent = habitat_extent,
+      target_year = yr,
+      year_one = year_one
+    )
+
+    # Ensure row names are explicitly set for clarity in output
+    rownames(ncai_df) <- habitat_labels
+
+    return(ncai_df)
+  })
+
+  names(all_ncai) <- names(tyf_list)
+  return(all_ncai)
+}
+
+#' Build a Single Year's Natural Capital Asset Matrix
+#'
+#' Calculates the Natural Capital Asset (NCA) matrix for a specific target year.
+#' It combines the Total Yearly Flow (condition) with the Wellbeing Base and
+#' adjusts for the change in Habitat Extent relative to a base year.
+#'
+#' @details
+#' The final calculation follows the formula:
+#' \eqn{(TYF \times Wellbeing Base \times Extent Index) / 10,000}.
+#' The Extent Index is the target year's extent divided by the base year's
+#' extent, multiplied by 100.
+#'
+#' @param tyf A matrix of Total Yearly Flows for the target year.
+#' @param wellbeing_base A matrix of base wellbeing values.
+#' @param habitat_extent A data frame of habitat extent values.
+#' @param target_year The specific year to calculate.
+#' @param year_one The base year for extent indexing.
+#'
+#' @return A data frame of natural capital assets for the target year.
+#' @keywords internal
+build_ncai_matrix <- function(tyf, wellbeing_base, habitat_extent, target_year, year_one) {
+
+  # Convert to characters for safe indexing
+  target_str <- as.character(target_year)
+  origin_str <- as.character(year_one)
+
+  # Extract extent vectors
+  extent_target_vec <- habitat_extent[[target_str]]
+  extent_origin_vec <- habitat_extent[[origin_str]]
+
+  # Index the habitat extent values (Target / Origin * 100)
+  extent_index <- (extent_target_vec / extent_origin_vec * 100)
+
+  # Step 1: Element-wise multiplication of condition (TYF) and relevance (WB)
+  wb_tyf <- as.matrix(tyf) * as.matrix(wellbeing_base)
+
+  # Step 2: Apply the extent index across the rows (Habitats)
+  # sweep() applies the vector (extent_index) to each row of the matrix
+  ncai_matrix <- sweep(
+    x = wb_tyf,
+    MARGIN = 1,
+    STATS = extent_index,
+    FUN = "*"
+  )
+
+  # Reapply rownames
+  rownames(ncai_matrix) <- rownames(wellbeing_base)
+
+  # Final Step: Normalize as per spreadsheet calculation (/10,000)
+  return(as.data.frame(ncai_matrix / 10000))
+}

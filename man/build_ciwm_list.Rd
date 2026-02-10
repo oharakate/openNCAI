@@ -33,6 +33,11 @@ Level 1). Syntactical names only (no spaces or special characters).
 The habitats label tree is optional; if supplied a labelled data frame will
 be returned.}
 }
+\value{
+A named list of data frames, one list object for each Condition
+Indicator each containing the weighted relevance of that indicator to each
+combination of habitats and ecosystem services.
+}
 \description{
 Converts relevance matrices (CIRM) into weight matrices (CIWM) by
 multiplying the relevance scores by the indicator's importance weights

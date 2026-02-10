@@ -21,6 +21,10 @@
 #' The habitats label tree is optional; if supplied a labelled data frame will
 #' be returned.
 #'
+#' @return A named list of data frames, one list object for each Condition
+#' Indicator each containing the weighted relevance of that indicator to each
+#' combination of habitats and ecosystem services.
+#'
 #' @importFrom utils stack
 #' @importFrom stats setNames
 #' @export

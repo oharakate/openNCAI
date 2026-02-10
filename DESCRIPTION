@@ -16,6 +16,7 @@ Imports:
     magrittr,
     readxl,
     rlang,
+    slider,
     stats,
     tidyr
 RoxygenNote: 7.3.3

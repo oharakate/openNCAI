@@ -53,7 +53,7 @@ use_package("janitor")
 use_package("stats")
 use_package("tidyr")
 # use_package("tibble")
-# use_package("slider")
+use_package("slider")
 # use_package("ggplot2")
 
 # Use Git
@@ -172,7 +172,6 @@ check()
 use_r("calc_importance_weights")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "calc_importance_weights")
 document()
 
 # Tests
@@ -225,13 +224,110 @@ check()
 
 
 
+#### calc_tir()####
+
+use_r("calc_tir")
+# Remember to put in the roxygen skeleton
+load_all()
+?calc_tir
+document()
+
+# Tests
+use_test("calc_tir")
+load_all()
+test_file("tests/testthat/test-calc_tir.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### build_all_tyfs()####
+
+use_r("build_all_tyfs")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?build_all_tyfs
+?build_tyf
+
+# Tests
+use_test("build_all_tyfs")
+load_all()
+test_file("tests/testthat/test-build_all_tyfs.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### calc_flow_rate() ####
+use_r("calc_flow_rate")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?calc_flow_rate
+
+# Tests
+use_test("calc_flow_rate")
+load_all()
+test_file("tests/testthat/test-calc_flow_rate.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+#### build_all_ncai_matrices()####
+
+use_r("build_all_ncai_matrices")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?build_ncai_matrix
+?build_all_ncai_matrices
+
+# Tests
+use_test("build_all_ncai_matrices")
+load_all()
+test_file("tests/testthat/test-build_all_ncai_matrices.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
 #### template()####
 
+use_r("calc_ncai")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?calc_ncai
+?calc_ncai_by_st
+?calc_ncai_by_bh
+
+# Tests
+use_test("calc_ncai")
+load_all()
+test_file("tests/testthat/test-calc_ncai.R")
+document()
+
+load_all()
+check()
+# Commit and push here.#### template()####
+
+
+#### template() ####
 use_r("X")
 # Remember to put in the roxygen skeleton
 load_all()
-?X
 document()
+?X
 
 # Tests
 use_test("X")
