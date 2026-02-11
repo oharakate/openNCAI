@@ -26,7 +26,7 @@
 #' by the category's broad weight. If a category has a total score of zero,
 #' all services within it are assigned a weight of 0.
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # 1. Define the Hierarchy
@@ -45,7 +45,7 @@
 #' )
 #'
 #' # 3. Run the calculation
-#' importance_df <- calc_importance_weights(b_scores, w_scores, es_tree)
+#' importance_df <- openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree)
 #' print(importance_df)
 calc_importance_weights <- function(between_scores,
                                     within_scores,

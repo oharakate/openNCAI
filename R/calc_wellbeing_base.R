@@ -29,7 +29,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom dplyr across everything
 #'
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # Assuming espb and importance_weights are already calculated:

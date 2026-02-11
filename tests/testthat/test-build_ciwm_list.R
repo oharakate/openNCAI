@@ -25,7 +25,7 @@ test_that("build_ciwm_list applies weights and matches by name (Output: DF)", {
   cirm_list <- list(ind1 = mat_template, ind2 = mat_template)
 
   # 4. Run Function
-  res <- build_ciwm_list(cirm_list, indicator_directory, es_tree, habitats_label_tree = NULL)
+  res <- openNCAI:::build_ciwm_list(cirm_list, indicator_directory, es_tree, habitats_label_tree = NULL)
 
   # 5. Verification
   # Calculation: Binary(1) * Weight(0.5) = 0.5
@@ -49,7 +49,7 @@ test_that("build_ciwm_list handles NA weights (Output: DF)", {
 
   cirm_list <- list(ind1 = matrix(1, nrow = 1, ncol = 1, dimnames = list("oak", "crops")))
 
-  res <- build_ciwm_list(cirm_list, indicator_directory, es_tree)
+  res <- openNCAI:::build_ciwm_list(cirm_list, indicator_directory, es_tree)
 
   # Verify it's a data frame and the value remains NA
   expect_s3_class(res$ind1, "data.frame")
@@ -63,6 +63,6 @@ test_that("build_ciwm_list throws error for missing IDs", {
   indicator_directory <- data.frame(ci_id = "missing_id", provisioning = 10)
   cirm_list <- list(ind1 = matrix(1, nrow = 1, ncol = 1, dimnames = list("oak", "crops")))
 
-  expect_error(build_ciwm_list(cirm_list, indicator_directory, es_tree),
+  expect_error(openNCAI:::build_ciwm_list(cirm_list, indicator_directory, es_tree),
                "not found in directory")
 })

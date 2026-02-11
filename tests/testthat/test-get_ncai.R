@@ -47,7 +47,7 @@ mock_dir <- data.frame(
 # --- 2. THE TESTS ---
 
 test_that("get_ncai core logic works with default return", {
-  res <- get_ncai(
+  res <- openNCAI::get_ncai(
     habitat_extent = mock_extent,
     ci_score_matrix = mock_ci_scores,
     habitats_label_tree = h_tree,
@@ -67,7 +67,7 @@ test_that("get_ncai core logic works with default return", {
 
 test_that("get_ncai correctly handles custom year_one", {
   expect_message(
-    res <- get_ncai(
+    res <- openNCAI::get_ncai(
       habitat_extent = mock_extent,
       ci_score_matrix = mock_ci_scores,
       habitats_label_tree = h_tree,
@@ -87,7 +87,7 @@ test_that("get_ncai correctly handles custom year_one", {
 })
 
 test_that("get_ncai returns the full results list when requested", {
-  res_all <- get_ncai(
+  res_all <- openNCAI::get_ncai(
     habitat_extent = mock_extent,
     ci_score_matrix = mock_ci_scores,
     habitats_label_tree = h_tree,

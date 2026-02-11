@@ -2,7 +2,7 @@ test_that("import_ns_testing_data returns expected structure and names", {
   path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
   skip_if(path == "")
 
-  res <- import_ns_testing_data(
+  res <- openNCAI:::import_ns_testing_data(
     path = path,
     habitats_label_tree = ns_habitats_label_tree,
     es_label_tree = ns_es_label_tree,

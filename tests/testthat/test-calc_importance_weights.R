@@ -14,7 +14,7 @@ test_that("calc_importance_weights correctly matches by name regardless of list 
     provisioning = list(timber = 5, crops = 5) # timber first here, tree says crops first
   )
 
-  res <- calc_importance_weights(b_scores, w_scores, es_tree)
+  res <- openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree)
 
   # 3. Verify Order and Math
   # Total b_score = 100. Provisioning = 75%, Regulating = 25%
@@ -33,7 +33,7 @@ test_that("calc_importance_weights throws error for missing broad categories", {
   b_scores <- list(prov = 100)
   w_scores <- list(prov = list(crops = 1), reg = list(carbon = 1))
 
-  expect_error(calc_importance_weights(b_scores, w_scores, es_tree),
+  expect_error(openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree),
                "between_scores is missing required categories")
 })
 
@@ -43,7 +43,7 @@ test_that("calc_importance_weights throws error for missing specific service lab
   # Missing 'timber' in within_scores
   w_scores <- list(prov = list(crops = 10))
 
-  expect_error(calc_importance_weights(b_scores, w_scores, es_tree),
+  expect_error(openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree),
                "Specific service labels for 'prov' were not found")
 })
 
@@ -53,6 +53,6 @@ test_that("calc_importance_weights handles all-zero categories", {
   # Total sum for prov is 0
   w_scores <- list(prov = list(crops = 0, timber = 0))
 
-  res <- calc_importance_weights(b_scores, w_scores, es_tree)
+  res <- openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree)
   expect_equal(as.numeric(res[1,]), c(0, 0))
 })

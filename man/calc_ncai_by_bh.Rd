@@ -17,6 +17,9 @@ calc_ncai_by_bh(
 \item{habitats_label_tree}{A named list where each element is a character
 vector of habitat labels (row names).}
 
+\item{year_one}{Optional: year to index around. Default is year one of the
+\code{year_list}.}
+
 \item{...}{Additional arguments passed to \code{calc_ncai}.}
 }
 \value{

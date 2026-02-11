@@ -21,7 +21,7 @@
 #' the hierarchy of ecosystem services.
 #'
 #' @return A labelled data frame with the same dimensions as 'esppu_weights'.
-#' @export
+#' @keywords internal
 #'
 #' @examples
 #' # Define Label Trees
@@ -41,7 +41,12 @@
 #' years <- c("2026", "2027")
 #'
 #' # Run with default (2026)
-#' espb_res <- calc_espb(weights, extent, years, habitats_label_tree = h_tree, es_label_tree = es_tree)
+#' espb_res <- openNCAI:::calc_espb(
+#'   esppu_weights = weights,
+#'   habitat_extent = extent,
+#'   year_list = years,
+#'   habitats_label_tree = h_tree,
+#'   es_label_tree = es_tree)
 calc_espb <- function(esppu_weights,
                       habitat_extent,
                       year_list,
@@ -49,9 +54,13 @@ calc_espb <- function(esppu_weights,
                       habitats_label_tree,
                       es_label_tree) {
 
-  # 1. Check dataframe dimensions and label trees match
+  # 1a. Check dataframe dimensions and label trees match
   if (length(unlist(habitats_label_tree, use.names = FALSE)) != nrow(habitat_extent)) {
     stop("Number of habitat names in habitats_label_tree must match rows in habitat_extent.")
+  }
+  # 1b. Check match of row names between extent and weights:
+  if (!all(rownames(habitat_extent) == rownames(esppu_weights))) {
+    stop("Row names (habitats) of habitat_extent and esppu_weights must be identical and in the same order.")
   }
 
   # 2. Identify target year and validate existence in extent data

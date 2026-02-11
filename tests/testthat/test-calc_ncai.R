@@ -10,7 +10,7 @@ test_that("calc_ncai calculates totals, indexing, and smoothing correctly", {
   )
 
   # 2. Run Function
-  res <- calc_ncai(m_list)
+  res <- openNCAI:::calc_ncai(m_list)
 
   # 3. Robust Verifications
   # Helper to extract value by row name safely
@@ -36,7 +36,7 @@ test_that("calc_ncai_by_st correctly filters columns before indexing", {
   m_list <- list("2000" = m1, "2001" = m1 * 1.1)
 
   tree <- list(group_a = "serv1", group_b = "serv2")
-  res <- calc_ncai_by_st(m_list, tree)
+  res <- openNCAI:::calc_ncai_by_st(m_list, tree)
 
   # Group A (serv1 only)
   val_a <- res$group_a$raw_total[which(rownames(res$group_a) == "2000")]
@@ -52,7 +52,7 @@ test_that("calc_ncai_by_bh correctly filters rows before indexing", {
   m_list <- list("2000" = m1, "2001" = m1 * 1.1)
 
   tree <- list(woodland = "hab1", grassland = "hab2")
-  res <- calc_ncai_by_bh(m_list, tree)
+  res <- openNCAI:::calc_ncai_by_bh(m_list, tree)
 
   # Woodland (hab1 only)
   val_w <- res$woodland$raw_total[which(rownames(res$woodland) == "2000")]

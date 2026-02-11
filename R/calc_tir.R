@@ -20,7 +20,7 @@
 #' scores plus the constant, with the same dimesions as the input matrices.
 #' @export
 #'
-#' @examples
+#' @keywords internal
 #' # Mock list of two matrices
 #' mat1 <- matrix(1, nrow = 2, ncol = 2)
 #' mat2 <- matrix(0.5, nrow = 2, ncol = 2)

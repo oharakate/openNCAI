@@ -45,3 +45,4 @@ exactly 100. This is because the smoothing reflects the trend of the
 preceding 4 years. The \code{raw_index} will always remain anchored at 100
 for the \code{year_one}.
 }
+\keyword{internal}

@@ -35,7 +35,7 @@
 #' @importFrom slider slide_dbl
 #' @importFrom dplyr mutate
 #' @importFrom utils tail
-#' @export
+#' @keywords internal
 calc_ncai <- function(total_assets_matrix_list,
                       smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
                       year_one = names(total_assets_matrix_list)[[1]]) {
@@ -122,6 +122,8 @@ calc_ncai_by_st <- function(total_assets_matrix_list,
 #' @param total_assets_matrix_list A named list of annual asset data frames.
 #' @param habitats_label_tree A named list where each element is a character
 #'   vector of habitat labels (row names).
+#' @param year_one Optional: year to index around. Default is year one of the
+#' \code{year_list}.
 #' @param ... Additional arguments passed to \code{calc_ncai}.
 #'
 #' @return A list of NCAI data frames, one for each habitat group.

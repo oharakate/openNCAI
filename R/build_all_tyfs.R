@@ -12,7 +12,7 @@
 #'
 #' @return A named list of matrices, one for each year in \code{year_list}.
 #'   Each matrix represents the aggregated flow of ecosystem services for that year.
-#' @export
+#' @keywords internal
 build_all_tyfs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
 
   # Call the process for every year in the list

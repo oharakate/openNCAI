@@ -19,7 +19,7 @@ library(ggthemes)
 # Location of the spreadsheet:
 ns_sheets_path <- file.path("inst", "extdata", "ncai_corrected.xlsx")
 # Get the data:
-ns_data_objects <- openNCAI::import_ns_data(path = ns_sheets_path)
+ns_data_objects <- openNCAI:::import_ns_data(path = ns_sheets_path)
 # See what's in the list of objects returned:
 names(ns_data_objects)
 # Place standalone objects into the environment for ease of access:
@@ -31,7 +31,7 @@ list2env(ns_data_objects, envir = .GlobalEnv)
 # spreadsheet method. These are reference examples used to check that openNCAI
 # replicates the NatureScot method correctly.
 # Get the data:
-ns_test_data_objects <- openNCAI::import_ns_testing_data(
+ns_test_data_objects <- openNCAI:::import_ns_testing_data(
   path = ns_sheets_path,
   habitats_label_tree = ns_habitats_label_tree,
   es_label_tree = ns_es_label_tree,
@@ -111,6 +111,15 @@ all.equal(ncai_objects$index_by_bh[ns_bh_breakdowns], ref_index_by_bh)
 # All matching.
 
 # The function works!
+
+
+
+
+
+
+
+
+
 
 #### CALCULATE BASES ####
 

@@ -45,3 +45,4 @@ Converts relevance matrices (CIRM) into weight matrices (CIWM) by
 multiplying the relevance scores by the indicator's importance weights
 (per ecosystem service type) as defined in the Indicator Directory.
 }
+\keyword{internal}

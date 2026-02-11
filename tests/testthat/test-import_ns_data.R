@@ -6,7 +6,7 @@ test_that("import_ns_data returns the correct structure", {
   skip_if(path == "")
 
   years <- 2000:2022
-  result <- import_ns_data(path, year_list = years)
+  result <- openNCAI:::import_ns_data(path, year_list = years)
 
   # 1. Test overall output type
   expect_type(result, "list")
@@ -28,7 +28,7 @@ test_that("make_custom_divisor_matrix handles partial matching correctly", {
   services <- c("timber_1", "crops_2", "climate_3")
 
   # Test if "b1" shorthand correctly matches "b1_coastal"
-  res <- make_custom_divisor_matrix(
+  res <- openNCAI:::make_custom_divisor_matrix(
     all_habitat_labels = habitats,
     all_es_labels = services,
     habitats_to_adjust = "b1",

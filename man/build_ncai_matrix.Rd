@@ -4,7 +4,14 @@
 \alias{build_ncai_matrix}
 \title{Build a Single Year's Natural Capital Asset Matrix}
 \usage{
-build_ncai_matrix(tyf, wellbeing_base, habitat_extent, target_year, year_one)
+build_ncai_matrix(
+  tyf,
+  wellbeing_base,
+  habitat_extent,
+  target_year,
+  year_one,
+  habitat_labels
+)
 }
 \arguments{
 \item{tyf}{A matrix of Total Yearly Flows for the target year.}

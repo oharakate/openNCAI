@@ -16,7 +16,7 @@
 #'
 #' @return A named list of Total Yearly Flow (TYF) matrices, one for each year
 #'   in \code{year_list}.
-#' @export
+#' @keywords internal
 calc_flow_rate <- function(cirm_list,
                            indicator_directory,
                            es_label_tree,

@@ -29,12 +29,31 @@ across all matrices in the input list. A constant is then added to every
 cell to ensure that subsequent divisions (e.g., when calculating the NCAI)
 do not encounter zeros.
 }
-\examples{
-# Mock list of two matrices
-mat1 <- matrix(1, nrow = 2, ncol = 2)
-mat2 <- matrix(0.5, nrow = 2, ncol = 2)
-ciwm_list <- list(mat1, mat2)
-
-# Calculate TIR with a constant of 2
-calc_tir(ciwm_list, tir_constant = 2)
-}
+\keyword{#}
+\keyword{2}
+\keyword{2)}
+\keyword{2,}
+\keyword{<-}
+\keyword{=}
+\keyword{Calculate}
+\keyword{Mock}
+\keyword{TIR}
+\keyword{a}
+\keyword{calc_tir(ciwm_list,}
+\keyword{ciwm_list}
+\keyword{constant}
+\keyword{internal}
+\keyword{list}
+\keyword{list(mat1,}
+\keyword{mat1}
+\keyword{mat2}
+\keyword{mat2)}
+\keyword{matrices}
+\keyword{matrix(0.5,}
+\keyword{matrix(1,}
+\keyword{ncol}
+\keyword{nrow}
+\keyword{of}
+\keyword{tir_constant}
+\keyword{two}
+\keyword{with}

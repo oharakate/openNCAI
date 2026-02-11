@@ -5,7 +5,7 @@ test_that("calc_potential_weights handles missing divisors", {
   es_tree <- list(cat = c("es1", "es2"))
 
   expect_error(
-    calc_potential_weights(df, divisor = NULL, custom_divisor_matrix = NULL, h_tree, es_tree),
+    openNCAI:::calc_potential_weights(df, divisor = NULL, custom_divisor_matrix = NULL, h_tree, es_tree),
     "You must provide either a 'divisor' or a 'custom_divisor_matrix'"
   )
 })
@@ -16,7 +16,7 @@ test_that("calc_potential_weights works with a single divisor", {
   es_tree <- list(cat = c("es1", "es2"))
 
   # Pass trees here
-  res <- calc_potential_weights(df,
+  res <- openNCAI:::calc_potential_weights(df,
                                  divisor = 10,
                                  habitats_label_tree = h_tree,
                                  es_label_tree = es_tree)
@@ -34,7 +34,7 @@ test_that("calc_potential_weights works with custom matrix", {
   es_tree <- list(cat = c("es1"))
 
   # Pass trees here
-  res <- calc_potential_weights(df,
+  res <- openNCAI:::calc_potential_weights(df,
                                  custom_divisor_matrix = custom,
                                  habitats_label_tree =  h_tree,
                                  es_label_tree = es_tree)
@@ -49,7 +49,7 @@ test_that("calc_potential_weights catches dimension mismatches", {
   es_tree <- list(cat = c("es1"))
 
   expect_error(
-    calc_potential_weights(df,
+    openNCAI:::calc_potential_weights(df,
                             custom_divisor_matrix = wrong_dim,
                             habitats_label_tree = h_tree,
                             es_label_tree = es_tree),

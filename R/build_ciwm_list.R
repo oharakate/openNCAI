@@ -29,7 +29,7 @@
 #'
 #' @importFrom utils stack
 #' @importFrom stats setNames
-#' @export
+#' @keywords internal
 build_ciwm_list <- function(cirm_list,
                             indicator_directory,
                             es_label_tree,

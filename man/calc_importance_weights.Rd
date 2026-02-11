@@ -55,6 +55,7 @@ w_scores <- list(
 )
 
 # 3. Run the calculation
-importance_df <- calc_importance_weights(b_scores, w_scores, es_tree)
+importance_df <- openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree)
 print(importance_df)
 }
+\keyword{internal}

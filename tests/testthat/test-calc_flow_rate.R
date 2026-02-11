@@ -31,7 +31,7 @@ test_that("calc_flow_rate returns a list with correct length and names", {
 
 
   # 2. Run the master function
-  results <- calc_flow_rate(
+  results <- openNCAI:::calc_flow_rate(
     cirm_list = mock_cirm_list,
     indicator_directory = mock_ind_dir,
     es_label_tree = mock_es_tree,

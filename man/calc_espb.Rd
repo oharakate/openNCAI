@@ -61,5 +61,6 @@ weights <- data.frame(crops = c(0.12, 0.1, 0.0), timber = c(0.0, 0.0, 0.9))
 years <- c("2026", "2027")
 
 # Run with default (2026)
-espb_res <- calc_espb(weights, extent, years, habitats_label_tree = h_tree, es_label_tree = es_tree)
+espb_res <- openNCAI:::calc_espb(weights, extent, years, habitats_label_tree = h_tree, es_label_tree = es_tree)
 }
+\keyword{internal}

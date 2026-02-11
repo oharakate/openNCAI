@@ -40,3 +40,4 @@ into normalized Total Yearly Flow (TYF) matrices. It builds the weighted
 relevance matrices (CIWMs), calculates the total relevance (TIR), and
 processes every year in the series.
 }
+\keyword{internal}

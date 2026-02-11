@@ -17,7 +17,7 @@
 #'
 #' @return A named list of data frames, one for each year. Each data frame
 #'   displays the calculated natural capital assets by habitat and service.
-#' @export
+#' @keywords internal
 build_all_ncai_matrices <- function(tyf_list,
                                     wellbeing_base,
                                     habitat_extent,
@@ -30,21 +30,22 @@ build_all_ncai_matrices <- function(tyf_list,
   }
 
   # Iterate over the years provided in the tyf_list
-  all_ncai <- lapply(names(tyf_list), function(yr) {
+  all_ncai <- lapply(names(tyf_list), function(yr, labels) {
 
     ncai_df <- build_ncai_matrix(
       tyf = tyf_list[[yr]],
       wellbeing_base = wellbeing_base,
       habitat_extent = habitat_extent,
       target_year = yr,
-      year_one = year_one
+      year_one = year_one,
+      habitat_labels = labels
     )
 
     # Ensure row names are explicitly set for clarity in output
     rownames(ncai_df) <- habitat_labels
 
     return(ncai_df)
-  })
+  }, labels = habitat_labels)
 
   names(all_ncai) <- names(tyf_list)
   return(all_ncai)
@@ -74,7 +75,8 @@ build_ncai_matrix <- function(tyf,
                               wellbeing_base,
                               habitat_extent,
                               target_year,
-                              year_one) {
+                              year_one,
+                              habitat_labels) {
 
   # Convert to characters for safe indexing
   target_str <- as.character(target_year)
@@ -100,7 +102,7 @@ build_ncai_matrix <- function(tyf,
   )
 
   # Reapply rownames
-  rownames(ncai_matrix) <- rownames(wellbeing_base)
+  rownames(ncai_matrix) <- habitat_labels
 
   # Final Step: Normalize as per spreadsheet calculation (/10,000)
   return(as.data.frame(ncai_matrix / 10000))

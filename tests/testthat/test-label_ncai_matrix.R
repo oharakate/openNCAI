@@ -12,7 +12,7 @@ test_that("label_ncai_matrix correctly applies expanded labels", {
   mat <- matrix(1:6, nrow = 3, ncol = 2)
 
   # 3. Execute
-  result <- label_ncai_matrix(mat, h_tree, es_tree)
+  result <- openNCAI::label_ncai_matrix(mat, h_tree, es_tree)
 
   # 4. Verify output type
   expect_s3_class(result, "data.frame")
@@ -34,7 +34,7 @@ test_that("label_ncai_matrix handles empty trees gracefully", {
   es_tree <- list(b = "es1")
   mat <- matrix(100)
 
-  result <- label_ncai_matrix(mat, h_tree, es_tree)
+  result <- openNCAI::label_ncai_matrix(mat, h_tree, es_tree)
 
   expect_equal(rownames(result), "h1")
   expect_equal(colnames(result), "es1")

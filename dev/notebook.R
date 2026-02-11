@@ -358,8 +358,8 @@ load_all()
 check()
 # Commit and push here.
 
-
-
+# Run all examples
+devtools::run_examples()
 
 # End things
 # We can install the package with

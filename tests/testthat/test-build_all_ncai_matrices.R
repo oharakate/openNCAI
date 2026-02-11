@@ -12,7 +12,7 @@ test_that("build_ncai_matrix correctly combines TYF, Wellbeing, and Extent", {
     check.names = FALSE
   )
 
-  res <- build_ncai_matrix(tyf, wb, extent_df, "2001", "2000")
+  res <- openNCAI:::build_ncai_matrix(tyf, wb, extent_df, "2001", "2000", c("hab1", "hab2"))
 
   # Use as.numeric() to ignore potential name attributes on the single value
   expect_equal(as.numeric(res["hab1", 1]), 100)
@@ -26,7 +26,13 @@ test_that("build_all_ncai_matrices returns named list of data frames", {
   extent <- data.frame("2000" = 100, row.names = "hab1", check.names = FALSE)
   labels <- "Woodland"
 
-  results <- build_all_ncai_matrices(tyf_list, wb, extent, "2000", labels)
+  results <- openNCAI:::build_all_ncai_matrices(
+    tyf_list = tyf_list,
+    wellbeing_base = wb,
+    habitat_extent = extent,
+    year_one = "2000",
+    year_list = years,
+    habitat_labels = labels)
 
   expect_type(results, "list")
   expect_named(results, "2000")

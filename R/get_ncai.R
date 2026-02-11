@@ -103,7 +103,7 @@ get_ncai <-  function(habitat_extent,
   # 1. Make the Ecosystem Service Potential Base.
   # Ecosystem Service Potential Per Unit (ESPPU) scores are converted
   # to weights and multiplied by year one extent data.
-  esppu_weights <- openNCAI::calc_potential_weights(
+  esppu_weights <- calc_potential_weights(
     esppu = esppu_scores,
     divisor = esppu_divisor,
     custom_divisor_matrix = custom_divisor_matrix,
@@ -129,7 +129,7 @@ get_ncai <-  function(habitat_extent,
     within_scores = within_importance_scores,
     es_label_tree = es_label_tree)
 
-  wellbeing_base <- openNCAI::calc_wellbeing_base(
+  wellbeing_base <- calc_wellbeing_base(
     espb = espb,
     importance_weights = importance_weights,
     habitats_label_tree = habitats_label_tree,

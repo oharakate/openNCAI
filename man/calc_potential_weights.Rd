@@ -64,7 +64,7 @@ hab_tree <- list(coastal = c("b1", "b2"))
 es_tree <- list(provisioning = c("crops", "drinking_water"))
 
 # 1. Using a universal divisor with labels
-calc_potential_weights(scores,
+openNCAI:::calc_potential_weights(scores,
   divisor = 10,
   habitats_label_tree = hab_tree,
   es_label_tree = es_tree
@@ -72,12 +72,13 @@ calc_potential_weights(scores,
 
 # 2. Using a custom matrix with labels
 custom_div <- data.frame(service1 = c(10, 10), service2 = c(5, 5))
-calc_potential_weights(scores,
+openNCAI:::calc_potential_weights(scores,
   custom_divisor_matrix = custom_div,
   habitats_label_tree = hab_tree,
   es_label_tree = es_tree
 )
 
 # 3. Running without labels (returns simple data frame)
-calc_potential_weights(scores, divisor = 10)
+openNCAI:::calc_potential_weights(scores, divisor = 10)
 }
+\keyword{internal}

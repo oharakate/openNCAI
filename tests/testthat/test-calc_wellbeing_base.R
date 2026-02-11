@@ -13,7 +13,7 @@ test_that("calc_wellbeing_base calculates proportions and weights correctly", {
   weights <- data.frame(crops = 80, timber = 20)
 
   # 2. Execute
-  res <- calc_wellbeing_base(espb, weights)
+  res <- openNCAI:::calc_wellbeing_base(espb, weights)
 
   # 3. Verify Math
   # Crops: Hab A prop = 10/40 (0.25). Weighted = 0.25 * 80 * 100 = 2000
@@ -31,7 +31,7 @@ test_that("calc_wellbeing_base handles zero-sum columns (no NaN)", {
   weights <- data.frame(service1 = 50, service2 = 50)
 
   # Should not produce NaN; service1 should remain 0
-  res <- calc_wellbeing_base(espb, weights)
+  res <- openNCAI:::calc_wellbeing_base(espb, weights)
 
   expect_equal(res$service1, c(0, 0))
   expect_false(any(is.nan(as.matrix(res))))
@@ -44,7 +44,7 @@ test_that("calc_wellbeing_base applies labels correctly when trees are provided"
   h_tree <- list(grassland = c("meadow", "pasture"))
   es_tree <- list(provisioning = c("crops", "timber"))
 
-  res <- calc_wellbeing_base(espb, weights, h_tree, es_tree)
+  res <- openNCAI:::calc_wellbeing_base(espb, weights, h_tree, es_tree)
 
   # Check labels
   expect_equal(rownames(res), c("meadow", "pasture"))
@@ -55,7 +55,7 @@ test_that("calc_wellbeing_base returns unlabelled data frame if trees are NULL",
   espb <- data.frame(c1 = c(1, 1), c2 = c(1, 1))
   weights <- data.frame(c1 = 10, c2 = 10)
 
-  res <- calc_wellbeing_base(espb, weights, habitats_label_tree = NULL)
+  res <- openNCAI:::calc_wellbeing_base(espb, weights, habitats_label_tree = NULL)
 
   # Should have default row names ("1", "2") and original col names
   expect_equal(rownames(res), c("1", "2"))

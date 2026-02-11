@@ -39,3 +39,4 @@ Orchestrates the generation of asset matrices for every year in the series.
 Each matrix represents the final "Year Sheet" in the NatureScot account
 methodology, combining condition, wellbeing, and extent.
 }
+\keyword{internal}

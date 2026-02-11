@@ -43,3 +43,4 @@ Excel template. It extracts habitat classifications, ecosystem service weights,
 condition indicators, and yearly measurements, bundling them into a structured
 list for subsequent index calculations.
 }
+\keyword{internal}
