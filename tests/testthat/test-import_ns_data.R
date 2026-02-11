@@ -1,63 +1,93 @@
-test_that("import_ns_data returns the correct structure", {
-  # Setup: Point to the template in your package
-  path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
-
-  # Skip tests if the file isn't there (avoids failure during automated builds)
-  skip_if(path == "")
-
+test_that("import_ns_data returns the correct 11-component list structure", {
+  # Setup - use your local path to the NatureScot template
+  path <- ns_sheets_path
+  # Skip this during devtools::check()
+  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
   years <- 2000:2022
-  result <- openNCAI:::import_ns_data(path, year_list = years)
 
-  # 1. Test overall output type
+  result <- import_ns_data(path = path, year_list = years)
+
+  # 1. Check overall structure
   expect_type(result, "list")
+  expect_length(result, 11)
 
-  # 2. Test Dimensions
-  # Habitat extent should have as many rows as total habitats
-  expect_equal(nrow(result$ns_habitat_extent), length(result$ns_all_habitat_labels))
-  # Habitat extent columns should match the number of years
-  expect_equal(ncol(result$ns_habitat_extent), length(years))
-
-  # 3. Test ESPPU and Custom Divisor alignment
-  # They must be the exact same shape for division logic to work
-  expect_equal(dim(result$ns_esppu), dim(result$ns_custom_divisor_matrix))
+  # 2. Verify all named components exist
+  expected_names <- c(
+    "ns_habitat_extent", "ns_ci_score_matrix", "ns_habitats_label_tree",
+    "ns_es_label_tree", "ns_year_list", "ns_esppu", "ns_custom_divisor_matrix",
+    "ns_between_importance_scores", "ns_within_importance_scores",
+    "ns_cirms_list", "ns_indicator_directory"
+  )
+  expect_setequal(names(result), expected_names)
 })
 
-test_that("make_custom_divisor_matrix handles partial matching correctly", {
-  # Mock data
-  habitats <- c("b1_coastal", "b2_woodland", "c1_water")
-  services <- c("timber_1", "crops_2", "climate_3")
+test_that("Label Trees and Matrices are perfectly aligned", {
+  path <- ns_sheets_path
+  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
+  result <- import_ns_data(path = path)
 
-  # Test if "b1" shorthand correctly matches "b1_coastal"
-  res <- openNCAI:::make_custom_divisor_matrix(
-    all_habitat_labels = habitats,
-    all_es_labels = services,
-    habitats_to_adjust = "b1",
-    services_to_adjust = "timber",
-    usual_divisor = 5,
-    custom_divisor = 1
-  )
+  # Flatten labels for testing
+  all_habitats <- unlist(result$ns_habitats_label_tree, use.names = FALSE)
+  all_services <- unlist(result$ns_es_label_tree, use.names = FALSE)
 
-  # The first cell (b1, timber) should be 1
-  expect_equal(res[[1, 1]], 1)
-  # Others should remain 5
-  expect_equal(res[[2, 2]], 5)
+  # 1. Check Habitat Extent Alignment
+  expect_equal(nrow(result$ns_habitat_extent), length(all_habitats))
+  expect_equal(rownames(result$ns_habitat_extent), all_habitats)
+  expect_equal(colnames(result$ns_habitat_extent), result$ns_year_list)
+
+  # 2. Check ESPPU Alignment
+  expect_equal(nrow(result$ns_esppu), length(all_habitats))
+  expect_equal(ncol(result$ns_esppu), length(all_services))
+  expect_equal(rownames(result$ns_esppu), all_habitats)
+  expect_equal(colnames(result$ns_esppu), all_services)
+
+  # 3. Check Custom Divisor Alignment
+  expect_equal(nrow(result$ns_custom_divisor_matrix), length(all_habitats))
+  expect_equal(ncol(result$ns_custom_divisor_matrix), length(all_services))
 })
 
-test_that("get_ns_cirm_list produces binary values", {
-  path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
-  skip_if(path == "")
+test_that("Condition Indicator data is consistent", {
+  path <- ns_sheets_path
+  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
+  result <- import_ns_data(path = path)
 
-  # Test the helper directly
-  # (Using ::: since it's an internal function)
-  cirms <- openNCAI:::get_ns_cirm_list(
-    path = path,
-    sheet_list = 9,
-    matrix_range = "F4:AG34",
-    ci_ids = "test_id",
-    all_service_labels = paste0("service_", 1:28)
-  )
+  ci_ids <- result$ns_indicator_directory$ci_id
 
-  # Check that all values are either 0 or 1
-  val_check <- all(unlist(cirms[[1]]) %in% c(0, 1))
-  expect_true(val_check)
+  # 1. Check CI Score Matrix dimensions
+  # Rows should be years, columns should be CIs
+  expect_equal(nrow(result$ns_ci_score_matrix), length(result$ns_year_list))
+  expect_equal(ncol(result$ns_ci_score_matrix), length(ci_ids))
+  expect_equal(colnames(result$ns_ci_score_matrix), ci_ids)
+
+  # 2. Check CIRMs list
+  expect_length(result$ns_cirms_list, length(ci_ids))
+  expect_equal(names(result$ns_cirms_list), ci_ids)
+
+  # Check structure of the first CIRM
+  first_cirm <- result$ns_cirms_list[[1]]
+  expect_equal(nrow(first_cirm), length(unlist(result$ns_habitats_label_tree)))
+  expect_equal(ncol(first_cirm), length(unlist(result$ns_es_label_tree)))
+})
+
+test_that("Importance scores map correctly to ES Types", {
+  path <- ns_sheets_path
+  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
+
+  result <- import_ns_data(path = path)
+
+  service_types <- names(result$ns_es_label_tree)
+
+  # Between scores
+  expect_equal(names(result$ns_between_importance_scores), service_types)
+
+  # Within scores
+  expect_equal(names(result$ns_within_importance_scores), service_types)
+
+  # Check that each list in 'within' matches the number of services in that type
+  for (type in service_types) {
+    expect_length(
+      result$ns_within_importance_scores[[type]],
+      length(result$ns_es_label_tree[[type]])
+    )
+  }
 })

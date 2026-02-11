@@ -3,3 +3,5 @@
 dev/
 ^LICENSE\.md$
 ^dev$
+^data-raw$
+^data-raw/NatureScot_NCAI_Template\.xlsx$

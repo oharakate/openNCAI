@@ -31,6 +31,7 @@
 
 # Load packages for development
 library(devtools)
+library(sinew)
 # library(gitcreds)
 # library(covr)
 # library(dplyr)
@@ -44,17 +45,12 @@ library(devtools)
 # create_package("~/habitats/openNCAI")
 
 # Declare these dependencies
-# use_package("sf")
-# use_package("terra")
-# use_package("tidyr")
 use_package("dplyr")
 use_package("readxl")
 use_package("janitor")
 use_package("stats")
 use_package("tidyr")
-# use_package("tibble")
 use_package("slider")
-# use_package("ggplot2")
 
 # Use Git
 # usethis::use_git_config(
@@ -84,6 +80,18 @@ use_package("slider")
 # Use testthat()
 # use_testthat()
 ####
+
+
+#### Importing NS data and bundling as rdf ####
+use_data_raw(name = "scotNCAI_data")
+
+# Put the spreadsheet in /data-raw but don't export.
+# Leave the function in place and the user can use their own path.
+# We can use this one for testing.
+use_build_ignore("data-raw/NatureScot_NCAI_Template.xlsx")
+
+# Use rprojroot tool to help with tests involving the spreadsheet:
+usethis::use_package("rprojroot", type = "Suggests")
 
 
 #### Building the NS vignette ####

@@ -1,5 +1,5 @@
 test_that("import_ns_testing_data returns expected structure and names", {
-  path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
+  path <- ns_sheets_path
   skip_if(path == "")
 
   res <- openNCAI:::import_ns_testing_data(
@@ -14,7 +14,7 @@ test_that("import_ns_testing_data returns expected structure and names", {
 })
 
 test_that("read_the_indices correctly formats output", {
-  path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
+  path <- ns_sheets_path
   skip_if(path == "")
 
   indices <- openNCAI:::read_the_indices(
@@ -30,7 +30,7 @@ test_that("read_the_indices correctly formats output", {
 })
 
 test_that("read_ns_year_sheet handles NA values", {
-  path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
+  path <- ns_sheets_path
   skip_if(path == "")
 
   sheet_data <- openNCAI:::read_ns_year_sheet(

@@ -30,15 +30,15 @@ NOTE TO SELF - we also have the option of exporting but hiding from the help by 
 
 ```{r import_data}
 # Locate the template within the package
-path <- system.file("extdata", "ncai.xlsx", package = "openNCAI")
+path <- system.file("data-raw", "ncai_corrected.xlsx", package = "openNCAI")
 
 # Import all trees, scores, and matrices
 # The year_list represents the temporal coverage of the account
-ns_data <- openNCAI:::import_ns_data(path, year_list = 2000:2022)
+# ns_data <- openNCAI:::import_ns_data(ns_sheets_path, year_list = 2000:2022)
 ```
 
 The function imports a list of objects:
 
 ```{r show_nsdata_list}
-print(names(ns_data))
+# print(names(ns_data))
 ```

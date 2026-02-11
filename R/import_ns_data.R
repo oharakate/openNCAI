@@ -165,23 +165,17 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   rownames(ci_score_matrix) <- year_list
 
   return(list(
-    ns_year_list = year_list,
+    ns_habitat_extent = habitat_extent,
+    ns_ci_score_matrix = ci_score_matrix,
     ns_habitats_label_tree = habitat_tree,
-    ns_broad_habitats = broad_habitats,
-    ns_all_habitat_labels = all_habitat_labels,
     ns_es_label_tree = es_tree,
-    ns_service_types = service_types,
-    ns_all_service_labels = all_service_labels,
+    ns_year_list = year_list,
     ns_esppu = esppu,
     ns_custom_divisor_matrix = custom_divisor_matrix,
     ns_between_importance_scores = between_importance_scores,
     ns_within_importance_scores = within_importance_scores,
-    ns_indicator_directory = indicator_directory,
-    ns_ci_ids = ci_ids,
     ns_cirms_list = cirms_list,
-    ns_tir_constant = tir_constant,
-    ns_habitat_extent = habitat_extent,
-    ns_ci_score_matrix = ci_score_matrix
+    ns_indicator_directory = indicator_directory
   ))
 }
 
