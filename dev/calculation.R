@@ -9,37 +9,14 @@ library(openNCAI)
 library(ggplot2)
 library(ggthemes)
 
-#### IMPORT NATURESCOT INPUT DATA ####
-# These are the input data, i.e.,
-# - Environmental measurements (habitat extent and condition indicators)
-# - Weighting information (ecosystem service provision potential scores,
-# importance scores, condition indicator relevance scores)
-# - Metadata (habitats label tree, ecosystem services label tree, condition
-# indicator labels, year list, TIR constant [2 is assumed])
-# Location of the spreadsheet:
-ns_sheets_path <- file.path("data-raw", "ncai_corrected.xlsx")
-# Get the data:
-ns_data_objects <- openNCAI:::import_ns_data(path = ns_sheets_path)
-# See what's in the list of objects returned:
-names(ns_data_objects)
-# Place standalone objects into the environment for ease of access:
-list2env(ns_data_objects, envir = .GlobalEnv)
 
+#### DATA IS BUNDLED WITH THE PACKAGE ####
+# The NatureScot input data is lazy loaded so just call objects.
+# See the list of functions and data objects like this:
+ls("package:openNCAI")
 
-#### IMPORT NATURESCOT REFERENCE CALCULATIONS FOR TESTING ####
-# These are data which are the results of calculation made using NatureScot
-# spreadsheet method. These are reference examples used to check that openNCAI
-# replicates the NatureScot method correctly.
-# Get the data:
-ns_test_data_objects <- openNCAI:::import_ns_testing_data(
-  path = ns_sheets_path,
-  habitats_label_tree = ns_habitats_label_tree,
-  es_label_tree = ns_es_label_tree,
-  year_list = 2000:2022)
-# See what's in the list of objects created:
-names(ns_test_data_objects)
-# Place into environment
-list2env(ns_test_data_objects, envir = .GlobalEnv)
+# Infos on functions and data:
+help(package = "openNCAI")
 
 # Get the test objects (post-calculation objects from NS spreadsheet)
 load("R/sysdata.rda")
@@ -58,6 +35,9 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
                          cirms_list = ns_cirms_list,
                          indicator_directory = ns_indicator_directory,
                          return = "everything")
+
+# What did we get?
+names(ncai_objects)
 
 # Check making ESPB works:
 # Does our made_espb match the published ref_espb?
@@ -502,171 +482,4 @@ ggsave(
   height = 6,               # Height in inches
   dpi = 300                 # High resolution for reports
 )
-
-
-#### HABITAT SHEETS AT THE END ####
-# In these sheets we find, for each broad habitat:
-# A table with a row for each year and a column containing indexed condition
-# scores for each indicator relevant to that broad habitat.
-
-# Across the top of that table is a vector of values recording the 'influence'
-# of each condition indicator.
-# At the bottom is calculated the 'influence since 2000' for each indicator.
-# This = (latest value - year one value) * influence.
-# And a similar statistic for 'since 2019'.
-
-# Where does the 'influence' figure come from?
-# It's the sum of the row totals for all rows in that broad habitat from the
-# second table of the CI sheets.
-# That table is found to the right of the
-# main one in the CI sheets and the cell values are calculated as:
-# (ciwm cell / tir cell)
-# * wellbeing base cell
-# / sum of wellbeing base rows in that habitat.
-
-# Look at indicator 67 since this is relevant to both grassland (multi-row)
-# and cropland (single row).
-
-# There is a further table to the right of that where cell values are
-# calculated as:
-# (ciwm cell / tir cell)
-# * wellbeing base cell
-# / sum of that service column in wellbeing base.
-
-# We then also have a breakdown by level-2 habitat type, where there is more
-# than one in the broad habitat.
-
-# For now, we will leave the relevances. They are certainly calculable, but
-# let's work on transposing the indexed CI scores and plotting.
-
-# We are going to need to know which indicators are relevant to each broad
-# habitat.
-# FUNCTION indicators_to_get() reads the whole list of CIWMs and returns a list
-# of indicator IDs relevant to a broad habitat:
-indicators_to_get <- function(broad_habitat,
-                              habitats_label_tree,
-                              all_ciwms_list,
-                              all_habitat_labels) {
-
-  # Identify habitat rows within the broad habitat type:
-  bh_row_group <- habitats_label_tree[[broad_habitat]]
-
-  indicators_to_get <- sapply(all_ciwms_list, function(ciwm) {
-    # Ensure rownames are set:
-    rownames(ciwm) <- all_habitat_labels
-    # Calculate sum of relevant row sums
-    s <- sum(ciwm[bh_row_group, ], na.rm = TRUE)
-    # Return true if not NA & > 0.
-    return(!is.na(s) && s > 0)
-  })
-
-  # Return names of relevant indicators:
-  return(names(all_ciwms_list[indicators_to_get]))
-}
-
-# E.g. this should return the list of relvant CI IDs for cropland.
-# test_indicators_to_get <- indicators_to_get(
-#   broad_habitat = "cropland",
-#   habitats_label_tree = habitats_label_tree,
-#   all_ciwms_list = ns_all_ciwms_list,
-#   all_habitat_labels)
-
-build_bh_condition_tables <- function(habitats_label_tree,
-                                      all_ciwms_list,
-                                      ci_score_matrix,
-                                      all_habitat_labels,
-                                      year_list,
-                                      year_one = year_list[[1]],
-                                      habitats_to_process =
-                                        names(habitats_label_tree)) {
-
-  # Check if custom year one is in the list
-  baseline_row_index <- match(year_one, year_list)
-
-  if (is.na(baseline_row_index)) {
-    stop("The provided year_one is not found in the year_list.")
-  }
-
-  # For each habitat, subset the CI scores matrix to just the relevant
-  # indicators:
-  bh_condition_tables <- lapply(habitats_to_process, function(bh) {
-
-    relevant_indicators <- indicators_to_get(
-      broad_habitat = bh,
-      habitats_label_tree = habitats_label_tree,
-      all_ciwms_list = all_ciwms_list,
-      all_habitat_labels = all_habitat_labels
-    )
-
-    valid_columns <- intersect(relevant_indicators, colnames(ci_score_matrix))
-    subset_matrix <- ci_score_matrix[, valid_columns, drop = FALSE]
-
-    # Name rows by year
-    rownames(subset_matrix) <- year_list
-
-    # Index scores on year one
-    indexed_matrix <- as.data.frame(lapply(subset_matrix, function(col) {
-      # Divide every value in the column by the value at the baseline year
-      col / col[baseline_row_index] * 100
-    }))
-
-    # Make sure names are restored
-    rownames(indexed_matrix) <- year_list
-    colnames(indexed_matrix) <- valid_columns
-
-    return(indexed_matrix)
-
-  })
-  names(bh_condition_tables) <- habitats_to_process
-
-  return(bh_condition_tables)
-}
-
-# Get the tables for all broad habitats, as per NatureScot spreadsheet:
-scot_bh_condition_tables <- build_bh_condition_tables(
-  habitats_label_tree = habitats_label_tree,
-  all_ciwms_list = ns_all_ciwms_list,
-  ci_score_matrix = ns_ci_score_matrix,
-  all_habitat_labels = all_habitat_labels,
-  year_list = ns_year_list
-)
-scot_bh_condition_tables[[1]]
-
-# And we would be able to plot these as per the plot top right in the Coastal
-# sheet...
-# Reshape data:
-coastal_plot_data <- scot_bh_condition_tables[["coastal"]] %>%
-  tibble::rownames_to_column(var = "year") %>%
-  mutate(year = as.numeric(year)) %>%
-  pivot_longer(
-    cols = -year,
-    names_to = "indicator_id",
-    values_to = "index_value"
-  )
-
-# Here is a basic and not-tidied up version of the Coastal indicators plot:
-ggplot(coastal_plot_data, aes(x = year, y = index_value, color = indicator_id)) +
-  geom_line(linewidth = 1) +
-  geom_point() +
-  # Add a horizontal line at 100 to show the baseline clearly
-  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
-  labs(
-    title = "Indicator Trends: Coastal Habitat",
-    subtitle = "Indexed to Year One (100)",
-    x = "Year",
-    y = "Index Value",
-    color = "Indicator ID"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
-
-# Save it:
-ggsave(
-  filename = file.path("dev", "coastal_indicator_trends.png"),
-  plot = last_plot(),       # Optional: defaults to the last plot displayed
-  width = 10,               # Width in inches
-  height = 4,               # Height in inches
-  dpi = 300                 # High resolution for reports
-)
-
 

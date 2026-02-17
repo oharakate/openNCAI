@@ -24,7 +24,6 @@ Suggests:
     knitr,
     rmarkdown,
     ggplot2,
-    dplyr,
     tibble,
     rprojroot,
     testthat (>= 3.0.0)
