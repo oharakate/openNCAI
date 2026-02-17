@@ -6,8 +6,8 @@
 
 # Import various input data, metadata and weights, ensuring it is labelled and
 # in the correct format:
-ns_sheets_path <- file.path("inst", "extdata", "ncai_corrected.xlsx")
-ns_data_objects <- openNCAI:::import_ns_data(path = ns_sheets_path)
+ns_sheets_path <- file.path("data-raw", "ncai_corrected.xlsx")
+ns_data_objects <- import_ns_data(path = ns_sheets_path)
 names(ns_data_objects)
 list2env(ns_data_objects, envir = .GlobalEnv)
 

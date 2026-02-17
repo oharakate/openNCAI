@@ -1,8 +1,11 @@
 ---
-title: "replicating_scotlands_ncai"
-output: rmarkdown::html_vignette
+title: "Replicating Scotland's NCAI"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{replicating_scotlands_ncai}
+  %\VignetteIndexEntry{Replicating Scotland's NCAI}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,43 +21,492 @@ knitr::opts_chunk$set(
 
 The 'openNCAI' package provides a reproducible pipeline to calculate a regional natural capital assets index (NCAI) using the method designed by NatureScot to calculate Scotland's NCAI.
 
-To illustrate this we use the built-in assets provided by NatureScot.
+To illustrate this we use built-in assets provided by NatureScot comprising the data used to calculate Scotland's NCAI in years 2000 - 2022.
 
 ```{r setup}
 library(openNCAI)
+library(ggplot2)
+library(dplyr)
+library(tibble)
 ```
 
-## Step 1: Accessing Package Data
+## Accessing Package Data
 
-The following NatureScot data objects are bundled with the package:
-
-```{r data-table, echo = FALSE}
-# 1. Capture the data list
-d <- as.data.frame(data(package = "openNCAI")$results[, c("Item", "Title")])
-
-# 2. Rename columns for a cleaner look
-colnames(d) <- c("Object Name", "Description")
-
-# 3. Render as a formatted table that wraps text
-knitr::kable(d, caption = "Available NatureScot Datasets")
-```
+openNCAI comes bundled with a set of data assets used by NatureScot to calculate Scotland's NCAI from 2000 to 2022.
 
 Because these are built in to the package we can access the data objects directly. For example, we can show a snippet of the habitat extent data by calling the object 'ns_habitat_extent':
 
-```{r inspect_measurement_data}
+```{r inspect_measurement-data}
 head(ns_habitat_extent[,1:3])
 ```
 
-## Step 2: Understanding The Required Data Inputs
+## Understanding The Required Data Inputs
 
 openNCAI requires three types of data:
 
 1. **Metadata** which define the natural habitats under consideration, the ecosystem services they provide, and the years across which the index is to be calculated,
 
-2. **Environmental measures** recording the extent and condition of the natural habitats over the years,
+2. **Environmental measurements** recording the extent and condition of the natural habitats over the years,
 
 3. **Weighting scores** - decided by experts at the beginning of the process; these denote the relative importance of different ecosystem services, the potential of different habitats to provide each each, and the salience of the available habitat condition indicators to represent flow of services from habitats.
 
-Let's
+Let's find out more about the contents and shape of the included data objects which fulfill these roles...
+
+### Metadata
+
+Three metadata objects are included:
+
+```{r metadata-table, echo = FALSE}
+metadata_subset <- c("ns_habitats_label_tree", "ns_es_label_tree", "ns_year_list")
+
+d_subset <- data.frame(
+  `Object Name` = metadata_subset,
+  `Description` = c(
+    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS level 2 designations) within broad habitat groups (based on EUNIS level 1) found in Scotland and considered in the calculation. <br><br>*A named list of character vectors where the names are the broad habitats and the character vectors are the list of habitats within them.*",                           
+    "Ecosystem Services Label Tree: a hierarchy of ecosystem services within ecosystem service type groups. <br><br>*A named list of character vectors where the names are the service type and the character vectors are the list of services within each type group.*",
+    "Year List: the list of years over which the index is to be calculated.<br><br>*A character vector.*"
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
+It is important that all measurement and weights objects are congruent with the metadata. E.g. time series data must include all the years mentioned in the year list, and weighting scores must be expressed across the habitats and ecosystem services listed in the label trees.
+
+Also required but not included explicitly as a data object is a **list of condition indicators** (CIs): this is extracted from the column names of the Condition Indicator Score Matrix (`ns_ci_score_matrix`) described in the next table. 
+
+We can inspect the objects and verify some of the dimensions and labels:
+
+```{r view-metadata}
+# The label trees are nested lists.
+# E.g. See the first couple of broad habitats and the habitats within them.
+ns_habitats_label_tree[1:2]
+
+# Or the names of the ES label tree:
+names(ns_es_label_tree)
+
+# And the labels within the last group 'Cultural':
+ns_es_label_tree[3]
+```
+
+### Environmental Measurements
+
+These measures constitute time series recording the extent (area) and condition of natural habitats over the years of the index. Included are:
+
+```{r measurement_table, echo = FALSE}
+measurement_subset <- c("ns_habitat_extent", "ns_ci_score_matrix")
+
+d_subset <- data.frame(
+  `Object Name` = measurement_subset,
+  `Description` = c(
+    "Habitat Extent for Scotland: measurement in hectares of the area of each natural habitat over the years. <br><br>*A data frame where rows are habitats and columsn are years.*",                           
+    "Condition Indicator Score Matrix: yearly condition score on each of the Condition Indicators (CIs). <br><br>*A dataframe where rows are years and columns are CIs.*"            
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
+
+Note that the dimensions and labelling of the measurement data should match the metadata:
+
+```{r view-measurement}
+# E.g. The habitat extent data has 31 rows and 23 columns: 
+dim(ns_habitat_extent)
+
+# The 31 rows match the habitats in the (unlisted) Habitats label tree:
+all_habitats <- unlist(ns_habitats_label_tree, use.names = FALSE)
+length(all_habitats)
+all.equal(all_habitats, rownames(ns_habitat_extent))
+
+# The condition score data has one row per year and these years match the year list: 
+dim(ns_ci_score_matrix)
+length(ns_year_list)
+
+# The row names match the year list too:
+all.equal(rownames(ns_ci_score_matrix), ns_year_list)
+```
+
+### Weighting Scores
+
+These data objects include scores decided by expert knowledge at the outset of the index. Included are:
+
+```{r weights_table, echo = FALSE}
+weights_subset <- c("ns_esppu", "ns_between_importance_scores", "ns_within_importance_scores", "ns_cirms_list", "ns_indicator_directory", "ns_custom_weight_matrix")
+
+d_subset <- data.frame(
+  `Object Name` = weights_subset,
+  `Description` = c(
+    "Ecosystem Service Potential per Unit Scores: scores denoting the relative potential of one area unit of a habitat to provide each of the ecosystem services. <br><br>*A dataframe where rows are habitats and columns are ecosystem services.*",                           
+    "Ecosystem Service Importance Scores (••between••-service-type): scores denoting the relative importance of the different ecosystem service **types** - in this case 'Provisioning', 'Regulation & Maintenance' and 'Cultural' - to Scotland. Scores were awarded following the instruction: the most important of the three is assigned a value of 20, and the other two are assigned a value (between 0 and 20) in terms of their relative importance.	<br><br>*A named list of numeric values where names match the names of the Habitats Label Tree.*",
+    "Ecosystem Service Importance Score (**within**-service-type): scores denoting the relative importance of the different individual ecosystem services within their type group. Scores were awarded following the instruction: the most important service of the group is assigned a value of 20, and the others are assigned a value (between 0 and 20) in terms of their relative importance. <br><br>*A named list of named lists of numbers, with naming hierarchy matching the habitats label tree.*",
+    "Condition Indicator Relevance Matrix List: a set of matrices - one per condition indicator - marking whether the indicator is relevant to each habitat/ecosystem service combination. E.g. the indicator 'Woodland bird index' is marked as a relevant indicator of capacity of the habitat 'Coniferous woodland' to provide the service 'Pollination and seed dispersal', but not the service 'Water for drinking purposes'. <br><br>*A named list of data frames of binary (1/0) values where the names are the ecosystem services in the ES label tree, and each data frame has habitats in the rows and ecosystem services in the columns.*",
+    "Indicator Directory: a table of scores per condition indicator recording the salience of each indicator in representing the likely capacity of habitats to provide each ecosystem service type. <br><br>*A data frame where a column called `ci_id` contains the list of condition indicators in use, and a column for each ecosystem service **type** (with names to match those of the ES label tree), containing a salience score of between 0 and 1.*",
+    "NatureScot's Custom Divisor Matrix: a matrix of custom weights (expressed as divisors) used to adjust the calculation of potential provision of ecosystem services to reflect the scale and context dependence of ecosystem service providing units. In this case the potential of some habitats to provide some ecosystem services is adjusted upwards by dividing their potential score (as recorded in `ns_esppu') by 1 instead of 5. <br><br>*A data frame where row names are habitats and column names are ecosystem services.*"
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
 
 
+Several of the weights objects are matrices of **habitat \times ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
+
+```{r view-weights}
+all_habitats <- unlist(ns_habitats_label_tree, use.names = FALSE)
+all_ecosystem_services <- unlist(ns_es_label_tree, use.names = FALSE)
+
+# The ESPPU, any custom divisor matrix, and each matrix in the CIRMs list need to match:
+one_ci_relevance_matrix <- ns_cirms_list[[4]]
+
+length(all_habitats)
+nrow(ns_esppu)
+nrow(ns_custom_divisor_matrix)
+nrow(one_ci_relevance_matrix)
+
+all.equal(all_habitats, rownames(ns_esppu))
+all.equal(all_habitats, rownames(ns_custom_divisor_matrix))
+all.equal(all_habitats, rownames(one_ci_relevance_matrix))
+
+length(all_ecosystem_services)
+ncol(ns_esppu)
+ncol(ns_custom_divisor_matrix)
+ncol(one_ci_relevance_matrix)
+
+all.equal(all_ecosystem_services, colnames(ns_esppu))
+all.equal(all_ecosystem_services, colnames(ns_custom_divisor_matrix))
+all.equal(all_ecosystem_services, colnames(one_ci_relevance_matrix))
+```
+
+
+## Calculating The Overall Index
+
+The index is calculated using the `get_ncai()` function. By default the final overall index is returned. 
+
+```{r calc_overall}
+overall_ncai <- get_ncai(
+                  habitat_extent = ns_habitat_extent,
+                  ci_score_matrix = ns_ci_score_matrix,
+                  habitats_label_tree = ns_habitats_label_tree,
+                  es_label_tree = ns_es_label_tree,
+                  year_list = ns_year_list,
+                  esppu_scores = ns_esppu,
+                  custom_divisor_matrix = ns_custom_divisor_matrix,
+                  between_importance_scores = ns_between_importance_scores,
+                  within_importance_scores = ns_within_importance_scores,
+                  cirms_list = ns_cirms_list,
+                  indicator_directory = ns_indicator_directory
+                  )
+
+# Three versions of the index are returned, the raw total, the raw index, and the smoothed index (values are a weighted average of the last 5 years' values, giving more weight to more recent entries):
+head(overall_ncai)
+
+# We can select just the raw indexed values to display:
+raw_index <- overall_ncai[, "raw_index", drop = FALSE]
+raw_index
+```
+And we can graph the index:
+
+
+<details>
+<summary>Click to see the R code used to build the graph</summary>
+
+```{r build-overall-plot}
+# Make some nice display labels:
+graph_labels <- c(
+  "overall"
+  = "Overall",
+  # --- Service Types ---
+  "provisioning"
+  = "Provisioning",
+  "regulation_and_maintenance"
+  = "Regulation & Maintenance",
+  "cultural"
+  = "Cultural",
+  # --- Broad Habitats ---
+  "b_coastal_habitats"
+  = "Coastal",
+  "b_inland_surface_waters"
+  = "Freshwater",
+  "d_mires_bogs_and_fens"
+  = "Mires, Bogs & Fens",
+  "e_grasslands_and_lands_dominated_by_forbs_mosses_or_lichens"
+  = "Grasslands",
+  "f_heathland_scrub_and_tundra"
+  = "Heathland",
+  "g_woodland_forest_and_other_wooded_land"
+  = "Woodland",
+  "h_inland_unvegetated_or_sparsely_vegetated_habitats"
+  = "Inland Unvegetated",
+  "i_cultivated_agricultural_horticultural_and_domestic_habitats"
+  = "Agri/Horticultural",
+  "j_constructed_industrial_and_other_artificial_habitats"
+  = "Constructed",
+  "montane"
+  = "Montane"
+)
+
+
+# Prepare overall index data:
+main_index_for_plot <- overall_ncai |>
+  rownames_to_column(var = "year") |>
+  mutate(
+    year = as.numeric(year),
+    breakdown = "overall",
+    display_name = recode(breakdown, !!!graph_labels)
+  )
+
+# Plot the Overall Index
+overall_plot <- ggplot(main_index_for_plot, aes(x = year, y = raw_index)) +
+  geom_line() +
+  scale_y_continuous(
+    limits = c(90, 110),           # <--- Forces the 90-110 range
+    breaks = seq(90, 110, by = 2)
+  ) +
+  scale_x_continuous(
+    breaks = seq(2000, 2022, by = 3)
+  ) +
+  labs(
+    title = "NCAI (Overall)",
+    x = "Year",
+    y = "Index (Base = 100)"
+  ) +
+  theme_classic() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+
+```
+</details>
+
+```{r show-overall-plot, fig.width = 7, fig.height = 4.5, fig.align = "center"}
+overall_plot
+```
+
+
+## Generating Breakdowns By Service Type or Broad Habitat
+
+By passing `"index_by_st"` or `"index_by_bh"` to the optional `return` argument, we can generate a list of data frames containing the index broken down ecosystem service type or by broad habitat respectively. 
+
+```{r index-breakdown-st}
+ncai_by_st <- get_ncai(
+                habitat_extent = ns_habitat_extent,
+                ci_score_matrix = ns_ci_score_matrix,
+                habitats_label_tree = ns_habitats_label_tree,
+                es_label_tree = ns_es_label_tree,
+                year_list = ns_year_list,
+                esppu_scores = ns_esppu,
+                custom_divisor_matrix = ns_custom_divisor_matrix,
+                between_importance_scores = ns_between_importance_scores,
+                within_importance_scores = ns_within_importance_scores,
+                cirms_list = ns_cirms_list,
+                indicator_directory = ns_indicator_directory,
+                return = "index_by_st"
+                )
+
+# A named list of data frames is returned, with names as per the ES label tree:
+names(ncai_by_st)
+
+# See the contribution of cultural services to the index:
+cultural_breakdown <- ncai_by_st[["cultural"]]
+cultural_breakdown
+```
+
+We can plot the breakdowns with the main trend line. 
+
+<details>
+<summary>Click to see the code used to build the graph</summary>
+```{r build-st-plot}
+# Set up the data:
+by_st_for_plot <- ncai_by_st[names(ns_es_label_tree)] |>
+  lapply(function(df) {
+    df |>
+      rownames_to_column(var = "year") |>
+      mutate(year = as.numeric(year)) # Convert here!
+  }) |>
+  bind_rows(.id = "breakdown") |>
+  bind_rows(main_index_for_plot) |>
+  mutate(
+    display_name = recode(breakdown, !!!graph_labels)
+  )
+
+# Build the plot
+st_plot <- ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = display_name)) +
+  # Basic lines
+  geom_line() +
+
+  # Point marker for overall line to distinguish trend
+  geom_point(
+    data = filter(by_st_for_plot, breakdown == "overall"),
+    shape = 18,
+    size = 3
+  ) +
+
+  # Fix the Y scale to match the 90-110 range
+  scale_y_continuous(
+    limits = c(90, 110),           # Forces the axis to show the full range
+    breaks = seq(90, 110, by = 2)   # Sets consistent tick marks
+  ) +
+
+  # Consistent X scale
+  scale_x_continuous(
+    breaks = seq(2000, 2022, by = 3)
+  ) +
+
+  # Labels
+  labs(
+    title = "NCAI by Ecosystem Service Type",
+    x = "Year",
+    y = "Index (Base = 100)",
+    color = "Service Type"
+  ) +
+
+  # Classic theme (solid axis lines, no grid)
+  theme_classic() +
+
+  # Minimal centering for the title
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+```
+</details>
+
+```{r show-st-plot, fig.width = 7, fig.height = 5.25, fig.align = "center"}
+st_plot + 
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 1))
+```
+
+
+And we can use the same approach to generate a breakdown by broad habitat:
+```{r index-breakdown-bh}
+ncai_by_bh <- get_ncai(
+                habitat_extent = ns_habitat_extent,
+                ci_score_matrix = ns_ci_score_matrix,
+                habitats_label_tree = ns_habitats_label_tree,
+                es_label_tree = ns_es_label_tree,
+                year_list = ns_year_list,
+                esppu_scores = ns_esppu,
+                custom_divisor_matrix = ns_custom_divisor_matrix,
+                between_importance_scores = ns_between_importance_scores,
+                within_importance_scores = ns_within_importance_scores,
+                cirms_list = ns_cirms_list,
+                indicator_directory = ns_indicator_directory,
+                return = "index_by_bh"
+                )
+
+# We get a list of data frames with names as per the top level of the habitats label tree:
+names(ncai_by_bh)
+
+# See the contribution to the index of the broad habitat group Mires, Bogs and Fens:
+bogs_breakdown <- ncai_by_bh[["d_mires_bogs_and_fens"]]
+bogs_breakdown
+```
+NatureScot typically reports the contribution to the index of a subset seven of the broad habitats. We can build this list and, as before, graph these contributions with the main trend line.
+
+<details>
+<summary>Click to see how we build the graph</summary>
+```{r build-bh-plot}
+# Specify custom list of broad habitats to use:
+ns_bh_breakdown_list <- c(names(ns_habitats_label_tree)[c(1:6, 8)])
+
+# Prepare the data:
+by_bh_for_plot <- ncai_by_bh[ns_bh_breakdown_list] |>
+  lapply(function(df) {
+    df |>
+      rownames_to_column(var = "year") |>
+      mutate(year = as.numeric(year))
+  }) |>
+  bind_rows(.id = "breakdown") |>
+  bind_rows(main_index_for_plot) |>
+  mutate(
+    display_name = recode(breakdown, !!!graph_labels)
+  )
+
+# Build the plot:
+bh_plot <- ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = display_name)) +
+  # Lines for all habitats
+  geom_line() +
+
+  # Diamond marker on the overall trend line
+  # We filter by 'breakdown' because that remains "overall" internally
+  geom_point(
+    data = filter(by_bh_for_plot, breakdown == "overall"),
+    shape = 18,
+    size = 3
+  ) +
+
+  # Fix the Y scale 
+  scale_y_continuous(
+    limits = c(90, 120),           # Forces the axis to show the full range
+    breaks = seq(90, 120, by = 2)   # Sets consistent tick marks
+  ) +
+
+  # Consistent X scale
+  scale_x_continuous(
+    breaks = seq(2000, 2022, by = 3)
+  ) +
+
+  # Labels
+  labs(
+    title = "NCAI by Broad Habitat",
+    x = "Year",
+    y = "Index (Base = 100)",
+    color = "Habitat Type"
+  ) +
+
+  # The requested classic theme
+  theme_classic() +
+
+  # Minimal centering for the title
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+```
+</details>
+```{r show-bh-plot, fig.width = 7, fig.height = 6, fig.align = "center"}
+bh_plot + 
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 3))
+```
+
+
+## Digging Deeper - Accessing Elements of the Calculation Process
+
+Using the optional `return` argument, we can access various elements of the calculation process. The following options are available to be passed to `return`:
+
+```{r return-options, echo = FALSE}
+# Define the return options and their descriptions
+ncai_options <- data.frame(
+  `Value` = c(
+    "**\"overall\"**", 
+    "**\"index_by_st\"**", 
+    "**\"index_by_bh\"**", 
+    "**\"espb\"**", 
+    "**\"wellbeing_base\"**", 
+    "**\"yearly_flow_matrices\"**", 
+    "**\"yearly_asset_matrices\"**", 
+    "**\"everything\"**"
+  ),
+  `Output Type` = c(
+    "Data Frame", "Data Frame", "Data Frame", "Data Frame", 
+    "Data Frame", "List of Data Frames", "List of Data Frames", "List of Objects"
+  ),
+  `Description` = c(
+    "The final smoothed and raw NCAI for the whole region (default).",
+    "Indices broken down by Ecosystem Service Type.",
+    "Indices broken down by Broad Habitat.",
+    "Ecosystem Service Potential Base (habitat extent multiplied by ecosystem service provision potential per unit weights).",
+    "Wellbeing Base: the regional baseline potential to provide services, calculated as the ESPB weighted by the regional importance weights.",
+    "Total Yearly Flow: the estimated total yearly flow of services from each habitat/service combination, based on relevance- and salience-weighted condition scores.",
+    "Matrices of total asset value for every habitat/service combination per year, calculated as the habitat extent, weighted by potential to provide and importance to Scotland, and multiplied by total yearly flow based on condition. The sum of these matrices form the basis of the final index.",
+    "A bundled list containing all of the above components."
+  )
+)
+
+# Render the table
+knitr::kable(ncai_options,
+             col.names = c("Argument Value", "Output Type", "Description"),
+             escape = FALSE)
+```

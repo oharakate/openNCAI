@@ -10,7 +10,7 @@
 library(devtools)
 
 # Get various post-calculation items from the NatureScot spreadsheet:
-ns_sheets_path <- file.path("inst", "extdata", "ncai_corrected.xlsx")
+ns_sheets_path <- file.path("data-raw", "ncai_corrected.xlsx")
 
 scotNCAItestobjects <- openNCAI:::import_ns_testing_data(
   path = ns_sheets_path,

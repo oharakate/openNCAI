@@ -11,23 +11,17 @@
 #' @param tir_constant A numeric constant added to the Total Indicator Relevances
 #'   to avoid zero divisions. Default is 2.
 #'
-#' @return A named list containing 17 components:
+#' @return A named list containing 11 components:
 #' \itemize{
 #'   \item \code{ns_year_list}: Character vector of years.
 #'   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
-#'   \item \code{ns_broad_habitats}: Character vector of broad habitat names.
-#'   \item \code{ns_all_habitat_labels}: Flat character vector of all detailed habitat labels.
 #'   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
-#'   \item \code{ns_service_types}: Character vector of the three main service types.
-#'   \item \code{ns_all_service_labels}: Flat character vector of all service labels.
 #'   \item \code{ns_esppu}: Data frame of Ecosystem Service Potential Per Unit scores.
 #'   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
 #'   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
 #'   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
 #'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
-#'   \item \code{ns_ci_ids}: Character vector of unique condition indicator IDs.
 #'   \item \code{ns_cirms_list}: List of binary Condition Indicator Relevance Matrices.
-#'   \item \code{ns_tir_constant}: The value of the \code{tir_constant} used.
 #'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
 #'   \item \code{ns_ci_score_matrix}: Data frame of yearly scores for each condition indicator.
 #' }
@@ -141,8 +135,15 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     sheet_list = 9:46,
     matrix_range = "F4:AG34",
     ci_ids = ci_ids,
-    all_service_labels = all_service_labels
+    all_service_labels = all_service_labels,
+    all_habitat_labels = all_habitat_labels
   )
+
+  # Check that there is a sheet for each condition indicator marked
+  # yes in the directory:
+  if (length(ci_ids) != length(9:46)) {
+    stop("Number of 'Yes' indicators in directory does not match sheet range 9:46.")
+  }
 
   # 5. ENVIRONMENTAL MEASUREMENTS
   habitat_extent <- readxl::read_xlsx(
@@ -195,8 +196,8 @@ get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
     dplyr::mutate(category = janitor::make_clean_names(.data$category, case = "snake")) %>%
     dplyr::pull(.data$category)
 
-  full_category_names <- c(broad_habitats[1], "b_inland_surface_waters",
-                           broad_habitats[2:length(broad_habitats)], "montane")
+  full_category_names <- c(broad_habitats[1], "c_inland_surface_waters",
+                           broad_habitats[2:length(broad_habitats)], "k_montane")
 
   habitat_tree <- lapply(dh_ranges, function(rng) {
     readxl::read_xlsx(path = path, sheet = sheet, range = rng,
@@ -270,17 +271,33 @@ get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
 #' @param matrix_range Excel range for the binary matrices.
 #' @param ci_ids Vector of indicator IDs.
 #' @param all_service_labels Flat vector of all service labels.
+#' @param all_habitat_labels Flat vector of all habitat labels.
 #' @keywords internal
-get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids, all_service_labels) {
+get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids,
+                             all_service_labels, all_habitat_labels) {
+
   list_of_dfs <- lapply(sheet_list, function(current_sheet) {
     data <- readxl::read_xlsx(path = path, sheet = current_sheet, range = matrix_range,
                               col_names = FALSE, col_types = "numeric", trim_ws = TRUE,
                               .name_repair = "minimal") %>%
       as.data.frame() %>%
       stats::setNames(all_service_labels)
+
+    # Debug if label mismatch
+    if (nrow(data) != length(all_habitat_labels)) {
+      stop(paste("Row mismatch in CIRM! Matrix has", nrow(data),
+                 "rows but labels have", length(all_habitat_labels)))
+    }
+
+    # Apply habitat labels as row names
+    row.names(data) <- all_habitat_labels
+
+    # Convert to binary 1/0
     data[] <- lapply(data, function(x) ifelse(!is.na(x) & x > 0, 1, 0))
+
     return(data)
   })
+
   names(list_of_dfs) <- ci_ids
   return(list_of_dfs)
 }
@@ -312,9 +329,13 @@ make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
     tidyr::pivot_wider(
       names_from = "service_type", # Use strings here
       values_from = "divisor"      # Use strings here
-    )
+    ) %>%
+    as.data.frame()
 
-  return(htst_wide %>% dplyr::select(-"habitat"))
+  htst_wide <- htst_wide[, !names(htst_wide) %in% "habitat"]
+  rownames(htst_wide) <- all_habitat_labels
+
+  return(as.data.frame(htst_wide))
 }
 
 #' Read Yearly Condition Indicator Scores

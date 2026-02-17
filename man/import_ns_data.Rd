@@ -16,23 +16,17 @@ Can be numeric or character.}
 to avoid zero divisions. Default is 2.}
 }
 \value{
-A named list containing 17 components:
+A named list containing 11 components:
 \itemize{
   \item \code{ns_year_list}: Character vector of years.
   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
-  \item \code{ns_broad_habitats}: Character vector of broad habitat names.
-  \item \code{ns_all_habitat_labels}: Flat character vector of all detailed habitat labels.
   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
-  \item \code{ns_service_types}: Character vector of the three main service types.
-  \item \code{ns_all_service_labels}: Flat character vector of all service labels.
   \item \code{ns_esppu}: Data frame of Ecosystem Service Potential Per Unit scores.
   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
-  \item \code{ns_ci_ids}: Character vector of unique condition indicator IDs.
   \item \code{ns_cirms_list}: List of binary Condition Indicator Relevance Matrices.
-  \item \code{ns_tir_constant}: The value of the \code{tir_constant} used.
   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
   \item \code{ns_ci_score_matrix}: Data frame of yearly scores for each condition indicator.
 }

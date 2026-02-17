@@ -4,7 +4,14 @@
 \alias{get_ns_cirm_list}
 \title{Extract List of Condition Indicator Relevance Matrices (CIRMs)}
 \usage{
-get_ns_cirm_list(path, sheet_list, matrix_range, ci_ids, all_service_labels)
+get_ns_cirm_list(
+  path,
+  sheet_list,
+  matrix_range,
+  ci_ids,
+  all_service_labels,
+  all_habitat_labels
+)
 }
 \arguments{
 \item{path}{Path to Excel source.}
@@ -16,6 +23,8 @@ get_ns_cirm_list(path, sheet_list, matrix_range, ci_ids, all_service_labels)
 \item{ci_ids}{Vector of indicator IDs.}
 
 \item{all_service_labels}{Flat vector of all service labels.}
+
+\item{all_habitat_labels}{Flat vector of all habitat labels.}
 }
 \description{
 Extract List of Condition Indicator Relevance Matrices (CIRMs)

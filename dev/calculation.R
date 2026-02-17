@@ -17,7 +17,7 @@ library(ggthemes)
 # - Metadata (habitats label tree, ecosystem services label tree, condition
 # indicator labels, year list, TIR constant [2 is assumed])
 # Location of the spreadsheet:
-ns_sheets_path <- file.path("inst", "extdata", "ncai_corrected.xlsx")
+ns_sheets_path <- file.path("data-raw", "ncai_corrected.xlsx")
 # Get the data:
 ns_data_objects <- openNCAI:::import_ns_data(path = ns_sheets_path)
 # See what's in the list of objects returned:

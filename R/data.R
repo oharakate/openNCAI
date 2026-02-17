@@ -80,7 +80,7 @@
 #' }
 "ns_custom_divisor_matrix"
 
-#' Ecosystem Service Type Importance Scores (between-service-type)
+#' Ecosystem Service Importance Scores (between-service-type)
 #'
 #' A set of scores denoting the importance of each type
 #' group of ecosystem services to Scotland.
