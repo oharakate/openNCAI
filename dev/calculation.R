@@ -319,7 +319,7 @@ graph_labels <- c(
   # --- Broad Habitats ---
   "b_coastal_habitats"
   = "Coastal",
-  "b_inland_surface_waters"
+  "c_inland_surface_waters"
   = "Freshwater",
   "d_mires_bogs_and_fens"
   = "Mires, Bogs & Fens",
@@ -335,7 +335,7 @@ graph_labels <- c(
   = "Agri/Horticultural",
   "j_constructed_industrial_and_other_artificial_habitats"
   = "Constructed",
-  "montane"
+  "k_montane"
   = "Montane"
 )
 
