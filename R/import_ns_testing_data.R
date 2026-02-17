@@ -19,7 +19,6 @@
 #'     breakdowns by service type and habitat.
 #' }
 #' @keywords internal
-#' @export
 import_ns_testing_data <- function(path,
                                    habitats_label_tree,
                                    es_label_tree,

@@ -18,7 +18,6 @@
 #'
 #' @return A data frame of numeric values representing the summed relevance
 #' scores plus the constant, with the same dimesions as the input matrices.
-#' @export
 #'
 #' @keywords internal
 #' # Mock list of two matrices

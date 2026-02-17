@@ -51,7 +51,7 @@ build_all_tyfs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
 #' @param ciwms_list A named list of Condition Indicator Weighting Matrices (CIWMs).
 #'
 #' @return A named list of matrices (YWCCMs), one for each indicator.
-#' @export
+#' @keywords internal
 build_all_ywccms <- function(raw_cis, year, year_list, ciwms_list) {
 
   # Iterate through the list of CIWMs to apply the scalar multiplier

@@ -98,7 +98,7 @@ calc_ncai <- function(total_assets_matrix_list,
 #' @param ... Additional arguments passed to \code{calc_ncai} (e.g., \code{smoothing_weights}).
 #'
 #' @return A list of NCAI data frames, one for each ecosystem service group.
-#' @export
+#' @keywords internal
 calc_ncai_by_st <- function(total_assets_matrix_list,
                             es_label_tree,
                             year_one = NULL,
@@ -127,7 +127,7 @@ calc_ncai_by_st <- function(total_assets_matrix_list,
 #' @param ... Additional arguments passed to \code{calc_ncai}.
 #'
 #' @return A list of NCAI data frames, one for each habitat group.
-#' @export
+#' @keywords internal
 calc_ncai_by_bh <- function(total_assets_matrix_list,
                             habitats_label_tree,
                             year_one = NULL,

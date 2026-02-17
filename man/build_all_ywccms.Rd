@@ -22,3 +22,4 @@ A named list of matrices (YWCCMs), one for each indicator.
 Generates a list of matrices where each indicator's relevance weighting
 (CIWM) is multiplied by its indexed condition score for a given year.
 }
+\keyword{internal}

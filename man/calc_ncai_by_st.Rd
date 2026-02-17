@@ -24,3 +24,4 @@ A list of NCAI data frames, one for each ecosystem service group.
 A wrapper for \code{calc_ncai} that subsets the annual asset matrices by
 specific columns (ecosystem services) before calculating the index.
 }
+\keyword{internal}

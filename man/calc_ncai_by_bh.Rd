@@ -29,3 +29,4 @@ A list of NCAI data frames, one for each habitat group.
 A wrapper for \code{calc_ncai} that subsets the annual asset matrices by
 specific rows (habitats) before calculating the index.
 }
+\keyword{internal}

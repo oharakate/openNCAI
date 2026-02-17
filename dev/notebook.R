@@ -51,6 +51,7 @@ use_package("janitor")
 use_package("stats")
 use_package("tidyr")
 use_package("slider")
+use_package("magrittr")
 
 # Use Git
 # usethis::use_git_config(

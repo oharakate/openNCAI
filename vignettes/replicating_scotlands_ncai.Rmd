@@ -1,5 +1,5 @@
 ---
-title: "Replicating Scotland's NCAI"
+title: "replicating_scotlands_ncai"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{replicating_scotlands_ncai}
@@ -14,31 +14,47 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Introduction
+
+The 'openNCAI' package provides a reproducible pipeline to calculate a regional natural capital assets index (NCAI) using the method designed by NatureScot to calculate Scotland's NCAI.
+
+To illustrate this we use the built-in assets provided by NatureScot.
+
 ```{r setup}
 library(openNCAI)
 ```
 
-## Introduction
+## Step 1: Accessing Package Data
 
-Scotland's **Natural Capital Asset Index (NCAI)** is designed by NatureScot to monitor the value of Scotland's Natural Capital Assets. This vignette, written to demonstrate the package to our NatureScot colleagues, demonstrates how to use the `openNCAI` package to replicate the index calculations.
+The following NatureScot data objects are bundled with the package:
 
-## Data Preparation
+```{r data-table, echo = FALSE}
+# 1. Capture the data list
+d <- as.data.frame(data(package = "openNCAI")$results[, c("Item", "Title")])
 
-To begin, we import data from NatureScot's original spreadsheet containing the index calculations to year 2022. A copy of the spreadsheet is included in the `extdata` directory. The get_ns_data() command is not exported with the publicly available package, but can be accessed with the 'triple colon' notation, like this: `openNCAI:::get_ns_data()`.
+# 2. Rename columns for a cleaner look
+colnames(d) <- c("Object Name", "Description")
 
-NOTE TO SELF - we also have the option of exporting but hiding from the help by adding `@keywords internal` to the Roxygen comments. 
-
-```{r import_data}
-# Locate the template within the package
-path <- system.file("data-raw", "ncai_corrected.xlsx", package = "openNCAI")
-
-# Import all trees, scores, and matrices
-# The year_list represents the temporal coverage of the account
-# ns_data <- openNCAI:::import_ns_data(ns_sheets_path, year_list = 2000:2022)
+# 3. Render as a formatted table that wraps text
+knitr::kable(d, caption = "Available NatureScot Datasets")
 ```
 
-The function imports a list of objects:
+Because these are built in to the package we can access the data objects directly. For example, we can show a snippet of the habitat extent data by calling the object 'ns_habitat_extent':
 
-```{r show_nsdata_list}
-# print(names(ns_data))
+```{r inspect_measurement_data}
+head(ns_habitat_extent[,1:3])
 ```
+
+## Step 2: Understanding The Required Data Inputs
+
+openNCAI requires three types of data:
+
+1. **Metadata** which define the natural habitats under consideration, the ecosystem services they provide, and the years across which the index is to be calculated,
+
+2. **Environmental measures** recording the extent and condition of the natural habitats over the years,
+
+3. **Weighting scores** - decided by experts at the beginning of the process; these denote the relative importance of different ecosystem services, the potential of different habitats to provide each each, and the salience of the available habitat condition indicators to represent flow of services from habitats.
+
+Let's
+
+
