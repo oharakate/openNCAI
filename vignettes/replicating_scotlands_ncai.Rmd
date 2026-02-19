@@ -1,13 +1,16 @@
 ---
 title: "Replicating Scotland's NCAI"
-output: 
+output:
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  html_vignette: default
   rmarkdown::html_vignette:
-    toc: true
+    toc: yes
     toc_depth: 2
-vignette: >
-  %\VignetteIndexEntry{Replicating Scotland's NCAI}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+  pdf_document: default
+vignette: "%\\VignetteIndexEntry{Replicating Scotland's NCAI} %\\VignetteEngine{knitr::rmarkdown}
+  %\\VignetteEncoding{UTF-8}\n"
 ---
 
 ```{r, include = FALSE}
@@ -19,7 +22,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The 'openNCAI' package calculates a regional natural capital assets index (NCAI) using the method designed by NatureScot to calculate Scotland's NCAI. The idea behind the NCAI is that by finding a way to express changing the value of natural capital, we make it easier for policymakers to consider the role of the natural environment in our well-being and the economy.
+The **openNCAI** package calculates a regional natural capital assets index (NCAI) using the method designed by NatureScot to calculate Scotland's NCAI. The idea behind the NCAI is that by finding a way to express changing the value of natural capital, we make it easier for policymakers to consider the role of the natural environment in our well-being and the economy.
 
 Why build this package? By engineering the NCAI process in R, we make it easy to create a reproducible trace of the calculation. That means that a reader can see exactly how the statistic was produced and check its validity, and take and use the calculator for themselves. 
 
@@ -187,7 +190,7 @@ knitr::kable(d_subset)
 ```
 
 
-Several of the weights objects are matrices of **habitat $\times$ ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
+Several of the weights objects are matrices of **habitat X ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
 
 ```{r view-weights}
 all_habitats <- unlist(ns_habitats_label_tree, use.names = FALSE)
@@ -263,7 +266,7 @@ graph_labels <- c(
   # --- Broad Habitats ---
   "b_coastal_habitats"
   = "Coastal",
-  "b_inland_surface_waters"
+  "c_inland_surface_waters"
   = "Freshwater",
   "d_mires_bogs_and_fens"
   = "Mires, Bogs & Fens",
@@ -279,7 +282,7 @@ graph_labels <- c(
   = "Agri/Horticultural",
   "j_constructed_industrial_and_other_artificial_habitats"
   = "Constructed",
-  "montane"
+  "k_montane"
   = "Montane"
 )
 
