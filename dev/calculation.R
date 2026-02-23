@@ -24,15 +24,15 @@ load("R/sysdata.rda")
 
 #### Calculate everything with the big function ####
 ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
-                         ci_score_matrix = ns_ci_score_matrix,
+                         ci_scores = ns_ci_scores,
                          habitats_label_tree = ns_habitats_label_tree,
                          es_label_tree = ns_es_label_tree,
                          year_list = ns_year_list,
-                         esppu_scores = ns_esppu,
+                         esppu_scores = ns_esppu_scores,
                          custom_divisor_matrix = ns_custom_divisor_matrix,
                          between_importance_scores = ns_between_importance_scores,
                          within_importance_scores = ns_within_importance_scores,
-                         cirms_list = ns_cirms_list,
+                         ci_relevance_matrices = ns_ci_relevance_matrices,
                          indicator_directory = ns_indicator_directory,
                          return = "everything")
 
@@ -105,7 +105,7 @@ all.equal(ncai_objects$index_by_bh[ns_bh_breakdowns], ref_index_by_bh)
 # # specified in our custom divisor matrix (normally 5, except for the cells
 # # marked in red in sheet6 "ES Potential Base").
 # made_esppu_weights <- openNCAI::calc_potential_weights(
-#   esppu = ns_esppu,
+#   esppu = ns_esppu_scores,
 #   custom_divisor_matrix = ns_custom_divisor_matrix,
 #   habitats_label_tree = ns_habitats_label_tree,
 #   es_label_tree = ns_es_label_tree
@@ -184,11 +184,11 @@ all.equal(ncai_objects$index_by_bh[ns_bh_breakdowns], ref_index_by_bh)
 #
 # # We use the function calc_flow_rate().
 # made_tyfs_list <- calc_flow_rate(
-#   cirm_list = ns_cirms_list,
+#   cirm_list = ns_ci_relevance_matrices,
 #   indicator_directory = ns_indicator_directory,
 #   es_label_tree = ns_es_label_tree,
 #   habitats_label_tree = ns_habitats_label_tree,
-#   ci_score_matrix = ns_ci_score_matrix,
+#   ci_scores = ns_ci_scores,
 #   year_list = ns_year_list,
 #   tir_constant = ns_tir_constant)
 #

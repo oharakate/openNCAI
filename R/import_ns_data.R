@@ -16,14 +16,14 @@
 #'   \item \code{ns_year_list}: Character vector of years.
 #'   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
 #'   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
-#'   \item \code{ns_esppu}: Data frame of Ecosystem Service Potential Per Unit scores.
+#'   \item \code{ns_esppu_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
 #'   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
 #'   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
 #'   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
 #'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
-#'   \item \code{ns_cirms_list}: List of binary Condition Indicator Relevance Matrices.
+#'   \item \code{ns_ci_relevance_matrices}: List of binary Condition Indicator Relevance Matrices.
 #'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
-#'   \item \code{ns_ci_score_matrix}: Data frame of yearly scores for each condition indicator.
+#'   \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
 #' }
 #' @keywords internal
 import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
@@ -130,7 +130,7 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
 
   ci_ids <- as.character(indicator_directory$ci_id)
 
-  cirms_list <- get_ns_cirm_list(
+  ci_relevance_matrices <- get_ns_cirm_list(
     path = path,
     sheet_list = 9:46,
     matrix_range = "F4:AG34",
@@ -159,23 +159,23 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   names(habitat_extent) <- year_list
   rownames(habitat_extent) <- all_habitat_labels
 
-  ci_score_matrix <- read_the_ci_scores(path = path,
+  ci_scores <- read_the_ci_scores(path = path,
                                         sheet_list = 9:46,
                                         vector_range = "I36:I58",
                                         ci_ids = ci_ids)
-  rownames(ci_score_matrix) <- year_list
+  rownames(ci_scores) <- year_list
 
   return(list(
     ns_habitat_extent = habitat_extent,
-    ns_ci_score_matrix = ci_score_matrix,
+    ns_ci_scores = ci_scores,
     ns_habitats_label_tree = habitat_tree,
     ns_es_label_tree = es_tree,
     ns_year_list = year_list,
-    ns_esppu = esppu,
+    ns_esppu_scores = esppu,
     ns_custom_divisor_matrix = custom_divisor_matrix,
     ns_between_importance_scores = between_importance_scores,
     ns_within_importance_scores = within_importance_scores,
-    ns_cirms_list = cirms_list,
+    ns_ci_relevance_matrices = ci_relevance_matrices,
     ns_indicator_directory = indicator_directory
   ))
 }

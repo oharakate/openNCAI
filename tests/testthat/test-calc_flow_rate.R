@@ -36,7 +36,7 @@ test_that("calc_flow_rate returns a list with correct length and names", {
     indicator_directory = mock_ind_dir,
     es_label_tree = mock_es_tree,
     habitats_label_tree = mock_hab_tree,
-    ci_score_matrix = mock_scores,
+    ci_scores = mock_scores,
     year_list = years,
     tir_constant = 2
   )

@@ -21,7 +21,7 @@
 #'   \item Columns represent condition indicators (e.g., "Adult red grouse density").
 #'   \item Values are numeric condition scores.
 #' }
-"ns_ci_score_matrix"
+"ns_ci_scores"
 
 #' Habitats Label Tree
 #'
@@ -65,7 +65,7 @@
 #'   \item Columns represent ecosystem services matching the ecosystem services label tree.
 #'   \item Values are numeric scores from 0 (No potential) to 5 (Maximum potential).
 #' }
-"ns_esppu"
+"ns_esppu_scores"
 
 #' Nature Scot Custom Divisor Matrix
 #'
@@ -126,4 +126,4 @@
 #'   \item Each data frame has habitats as rows and ecosystem services as columns.
 #'   \item Values are binary (0 or 1) indicating relevance.
 #' }
-"ns_cirms_list"
+"ns_ci_relevance_matrices"

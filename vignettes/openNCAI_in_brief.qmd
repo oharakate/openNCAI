@@ -1,0 +1,186 @@
+---
+title: "openNCAI in Brief"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    df-print: kable 
+vignette: >
+  %\VignetteIndexEntry{OpenNCAI in Brief}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+
+This vignette demonstrates very briefly how to use openNCAI to calculate a Natural Capital Assets Index. We use the data assets bundled with the package, namely metadata, environmental measurements, and weight sets used by NatureScot to calculate Scotland's NCAI from 2000 to 2022.
+
+First we load the package:
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(openNCAI)
+```
+
+We can see a list of the data objects which are included. 
+
+```{r}
+#| label: show-data
+# The packaged data objects all have names beginning with `ns_` (for NatureScot):
+ls("package:openNCAI", patter = "^ns_")
+```
+
+
+What are all these data objects? They fall into three groups: metadata, environmental measurements, and weight sets. You can read more about them in the tables below, but for now, since this is **openNCAI in brief**, let's just see how to use the package. `get_ncai()` requires eleven arguments to calculate the index:
+
+```{r}
+#| label: run-get-ncai
+scot_ncai <- get_ncai(habitat_extent = ns_habitat_extent,
+               ci_scores = ns_ci_scores,
+               habitats_label_tree = ns_habitats_label_tree,
+               es_label_tree = ns_es_label_tree,
+               year_list = ns_year_list,
+               year_one = NULL, # Default is the first year of year list
+               esppu_scores = ns_esppu_scores,
+               esppu_divisor = ns_custom_divisor_matrix, 
+               between_importance_scores = ns_between_importance_scores,
+               within_importance_scores = ns_within_importance_scores,
+               ci_relevance_matrices = ns_ci_relevance_matrices,
+               indicator_directory = ns_indicator_directory,
+               return = NULL # By default the overall index is returned
+              )
+```
+
+
+Let's see what is returned:
+```{r}
+#| label: see-output1
+scot_ncai
+```
+
+Three versions of the index are returned: the raw assets total, the raw index (indexed around 100 at year one), and the smoothed index (uses a rolling average which is weighted towards more recent years). We can plot one:
+```{r}
+#| label: plot-raw
+scot_ncai$years <-  as.numeric(rownames(scot_ncai)) # Use row names for x axis
+plot(
+  x = scot_ncai$years, 
+  y = scot_ncai$raw_index, 
+  type = "l",               
+  main = "Scotland's Natural Capital Assets Index",
+  xlab = "Year",
+  ylab = "Index (Base = 100)"
+)
+```
+
+Type `?openNCAI` to get help, including seeing all the `return` options available:
+```{r}
+#| label: get-help
+?openNCAI
+```
+
+
+
+### Details of the bundled data objects
+
+#### Metadata objects
+```{r}
+#| label: metadata-table
+#| echo: false
+
+d_subset <- data.frame(
+  `Object Name` = c(
+    "ns_habitats_label_tree", 
+    "ns_es_label_tree", 
+    "ns_year_list"
+  ),
+  `Description` = c(
+    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS level 2) grouped within their respective broad habitat categories (EUNIS level 1) found in Scotland.",
+    "Ecosystem Services Label Tree: a hierarchy of individual ecosystem services organized by their service type groups (Provisioning, Regulation & Maintenance, and Cultural).",
+    "Year List: the specific range of years over which the index is calculated."
+  ),
+  `Data Format` = c(
+    "A named list of character vectors where names are broad habitats and vectors contain the specific habitats within them.",
+    "A named list of character vectors where names are service types and vectors contain the individual services.",
+    "A character vector of years."
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
+
+#### Environmental measurements objects
+```{r}
+#| label:  measurement_table
+#| echo: false
+d_subset <- data.frame(
+  `Object Name` = c(
+    "ns_habitat_extent", 
+    "ns_ci_scores"
+  ),
+  `Description` = c(
+    "Habitat Extent for Scotland: measurement in hectares of the area of each natural habitat over the years.",
+    "Condition Indicator Score Matrix: yearly condition score on each of the Condition Indicators (CIs)."
+  ),
+  `Data Format` = c(
+    "A data frame where rows are habitats and columns are years.",
+    "A data frame where rows are years and columns are CIs."
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
+
+
+#### Weighting objects
+```{r} 
+#| label: weights_table
+#| echo: false
+d_subset <- data.frame(
+  `Object Name` = c(
+    "ns_esppu_scores", 
+    "ns_between_importance_scores", 
+    "ns_within_importance_scores", 
+    "ns_ci_relevance_matrices", 
+    "ns_indicator_directory", 
+    "ns_custom_divisor_matrix"
+  ),
+  `Description` = c(
+    "Ecosystem Service Provision Potential per Unit Scores: scores denoting the relative potential of one area unit of a habitat to provide each of the ecosystem services.",
+    "Ecosystem Service Importance Scores (**between**-service-type): scores denoting the relative importance of the different ecosystem service **types** ('Provisioning', 'Regulation & Maintenance', 'Cultural') to Scotland.",
+    "Ecosystem Service Importance Score (**within**-service-type): scores denoting the relative importance of individual ecosystem services within their service type group.",
+    "Condition Indicator Relevance Matrices: a set of matrices marking whether an indicator is relevant to specific habitat/ecosystem service combinations (e.g., 'Woodland bird index' relevance to 'Pollination').",
+    "Indicator Directory: a table recording the salience of each condition indicator (between 0 and 1) in representing the capacity of habitats to provide each ecosystem service type.",
+    "NatureScot's Custom Divisor Matrix: weights used to adjust potential provision scores to reflect scale and context dependence (e.g., adjusting scores by dividing by 1 instead of 5)."
+  ),
+  `Data Format` = c(
+    "A data frame where rows are habitats and columns are ecosystem services.",
+    "A named list of numeric values where names match the top-level names of the Service Label Tree.",
+    "A nested list of named lists, with a hierarchy matching the Service Label Tree.",
+    "A named list of data frames (one per CI) with binary (1/0) values; rows are habitats and columns are ecosystem services.",
+    "A data frame with a `ci_id` column and columns for each ecosystem service type containing salience scores.",
+    "A data frame where row names are habitats and column names are ecosystem services."
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(d_subset)
+```
+
+::: {.callout-note collapse="true"}
+## Click to see the R code
+This content is hidden until the user clicks it.
+```{r}
+#| label: hidden-code-example
+print("This code is hidden until the user clicks it.")
+```
+:::
+
+

@@ -9,7 +9,7 @@ calc_flow_rate(
   indicator_directory,
   es_label_tree,
   habitats_label_tree,
-  ci_score_matrix,
+  ci_scores,
   year_list,
   tir_constant = 2
 )
@@ -23,7 +23,7 @@ calc_flow_rate(
 
 \item{habitats_label_tree}{A named list of habitat labels.}
 
-\item{ci_score_matrix}{A data frame or matrix of raw condition scores (years as rows).}
+\item{ci_scores}{A data frame or matrix of raw condition scores (years as rows).}
 
 \item{year_list}{A vector of years to be processed.}
 

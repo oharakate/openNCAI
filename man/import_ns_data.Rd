@@ -21,14 +21,14 @@ A named list containing 11 components:
   \item \code{ns_year_list}: Character vector of years.
   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
-  \item \code{ns_esppu}: Data frame of Ecosystem Service Potential Per Unit scores.
+  \item \code{ns_esppu_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
-  \item \code{ns_cirms_list}: List of binary Condition Indicator Relevance Matrices.
+  \item \code{ns_ci_relevance_matrices}: List of binary Condition Indicator Relevance Matrices.
   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
-  \item \code{ns_ci_score_matrix}: Data frame of yearly scores for each condition indicator.
+  \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
 }
 }
 \description{

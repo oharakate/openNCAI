@@ -6,7 +6,7 @@
 \usage{
 get_ncai(
   habitat_extent,
-  ci_score_matrix,
+  ci_scores,
   habitats_label_tree,
   es_label_tree,
   year_list,
@@ -16,7 +16,7 @@ get_ncai(
   custom_divisor_matrix = NULL,
   between_importance_scores,
   within_importance_scores,
-  cirms_list,
+  ci_relevance_matrices,
   indicator_directory,
   tir_constant = 2,
   smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1),
@@ -27,7 +27,7 @@ get_ncai(
 \arguments{
 \item{habitat_extent}{A data frame of habitat area/extent per year.}
 
-\item{ci_score_matrix}{A matrix of condition indicator scores.}
+\item{ci_scores}{A matrix of condition indicator scores.}
 
 \item{habitats_label_tree}{A named list defining the hierarchy of habitats.}
 
@@ -54,7 +54,7 @@ between different ecosystem service types.}
 \item{within_importance_scores}{Scores representing the relative importance
 within ecosystem service types.}
 
-\item{cirms_list}{Condition Indicator Relevance Matrices list.}
+\item{ci_relevance_matrices}{Condition Indicator Relevance Matrices list.}
 
 \item{indicator_directory}{Directory mapping indicators to services/habitats.}
 

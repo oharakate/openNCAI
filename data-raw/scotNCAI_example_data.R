@@ -13,14 +13,14 @@ list2env(ns_data_objects, envir = .GlobalEnv)
 
 # Add the objects tot he package data dir:
 usethis::use_data(ns_habitat_extent,
-                  ns_ci_score_matrix,
+                  ns_ci_scores,
                   ns_habitats_label_tree,
                   ns_es_label_tree,
                   ns_year_list,
-                  ns_esppu,
+                  ns_esppu_scores,
                   ns_custom_divisor_matrix,
                   ns_between_importance_scores,
                   ns_within_importance_scores,
-                  ns_cirms_list,
+                  ns_ci_relevance_matrices,
                   ns_indicator_directory,
                   overwrite = TRUE)

@@ -9,7 +9,7 @@
 #' @param indicator_directory A data frame containing relevance weights for each indicator.
 #' @param es_label_tree A named list of ecosystem service labels.
 #' @param habitats_label_tree A named list of habitat labels.
-#' @param ci_score_matrix A data frame or matrix of raw condition scores (years as rows).
+#' @param ci_scores A data frame or matrix of raw condition scores (years as rows).
 #' @param year_list A vector of years to be processed.
 #' @param tir_constant A numeric constant (default 2) to prevent zero-division
 #'   and ensure indexing congruency.
@@ -21,7 +21,7 @@ calc_flow_rate <- function(cirm_list,
                            indicator_directory,
                            es_label_tree,
                            habitats_label_tree,
-                           ci_score_matrix,
+                           ci_scores,
                            year_list,
                            tir_constant = 2) {
 
@@ -44,7 +44,7 @@ calc_flow_rate <- function(cirm_list,
   # 3. Calculate the Total Yearly Flow (TYF) matrices for all years
   # This combines condition scores with relevances and normalizes the output.
   tyfs_list <- build_all_tyfs(
-    raw_cis = ci_score_matrix,
+    raw_cis = ci_scores,
     year_list = year_list,
     ciwms_list = ciwms_list,
     tir = tir,

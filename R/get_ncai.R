@@ -6,7 +6,7 @@
 #'  or specific breakdowns.
 #'
 #' @param habitat_extent A data frame of habitat area/extent per year.
-#' @param ci_score_matrix A matrix of condition indicator scores.
+#' @param ci_scores A matrix of condition indicator scores.
 #' @param habitats_label_tree A named list defining the hierarchy of habitats.
 #' @param es_label_tree A named list defining the hierarchy of ecosystem
 #' services.
@@ -23,7 +23,7 @@
 #'   between different ecosystem service types.
 #' @param within_importance_scores Scores representing the relative importance
 #'   within ecosystem service types.
-#' @param cirms_list Condition Indicator Relevance Matrices list.
+#' @param ci_relevance_matrices Condition Indicator Relevance Matrices list.
 #' @param indicator_directory Directory mapping indicators to services/habitats.
 #' @param tir_constant Numeric. The constant used in the Total Indicator
 #'   Relevance (TIR) calculation. Defaults to 2.
@@ -61,7 +61,7 @@
 #' @export
 
 get_ncai <-  function(habitat_extent,
-                      ci_score_matrix,
+                      ci_scores,
                       habitats_label_tree,
                       es_label_tree,
                       year_list,
@@ -71,7 +71,7 @@ get_ncai <-  function(habitat_extent,
                       custom_divisor_matrix = NULL,
                       between_importance_scores,
                       within_importance_scores,
-                      cirms_list,
+                      ci_relevance_matrices,
                       indicator_directory,
                       tir_constant = 2,
                       smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
@@ -143,11 +143,11 @@ get_ncai <-  function(habitat_extent,
   # Condition scores are weighted by relevance and combined into
   # yearly matrices of flow rate by habitat/service combination.
   yearly_flow_matrices <- calc_flow_rate(
-    cirm_list = cirms_list,
+    cirm_list = ci_relevance_matrices,
     indicator_directory = indicator_directory,
     es_label_tree = es_label_tree,
     habitats_label_tree = habitats_label_tree,
-    ci_score_matrix = ci_score_matrix,
+    ci_scores = ci_scores,
     year_list = year_list,
     tir_constant = tir_constant
   )

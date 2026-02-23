@@ -1,16 +1,17 @@
 ---
 title: "Replicating Scotland's NCAI"
 output:
-  word_document:
-    toc: yes
-    toc_depth: '2'
-  html_vignette: default
   rmarkdown::html_vignette:
     toc: yes
     toc_depth: 2
+  word_document:
+    toc: yes
+    toc_depth: '2'
   pdf_document: default
-vignette: "%\\VignetteIndexEntry{Replicating Scotland's NCAI} %\\VignetteEngine{knitr::rmarkdown}
-  %\\VignetteEncoding{UTF-8}\n"
+vignette: >
+  %\VignetteIndexEntry{Replicating Scotland's NCAI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -94,7 +95,7 @@ knitr::kable(d_subset)
 
 It is important that all measurement and weights objects are congruent with the metadata. E.g. time series data must include all the years mentioned in the year list, and weighting scores must be expressed across the habitats and ecosystem services listed in the label trees.
 
-Also required but not included explicitly as a data object is a **list of condition indicators** (CIs): this is extracted from the column names of the Condition Indicator Score Matrix (`ns_ci_score_matrix`) described in the next table. 
+Also required but not included explicitly as a data object is a **list of condition indicators** (CIs): this is extracted from the column names of the Condition Indicator Score Matrix (`ns_ci_scores`) described in the next table. 
 
 We can inspect the objects and verify some of the dimensions and labels:
 
@@ -118,7 +119,7 @@ These measures constitute time series recording the extent (area) and condition 
 d_subset <- data.frame(
   `Object Name` = c(
     "ns_habitat_extent", 
-    "ns_ci_score_matrix"
+    "ns_ci_scores"
   ),
   `Description` = c(
     "Habitat Extent for Scotland: measurement in hectares of the area of each natural habitat over the years.",
@@ -146,11 +147,11 @@ length(all_habitats)
 all.equal(all_habitats, rownames(ns_habitat_extent))
 
 # The condition score data has one row per year and these years match the year list: 
-dim(ns_ci_score_matrix)
+dim(ns_ci_scores)
 length(ns_year_list)
 
 # The row names match the year list too:
-all.equal(rownames(ns_ci_score_matrix), ns_year_list)
+all.equal(rownames(ns_ci_scores), ns_year_list)
 ```
 
 ### Weighting Scores
@@ -160,18 +161,18 @@ These data objects include scores decided by expert knowledge at the outset of t
 ```{r weights_table, echo = FALSE}
 d_subset <- data.frame(
   `Object Name` = c(
-    "ns_esppu", 
+    "ns_esppu_scores", 
     "ns_between_importance_scores", 
     "ns_within_importance_scores", 
-    "ns_cirms_list", 
+    "ns_ci_relevance_matrices", 
     "ns_indicator_directory", 
     "ns_custom_weight_matrix"
   ),
   `Description` = c(
-    "Ecosystem Service Potential per Unit Scores: scores denoting the relative potential of one area unit of a habitat to provide each of the ecosystem services.",
+    "Ecosystem Service Provision Potential per Unit Scores: scores denoting the relative potential of one area unit of a habitat to provide each of the ecosystem services.",
     "Ecosystem Service Importance Scores (**between**-service-type): scores denoting the relative importance of the different ecosystem service **types** ('Provisioning', 'Regulation & Maintenance', 'Cultural') to Scotland.",
     "Ecosystem Service Importance Score (**within**-service-type): scores denoting the relative importance of individual ecosystem services within their service type group.",
-    "Condition Indicator Relevance Matrix List: a set of matrices marking whether an indicator is relevant to specific habitat/ecosystem service combinations (e.g., 'Woodland bird index' relevance to 'Pollination').",
+    "Condition Indicator Relevance Matrices: a set of matrices marking whether an indicator is relevant to specific habitat/ecosystem service combinations (e.g., 'Woodland bird index' relevance to 'Pollination').",
     "Indicator Directory: a table recording the salience of each condition indicator (between 0 and 1) in representing the capacity of habitats to provide each ecosystem service type.",
     "NatureScot's Custom Divisor Matrix: weights used to adjust potential provision scores to reflect scale and context dependence (e.g., adjusting scores by dividing by 1 instead of 5)."
   ),
@@ -190,30 +191,30 @@ knitr::kable(d_subset)
 ```
 
 
-Several of the weights objects are matrices of **habitat X ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
+Several of the weights objects are matrices of **habitat / ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
 
 ```{r view-weights}
 all_habitats <- unlist(ns_habitats_label_tree, use.names = FALSE)
 all_ecosystem_services <- unlist(ns_es_label_tree, use.names = FALSE)
 
 # The ESPPU, any custom divisor matrix, and each matrix in the CIRMs list need to match:
-one_ci_relevance_matrix <- ns_cirms_list[[4]]
+one_ci_relevance_matrix <- ns_ci_relevance_matrices[[4]]
 
 length(all_habitats)
-nrow(ns_esppu)
+nrow(ns_esppu_scores)
 nrow(ns_custom_divisor_matrix)
 nrow(one_ci_relevance_matrix)
 
-all.equal(all_habitats, rownames(ns_esppu))
+all.equal(all_habitats, rownames(ns_esppu_scores))
 all.equal(all_habitats, rownames(ns_custom_divisor_matrix))
 all.equal(all_habitats, rownames(one_ci_relevance_matrix))
 
 length(all_ecosystem_services)
-ncol(ns_esppu)
+ncol(ns_esppu_scores)
 ncol(ns_custom_divisor_matrix)
 ncol(one_ci_relevance_matrix)
 
-all.equal(all_ecosystem_services, colnames(ns_esppu))
+all.equal(all_ecosystem_services, colnames(ns_esppu_scores))
 all.equal(all_ecosystem_services, colnames(ns_custom_divisor_matrix))
 all.equal(all_ecosystem_services, colnames(one_ci_relevance_matrix))
 ```
@@ -226,15 +227,15 @@ The index is calculated using the `get_ncai()` function. By default the final ov
 ```{r calc_overall}
 overall_ncai <- get_ncai(
                   habitat_extent = ns_habitat_extent,
-                  ci_score_matrix = ns_ci_score_matrix,
+                  ci_scores = ns_ci_scores,
                   habitats_label_tree = ns_habitats_label_tree,
                   es_label_tree = ns_es_label_tree,
                   year_list = ns_year_list,
-                  esppu_scores = ns_esppu,
+                  esppu_scores = ns_esppu_scores,
                   custom_divisor_matrix = ns_custom_divisor_matrix,
                   between_importance_scores = ns_between_importance_scores,
                   within_importance_scores = ns_within_importance_scores,
-                  cirms_list = ns_cirms_list,
+                  ci_relevance_matrices = ns_ci_relevance_matrices,
                   indicator_directory = ns_indicator_directory
                   )
 
@@ -330,15 +331,15 @@ By passing `"index_by_st"` or `"index_by_bh"` to the optional `return` argument,
 ```{r index-breakdown-st}
 ncai_by_st <- get_ncai(
                 habitat_extent = ns_habitat_extent,
-                ci_score_matrix = ns_ci_score_matrix,
+                ci_scores = ns_ci_scores,
                 habitats_label_tree = ns_habitats_label_tree,
                 es_label_tree = ns_es_label_tree,
                 year_list = ns_year_list,
-                esppu_scores = ns_esppu,
+                esppu_scores = ns_esppu_scores,
                 custom_divisor_matrix = ns_custom_divisor_matrix,
                 between_importance_scores = ns_between_importance_scores,
                 within_importance_scores = ns_within_importance_scores,
-                cirms_list = ns_cirms_list,
+                ci_relevance_matrices = ns_ci_relevance_matrices,
                 indicator_directory = ns_indicator_directory,
                 return = "index_by_st"
                 )
@@ -422,15 +423,15 @@ And we can use the same approach to generate a breakdown by broad habitat:
 ```{r index-breakdown-bh}
 ncai_by_bh <- get_ncai(
                 habitat_extent = ns_habitat_extent,
-                ci_score_matrix = ns_ci_score_matrix,
+                ci_scores = ns_ci_scores,
                 habitats_label_tree = ns_habitats_label_tree,
                 es_label_tree = ns_es_label_tree,
                 year_list = ns_year_list,
-                esppu_scores = ns_esppu,
+                esppu_scores = ns_esppu_scores,
                 custom_divisor_matrix = ns_custom_divisor_matrix,
                 between_importance_scores = ns_between_importance_scores,
                 within_importance_scores = ns_within_importance_scores,
-                cirms_list = ns_cirms_list,
+                ci_relevance_matrices = ns_ci_relevance_matrices,
                 indicator_directory = ns_indicator_directory,
                 return = "index_by_bh"
                 )

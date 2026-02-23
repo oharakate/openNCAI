@@ -13,10 +13,10 @@ test_that("import_ns_data returns the correct 11-component list structure", {
 
   # 2. Verify all named components exist
   expected_names <- c(
-    "ns_habitat_extent", "ns_ci_score_matrix", "ns_habitats_label_tree",
-    "ns_es_label_tree", "ns_year_list", "ns_esppu", "ns_custom_divisor_matrix",
+    "ns_habitat_extent", "ns_ci_scores", "ns_habitats_label_tree",
+    "ns_es_label_tree", "ns_year_list", "ns_esppu_scores", "ns_custom_divisor_matrix",
     "ns_between_importance_scores", "ns_within_importance_scores",
-    "ns_cirms_list", "ns_indicator_directory"
+    "ns_ci_relevance_matrices", "ns_indicator_directory"
   )
   expect_setequal(names(result), expected_names)
 })
@@ -36,10 +36,10 @@ test_that("Label Trees and Matrices are perfectly aligned", {
   expect_equal(colnames(result$ns_habitat_extent), result$ns_year_list)
 
   # 2. Check ESPPU Alignment
-  expect_equal(nrow(result$ns_esppu), length(all_habitats))
-  expect_equal(ncol(result$ns_esppu), length(all_services))
-  expect_equal(rownames(result$ns_esppu), all_habitats)
-  expect_equal(colnames(result$ns_esppu), all_services)
+  expect_equal(nrow(result$ns_esppu_scores), length(all_habitats))
+  expect_equal(ncol(result$ns_esppu_scores), length(all_services))
+  expect_equal(rownames(result$ns_esppu_scores), all_habitats)
+  expect_equal(colnames(result$ns_esppu_scores), all_services)
 
   # 3. Check Custom Divisor Alignment
   expect_equal(nrow(result$ns_custom_divisor_matrix), length(all_habitats))
@@ -55,16 +55,16 @@ test_that("Condition Indicator data is consistent", {
 
   # 1. Check CI Score Matrix dimensions
   # Rows should be years, columns should be CIs
-  expect_equal(nrow(result$ns_ci_score_matrix), length(result$ns_year_list))
-  expect_equal(ncol(result$ns_ci_score_matrix), length(ci_ids))
-  expect_equal(colnames(result$ns_ci_score_matrix), ci_ids)
+  expect_equal(nrow(result$ns_ci_scores), length(result$ns_year_list))
+  expect_equal(ncol(result$ns_ci_scores), length(ci_ids))
+  expect_equal(colnames(result$ns_ci_scores), ci_ids)
 
   # 2. Check CIRMs list
-  expect_length(result$ns_cirms_list, length(ci_ids))
-  expect_equal(names(result$ns_cirms_list), ci_ids)
+  expect_length(result$ns_ci_relevance_matrices, length(ci_ids))
+  expect_equal(names(result$ns_ci_relevance_matrices), ci_ids)
 
   # Check structure of the first CIRM
-  first_cirm <- result$ns_cirms_list[[1]]
+  first_cirm <- result$ns_ci_relevance_matrices[[1]]
   expect_equal(nrow(first_cirm), length(unlist(result$ns_habitats_label_tree)))
   expect_equal(ncol(first_cirm), length(unlist(result$ns_es_label_tree)))
 })

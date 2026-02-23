@@ -49,7 +49,7 @@ mock_dir <- data.frame(
 test_that("get_ncai core logic works with default return", {
   res <- openNCAI::get_ncai(
     habitat_extent = mock_extent,
-    ci_score_matrix = mock_ci_scores,
+    ci_scores = mock_ci_scores,
     habitats_label_tree = h_tree,
     es_label_tree = e_tree,
     year_list = years,
@@ -57,7 +57,7 @@ test_that("get_ncai core logic works with default return", {
     esppu_divisor = 5,
     between_importance_scores = mock_between,
     within_importance_scores = mock_within,
-    cirms_list = mock_cirms,
+    ci_relevance_matrices = mock_cirms,
     indicator_directory = mock_dir
   )
 
@@ -69,7 +69,7 @@ test_that("get_ncai correctly handles custom year_one", {
   expect_message(
     res <- openNCAI::get_ncai(
       habitat_extent = mock_extent,
-      ci_score_matrix = mock_ci_scores,
+      ci_scores = mock_ci_scores,
       habitats_label_tree = h_tree,
       es_label_tree = e_tree,
       year_list = years,
@@ -78,7 +78,7 @@ test_that("get_ncai correctly handles custom year_one", {
       esppu_divisor = 5,
       between_importance_scores = mock_between,
       within_importance_scores = mock_within,
-      cirms_list = mock_cirms,
+      ci_relevance_matrices = mock_cirms,
       indicator_directory = mock_dir
     ),
     "Note: Smoothed index at baseline year"
@@ -89,7 +89,7 @@ test_that("get_ncai correctly handles custom year_one", {
 test_that("get_ncai returns the full results list when requested", {
   res_all <- openNCAI::get_ncai(
     habitat_extent = mock_extent,
-    ci_score_matrix = mock_ci_scores,
+    ci_scores = mock_ci_scores,
     habitats_label_tree = h_tree,
     es_label_tree = e_tree,
     year_list = years,
@@ -97,7 +97,7 @@ test_that("get_ncai returns the full results list when requested", {
     esppu_divisor = 5,
     between_importance_scores = mock_between,
     within_importance_scores = mock_within,
-    cirms_list = mock_cirms,
+    ci_relevance_matrices = mock_cirms,
     indicator_directory = mock_dir,
     return = "everything"
   )

@@ -5,3 +5,5 @@ dev/
 ^dev$
 ^data-raw$
 ^data-raw/NatureScot_NCAI_Template\.xlsx$
+^vignettes/\.quarto$
+^vignettes/*_files$
