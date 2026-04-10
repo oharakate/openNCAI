@@ -12,13 +12,20 @@ library(devtools)
 # Get various post-calculation items from the NatureScot spreadsheet:
 ns_sheets_path <- file.path("data-raw", "ncai_corrected.xlsx")
 
-scotNCAItestobjects <- openNCAI:::import_ns_testing_data(
+raw_imports <- openNCAI:::import_ns_testing_data(
   path = ns_sheets_path,
   habitats_label_tree = ns_habitats_label_tree,
   es_label_tree = ns_es_label_tree,
   year_list = 2000:2022)
-names(scotNCAItestobjects)
-list2env(scotNCAItestobjects, envir = .GlobalEnv)
+names(raw_imports)
+# list2env(scotNCAItestobjects, envir = .GlobalEnv)
+
+# Use manual method to force overwrite
+ref_espb <- raw_imports$ref_espb
+ref_wellbeing_base <- raw_imports$ref_wellbeing_base
+ref_tir <- raw_imports$ref_tir
+ref_all_year_sheets <- raw_imports$ref_all_year_sheets
+ref_index_breakdowns <- raw_imports$ref_index_breakdowns
 
 # Create a matrix of zeroes in the same shape as the test data matrices:
 zero_main_matrix <- ref_espb

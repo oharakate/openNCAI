@@ -51,13 +51,28 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   all_service_labels <- unlist(es_tree, use.names = FALSE)
 
   # 2. ECOSYSTEM SERVICE POTENTIAL WEIGHTING (esppu)
-  esppu <- readxl::read_xlsx(path = path,
-                             sheet = 3,
-                             range = "F4:AG34",
-                             col_names = FALSE,
-                             col_types = "numeric",
-                             trim_ws = TRUE,
-                             .name_repair = "minimal") %>%
+  esppu <- readxl::read_xlsx(
+    path = path,
+    sheet = 3,
+    range = "F4:AG34",
+    col_names = FALSE,
+    col_types = "numeric",
+    trim_ws = TRUE,
+    .name_repair = "minimal",
+    progress = FALSE
+  ) %>%
+    as.data.frame() # Convert to data frame to allow row naming
+
+  # Check/throw error if some mismatch
+  if (nrow(esppu) != length(unlist(habitat_tree))) {
+    stop("Excel range height does not match habitat tree length!")
+  }
+
+  # Explicitly set names to suit label_ncai_matrix
+  rownames(esppu) <- unlist(habitat_tree, use.names = FALSE)
+  colnames(esppu) <- unlist(es_tree, use.names = FALSE)
+
+  esppu <- esppu %>%
     label_ncai_matrix(habitats_label_tree = habitat_tree,
                       es_label_tree = es_tree)
 
@@ -91,7 +106,9 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     range = "D6:D8",
     col_names = "score",
     col_types = "numeric",
-    trim_ws = TRUE
+    trim_ws = TRUE,
+    .name_repair = "minimal",
+    progress = FALSE
   ) %>%
     dplyr::pull(.data$score) %>%
     as.list() %>%
@@ -109,15 +126,18 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   )
 
   # 4. CONDITION INDICATORS
-  indicator_directory <- readxl::read_xlsx(
-    path = path,
-    sheet = 8,
-    range = "A3:R106",
-    col_names = FALSE,
-    col_types = NULL,
-    trim_ws = TRUE,
-    .name_repair = "unique"
-  ) %>%
+  indicator_directory <- suppressMessages(
+    readxl::read_xlsx(
+      path = path,
+      sheet = 8,
+      range = "A3:R106",
+      col_names = FALSE,
+      col_types = NULL,
+      trim_ws = TRUE,
+      .name_repair = "unique",
+      progress = FALSE
+      )
+    ) %>%
     as.data.frame() %>%
     dplyr::select(1, 4, 14, 15, 16, 18) %>%
     stats::setNames(c("raw_code", "raw_name", service_types, "used")) %>%
@@ -153,7 +173,8 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     col_names = FALSE,
     col_types = "numeric",
     trim_ws = TRUE,
-    .name_repair = "minimal"
+    .name_repair = "minimal",
+    progress = FALSE
   ) %>%
     as.data.frame()
   names(habitat_extent) <- year_list
@@ -188,20 +209,46 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
 #' @param dh_ranges Vector of ranges for detailed habitats.
 #' @keywords internal
 get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
+  # 1. Process Broad Habitats
+  # Using col_names = FALSE ensures we don't lose the first row of the range
   broad_habitats <- readxl::read_xlsx(
-    path = path, sheet = sheet, range = bh_range,
-    col_names = "category", col_types = "text", trim_ws = TRUE
+    path = path,
+    sheet = sheet,
+    range = bh_range,
+    col_names = FALSE,
+    col_types = "text",
+    trim_ws = TRUE,
+    .name_repair = "minimal",
+    progress = FALSE
   ) %>%
+    # Manually name the column to avoid the header-guessing bug
+    stats::setNames("category") %>%
     dplyr::filter(!is.na(.data$category)) %>%
     dplyr::mutate(category = janitor::make_clean_names(.data$category, case = "snake")) %>%
     dplyr::pull(.data$category)
 
-  full_category_names <- c(broad_habitats[1], "c_inland_surface_waters",
-                           broad_habitats[2:length(broad_habitats)], "k_montane")
+  # Add missing categories specific to the NatureScot structure
+  full_category_names <- c(
+    broad_habitats[1],
+    "c_inland_surface_waters",
+    broad_habitats[2:length(broad_habitats)],
+    "k_montane"
+  )
 
+  # 2. Process Detailed Habitats
   habitat_tree <- lapply(dh_ranges, function(rng) {
-    readxl::read_xlsx(path = path, sheet = sheet, range = rng,
-                      col_names = "label", col_types = "text", trim_ws = TRUE) %>%
+    readxl::read_xlsx(
+      path = path,
+      sheet = sheet,
+      range = rng,
+      col_names = FALSE, # FIX: Capture every row including the first one
+      col_types = "text",
+      trim_ws = TRUE,
+      .name_repair = "minimal",
+      progress = FALSE
+    ) %>%
+      # Manually name the column 'label'
+      stats::setNames("label") %>%
       dplyr::filter(!is.na(.data$label)) %>%
       dplyr::mutate(label = janitor::make_clean_names(.data$label, case = "snake")) %>%
       dplyr::pull(.data$label)
@@ -210,7 +257,6 @@ get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
   names(habitat_tree) <- full_category_names
   return(habitat_tree)
 }
-
 #' Extract and Clean Ecosystem Service Tree
 #'
 #' @param path Path to Excel source.
@@ -220,15 +266,20 @@ get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
 #' @param es_name_ranges Vector of ranges for ES names.
 #' @keywords internal
 get_ns_es_tree <- function(path, sheet, est_range, es_code_ranges, es_name_ranges) {
-  es_categories <- readxl::read_xlsx(path = path, sheet = sheet, range = est_range,
-                                     col_names = FALSE, col_types = "text", trim_ws = TRUE) %>%
+  es_categories <- suppressMessages(
+    readxl::read_xlsx(path = path, sheet = sheet, range = est_range,
+                      col_names = FALSE, col_types = "text", trim_ws = TRUE,
+                      .name_repair = "unique", progress = FALSE)
+  ) %>%
     unlist(use.names = FALSE) %>%
     stats::na.omit() %>%
     janitor::make_clean_names(case = "snake")
 
   es_tree <- lapply(seq_along(es_code_ranges), function(i) {
     codes <- readxl::read_xlsx(path = path, sheet = sheet, range = es_code_ranges[i],
-                               col_names = FALSE, col_types = "text", trim_ws = TRUE) %>%
+                               col_names = FALSE, col_types = "text", trim_ws = TRUE,
+                               .name_repair = "minimal",
+                               progress = FALSE) %>%
       unlist(use.names = FALSE) %>% as.character()
 
     names_full <- readxl::read_xlsx(path = path, sheet = sheet, range = es_name_ranges[i],
@@ -255,7 +306,9 @@ get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
   importance_scores_list <- lapply(names(importance_ranges), function(service_type) {
     rng <- importance_ranges[[service_type]]
     scores_vec <- readxl::read_xlsx(path = path, sheet = sheet, range = rng,
-                                    col_names = "score", col_types = "numeric", trim_ws = TRUE) %>%
+                                    col_names = "score", col_types = "numeric", trim_ws = TRUE,
+                                    .name_repair = "minimal",
+                                    progress = FALSE) %>%
       dplyr::pull(.data$score)
     names(scores_vec) <- es_tree[[service_type]]
     return(as.list(scores_vec))
@@ -352,9 +405,10 @@ read_the_ci_scores <- function(path, sheet_list, vector_range, ci_ids) {
     raw_score_data <- readxl::read_xlsx(path = path, sheet = actual_sheet_index,
                                         range = vector_range, col_names = FALSE,
                                         col_types = "numeric", trim_ws = TRUE,
-                                        .name_repair = "minimal")
+                                        .name_repair = "minimal",
+                                        progress = FALSE)
     list_of_vectors[[as.character(ci_ids[idx])]] <- as.numeric(raw_score_data[[1]])
-    cat("Processed Sheet", actual_sheet_index, "(CI ID:", ci_ids[idx], ")\n")
+    # cat("Processed Sheet", actual_sheet_index, "(CI ID:", ci_ids[idx], ")\n")
   }
   return(as.data.frame(list_of_vectors, check.names = FALSE))
 }

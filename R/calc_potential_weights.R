@@ -39,13 +39,20 @@
 #' @keywords internal
 #'
 #' @examples
-#' scores <- data.frame(service1 = c(10, 5), service2 = c(2, 8))
+#' # Setup dummy scores
+#' # FIX: Column names must match the values in es_tree!
+#' scores <- data.frame(
+#'   crops = c(10, 5),          # Changed from service1
+#'   drinking_water = c(2, 8),  # Changed from service2
+#'   row.names = c("b1", "b2")
+#' )
 #'
 #' hab_tree <- list(coastal = c("b1", "b2"))
 #' es_tree <- list(provisioning = c("crops", "drinking_water"))
 #'
 #' # 1. Using a universal divisor with labels
-#' openNCAI:::calc_potential_weights(scores,
+#' openNCAI:::calc_potential_weights(
+#'   scores,
 #'   divisor = 10,
 #'   habitats_label_tree = hab_tree,
 #'   es_label_tree = es_tree
@@ -69,6 +76,9 @@ calc_potential_weights <- function(
     es_label_tree = NULL
 ) {
 
+  # 1. Store the original row names immediately
+  original_rownames <- rownames(esppu)
+
   # Make sure a common divisor or custom matrix is provided:
   if (is.null(custom_divisor_matrix) && is.null(divisor)) {
     stop("You must provide either a 'divisor' or a 'custom_divisor_matrix'.")
@@ -84,6 +94,9 @@ calc_potential_weights <- function(
     }
     esppu_aw <- esppu / custom_divisor_matrix
   }
+
+  # 2. Re-assign the row names (arithmetic can strip them)
+  rownames(esppu_aw) <- original_rownames
 
   # Call labelling helper if label trees are passed in
   if (!is.null(habitats_label_tree) && !is.null(es_label_tree)) {

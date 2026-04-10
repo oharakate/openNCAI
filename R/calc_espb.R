@@ -24,7 +24,6 @@
 #' @keywords internal
 #'
 #' @examples
-#' # Define Label Trees
 #' h_tree <- list(coastal = c("b1", "b2"), woodland = c("g1"))
 #' es_tree <- list(provisioning = c("crops", "timber"))
 #'
@@ -32,15 +31,19 @@
 #' extent <- data.frame(
 #'   `2026` = c(100, 150, 200),
 #'   `2027` = c(110, 140, 210),
-#'   check.names = FALSE
+#'   check.names = FALSE,
+#'   row.names = c("b1", "b2", "g1")
 #' )
 #'
 #' # Setup ESPPU Weights
-#' weights <- data.frame(crops = c(0.12, 0.1, 0.0), timber = c(0.0, 0.0, 0.9))
+#' weights <- data.frame(
+#'   crops = c(0.12, 0.1, 0.0),
+#'   timber = c(0.0, 0.0, 0.9),
+#'   row.names = c("b1", "b2", "g1")
+#' )
 #'
 #' years <- c("2026", "2027")
 #'
-#' # Run with default (2026)
 #' espb_res <- openNCAI:::calc_espb(
 #'   esppu_weights = weights,
 #'   habitat_extent = extent,
@@ -54,17 +57,16 @@ calc_espb <- function(esppu_weights,
                       habitats_label_tree,
                       es_label_tree) {
 
-  # 1a. Check dataframe dimensions and label trees match
+  # 1. Validation checks (Unchanged)
   if (length(unlist(habitats_label_tree, use.names = FALSE)) != nrow(habitat_extent)) {
     stop("Number of habitat names in habitats_label_tree must match rows in habitat_extent.")
   }
-  # 1b. Check match of row names between extent and weights:
+
   if (!all(rownames(habitat_extent) == rownames(esppu_weights))) {
-    stop("Row names (habitats) of habitat_extent and esppu_weights must be identical and in the same order.")
+    stop("Row names (habitats) of habitat_extent and esppu_weights must be identical.")
   }
 
-  # 2. Identify target year and validate existence in extent data
-  # Consolidated the two if-blocks into a single clean assignment
+  # 2. Identify target year
   target_year <- as.character(if (is.null(year_one)) year_list[1] else year_one)
 
   if (!(target_year %in% colnames(habitat_extent))) {
@@ -75,13 +77,9 @@ calc_espb <- function(esppu_weights,
   origin_year_vec <- dplyr::pull(habitat_extent, var = target_year)
 
   # 4. Multiply habitat extent values across the esppu weightings
-  espb <- as.data.frame(
-    dplyr::mutate(
-      esppu_weights,
-      dplyr::across(
-        dplyr::where(is.numeric), ~ .x * origin_year_vec
-      )
-    ))
+  espb <- esppu_weights * origin_year_vec
+
+  rownames(espb) <- rownames(esppu_weights)
 
   # 5. Label and return
   return(label_ncai_matrix(espb, habitats_label_tree, es_label_tree))

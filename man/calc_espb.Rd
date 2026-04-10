@@ -44,7 +44,6 @@ Multiply the ecosystem service provision potential per unit (ESPPU) by the
 habitat extent in the baseline year of the index.
 }
 \examples{
-# Define Label Trees
 h_tree <- list(coastal = c("b1", "b2"), woodland = c("g1"))
 es_tree <- list(provisioning = c("crops", "timber"))
 
@@ -52,15 +51,19 @@ es_tree <- list(provisioning = c("crops", "timber"))
 extent <- data.frame(
   `2026` = c(100, 150, 200),
   `2027` = c(110, 140, 210),
-  check.names = FALSE
+  check.names = FALSE,
+  row.names = c("b1", "b2", "g1")
 )
 
 # Setup ESPPU Weights
-weights <- data.frame(crops = c(0.12, 0.1, 0.0), timber = c(0.0, 0.0, 0.9))
+weights <- data.frame(
+  crops = c(0.12, 0.1, 0.0),
+  timber = c(0.0, 0.0, 0.9),
+  row.names = c("b1", "b2", "g1")
+)
 
 years <- c("2026", "2027")
 
-# Run with default (2026)
 espb_res <- openNCAI:::calc_espb(
   esppu_weights = weights,
   habitat_extent = extent,

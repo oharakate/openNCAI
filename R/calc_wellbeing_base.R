@@ -43,7 +43,10 @@ calc_wellbeing_base <- function(espb,
                                 importance_weights,
                                 habitats_label_tree = NULL,
                                 es_label_tree = NULL
-                                ) {
+) {
+
+  # Store original names because dplyr/mapply operations often strip them
+  orig_hab_names <- rownames(espb)
 
   # Ensure input is a data frame
   wellbeing_base <- as.data.frame(espb)
@@ -63,6 +66,9 @@ calc_wellbeing_base <- function(espb,
   # Scale to 100
   wellbeing_base <- wellbeing_base * 100
 
+  # Restore row names before calling the labeler or returning
+  rownames(wellbeing_base) <- orig_hab_names
+
   # Label data frame if label trees are passed in
   if (!is.null(habitats_label_tree) && !is.null(es_label_tree)) {
     wellbeing_base <- label_ncai_matrix(
@@ -73,5 +79,4 @@ calc_wellbeing_base <- function(espb,
   }
 
   return(wellbeing_base)
-
 }

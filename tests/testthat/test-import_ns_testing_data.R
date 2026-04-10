@@ -1,6 +1,7 @@
+path <- testthat::test_path("../../data-raw/ncai_corrected.xlsx")
+
 test_that("import_ns_testing_data returns expected structure and names", {
-  path <- ns_sheets_path
-  skip_if(path == "")
+  skip_if_not(file.exists(path), "Spreadsheet not found")
 
   res <- openNCAI:::import_ns_testing_data(
     path = path,
@@ -14,8 +15,7 @@ test_that("import_ns_testing_data returns expected structure and names", {
 })
 
 test_that("read_the_indices correctly formats output", {
-  path <- ns_sheets_path
-  skip_if(path == "")
+  skip_if_not(file.exists(path), "Spreadsheet not found")
 
   indices <- openNCAI:::read_the_indices(
     indices_range = "B2:D24",
@@ -30,8 +30,7 @@ test_that("read_the_indices correctly formats output", {
 })
 
 test_that("read_ns_year_sheet handles NA values", {
-  path <- ns_sheets_path
-  skip_if(path == "")
+  skip_if_not(file.exists(path), "Spreadsheet not found")
 
   sheet_data <- openNCAI:::read_ns_year_sheet(
     sheet = 50,

@@ -35,21 +35,24 @@ service labels applied.
 \examples{
 # 1. Define the habitat tree (Total of 3 sub-habitats)
 h_tree <- list(
-  coastal = c("b1", "b2"),
-  woodland = c("g1")
+   coastal = c("b1", "b2"),
+   woodland = c("g1")
 )
 
 # 2. Define the ecosystem service tree (Total of 2 services)
 es_tree <- list(
-  provisioning = c("crops", "timber")
+   provisioning = c("crops", "timber")
 )
 
 # 3. Create a raw matrix of values (3 rows x 2 columns)
 raw_values <- matrix(
-  c(1, 0.5, 0, 0, 0.2, 0.9),
-  nrow = 3,
-  ncol = 2
+   c(1, 0.5, 0, 0, 0.2, 0.9),
+   nrow = 3,
+   ncol = 2
 )
+
+rownames(raw_values) <- c("b1", "b2", "g1")
+colnames(raw_values) <- c("crops", "timber")
 
 # 4. Apply the labels
 labeled_df <- label_ncai_matrix(matrix = raw_values,

@@ -16,7 +16,7 @@
 #'   \item \code{ref_tir}: Total Indicator Relevances matrix (Sheet 74).
 #'   \item \code{ref_all_year_sheets}: A list of yearly natural capital asset matrices.
 #'   \item \code{ref_index_breakdowns}: Data frames containing the final index and its
-#'     breakdowns by service type and habitat.
+#'       breakdowns by service type and habitat.
 #' }
 #' @keywords internal
 import_ns_testing_data <- function(path,
@@ -29,10 +29,17 @@ import_ns_testing_data <- function(path,
   # Per SPU (ESPPU) weightings.
   ref_espb <- readxl::read_xlsx(path,
                                 sheet = 6,
-                                range = "F4:AG34",col_names = FALSE,
+                                range = "F4:AG34", col_names = FALSE,
                                 col_types = "numeric",
                                 trim_ws = TRUE,
                                 .name_repair = "minimal") %>%
+    as.data.frame()
+
+  # Set row names before labeling to satisfy the strict check in label_ncai_matrix
+  rownames(ref_espb) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_espb) <- unlist(es_label_tree, use.names = FALSE)
+
+  ref_espb <- ref_espb %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 2. Get the Well-being Base
@@ -46,6 +53,12 @@ import_ns_testing_data <- function(path,
                                           trim_ws = TRUE,
                                           .name_repair = "minimal"
   ) %>%
+    as.data.frame()
+
+  rownames(ref_wellbeing_base) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_wellbeing_base) <- unlist(es_label_tree, use.names = FALSE)
+
+  ref_wellbeing_base <- ref_wellbeing_base %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 3. Get the Total Indicator Relevances (TIR)
@@ -58,6 +71,12 @@ import_ns_testing_data <- function(path,
     trim_ws = TRUE,
     .name_repair = "minimal"
   ) %>%
+    as.data.frame()
+
+  rownames(ref_tir) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_tir) <- unlist(es_label_tree, use.names = FALSE)
+
+  ref_tir <- ref_tir %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 4. Get the final natural capital assets yearly matrices (year sheets)
@@ -98,7 +117,7 @@ import_ns_testing_data <- function(path,
               ref_tir = ref_tir,
               ref_all_year_sheets = ref_all_year_sheets,
               ref_index_breakdowns = ref_index_breakdowns
-              ))
+  ))
 
 }
 #' Read and Label a Specific Yearly Asset Sheet
@@ -121,6 +140,13 @@ read_ns_year_sheet <- function(sheet, path, es_label_tree, habitats_label_tree) 
     trim_ws = TRUE,
     .name_repair = "minimal" #quietens reporting on name repair
   ) %>%
+    as.data.frame()
+
+  # Apply names before labeling
+  rownames(year_sheet) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(year_sheet) <- unlist(es_label_tree, use.names = FALSE)
+
+  year_sheet <- year_sheet %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # NAs to 0 as before

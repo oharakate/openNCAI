@@ -1,11 +1,16 @@
-test_that("import_ns_data returns the correct 11-component list structure", {
-  # Setup - use your local path to the NatureScot template
-  path <- ns_sheets_path
-  # Skip this during devtools::check()
-  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
-  years <- 2000:2022
+# --- SETUP ---
+# test_path looks up from tests/testthat/ to project root, then into data-raw/
+# (robust way to handle external files in testthat)
+path <- testthat::test_path("..", "..", "data-raw", "ncai_corrected.xlsx")
 
-  result <- import_ns_data(path = path, year_list = years)
+# --- TESTS ---
+
+test_that("import_ns_data returns the correct 11-component list structure", {
+  # Skip this during R CMD check if the file is not reachable
+  skip_if_not(file.exists(path), message = "Spreadsheet not found (expected during R CMD check)")
+
+  years <- 2000:2022
+  result <- openNCAI:::import_ns_data(path = path, year_list = years)
 
   # 1. Check overall structure
   expect_type(result, "list")
@@ -22,9 +27,9 @@ test_that("import_ns_data returns the correct 11-component list structure", {
 })
 
 test_that("Label Trees and Matrices are perfectly aligned", {
-  path <- ns_sheets_path
-  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
-  result <- import_ns_data(path = path)
+  skip_if_not(file.exists(path), message = "Spreadsheet not found")
+
+  result <- openNCAI:::import_ns_data(path = path)
 
   # Flatten labels for testing
   all_habitats <- unlist(result$ns_habitats_label_tree, use.names = FALSE)
@@ -47,14 +52,12 @@ test_that("Label Trees and Matrices are perfectly aligned", {
 })
 
 test_that("Condition Indicator data is consistent", {
-  path <- ns_sheets_path
-  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
-  result <- import_ns_data(path = path)
+  skip_if_not(file.exists(path), message = "Spreadsheet not found")
 
+  result <- openNCAI:::import_ns_data(path = path)
   ci_ids <- result$ns_indicator_directory$ci_id
 
   # 1. Check CI Score Matrix dimensions
-  # Rows should be years, columns should be CIs
   expect_equal(nrow(result$ns_ci_scores), length(result$ns_year_list))
   expect_equal(ncol(result$ns_ci_scores), length(ci_ids))
   expect_equal(colnames(result$ns_ci_scores), ci_ids)
@@ -70,11 +73,9 @@ test_that("Condition Indicator data is consistent", {
 })
 
 test_that("Importance scores map correctly to ES Types", {
-  path <- ns_sheets_path
-  skip_if(path == "", message = "Spreadsheet not found (expected during R CMD check)")
+  skip_if_not(file.exists(path), message = "Spreadsheet not found")
 
-  result <- import_ns_data(path = path)
-
+  result <- openNCAI:::import_ns_data(path = path)
   service_types <- names(result$ns_es_label_tree)
 
   # Between scores

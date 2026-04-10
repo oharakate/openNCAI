@@ -20,21 +20,24 @@
 #' @examples
 #' # 1. Define the habitat tree (Total of 3 sub-habitats)
 #' h_tree <- list(
-#'   coastal = c("b1", "b2"),
-#'   woodland = c("g1")
+#'    coastal = c("b1", "b2"),
+#'    woodland = c("g1")
 #' )
 #'
 #' # 2. Define the ecosystem service tree (Total of 2 services)
 #' es_tree <- list(
-#'   provisioning = c("crops", "timber")
+#'    provisioning = c("crops", "timber")
 #' )
 #'
 #' # 3. Create a raw matrix of values (3 rows x 2 columns)
 #' raw_values <- matrix(
-#'   c(1, 0.5, 0, 0, 0.2, 0.9),
-#'   nrow = 3,
-#'   ncol = 2
+#'    c(1, 0.5, 0, 0, 0.2, 0.9),
+#'    nrow = 3,
+#'    ncol = 2
 #' )
+#'
+#' rownames(raw_values) <- c("b1", "b2", "g1")
+#' colnames(raw_values) <- c("crops", "timber")
 #'
 #' # 4. Apply the labels
 #' labeled_df <- label_ncai_matrix(matrix = raw_values,
@@ -47,24 +50,20 @@
 #' # Row names will be: "b1", "b2", "g1"
 #' # Column names will be: "crops", "timber"
 #'
-label_ncai_matrix <- function(matrix,
-                              habitats_label_tree,
-                              es_label_tree) {
+label_ncai_matrix <- function(matrix, habitats_label_tree, es_label_tree) {
 
   flat_h <- unlist(habitats_label_tree, use.names = FALSE)
   flat_es <- unlist(es_label_tree, use.names = FALSE)
 
-  if (length(flat_h) != nrow(matrix)) {
-    stop("Number of habitat labels must match matrix rows.")
-  }
-  if (length(flat_es) != ncol(matrix)) {
-    stop("Number of ES labels must match matrix columns.")
+  # 1. Verification: Do the sets match?
+  if (!all(rownames(matrix) %in% flat_h) || !all(flat_h %in% rownames(matrix))) {
+    stop("Mismatch: The row names in the data do not match the names provided in the habitat_label_tree.")
   }
 
+  # 2. Alignment: Reorder the data frame to match the Tree's order
+  # This handles the 'wrong order' situations you mentioned.
   out <- as.data.frame(matrix)
-  rownames(out) <- flat_h
-  colnames(out) <- flat_es
+  out <- out[flat_h, flat_es, drop = FALSE]
 
   return(out)
-
 }

@@ -21,7 +21,7 @@ A nested list containing:
   \item \code{ref_tir}: Total Indicator Relevances matrix (Sheet 74).
   \item \code{ref_all_year_sheets}: A list of yearly natural capital asset matrices.
   \item \code{ref_index_breakdowns}: Data frames containing the final index and its
-    breakdowns by service type and habitat.
+      breakdowns by service type and habitat.
 }
 }
 \description{
