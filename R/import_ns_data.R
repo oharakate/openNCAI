@@ -25,6 +25,8 @@
 #'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
 #'   \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
 #' }
+#'
+#' @importFrom janitor make_clean_names
 #' @keywords internal
 import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   year_list <- as.character(year_list)
