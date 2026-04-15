@@ -326,29 +326,29 @@ overall_plot
 
 ## Generating Breakdowns By Service Type or Broad Habitat
 
-By passing `"index_by_st"` or `"index_by_bh"` to the optional `return` argument, we can generate a list of data frames containing the index broken down ecosystem service type or by broad habitat respectively. 
+By passing `"by_ecosystem_service_type"` or `"by_broad_habitat"` to the optional `return` argument, we can generate a list of data frames containing the index broken down ecosystem service type or by broad habitat respectively. 
 
 ```{r index-breakdown-st}
-ncai_by_st <- get_ncai(
-                habitat_extent = ns_habitat_extent,
-                ci_scores = ns_ci_scores,
-                habitats_label_tree = ns_habitats_label_tree,
-                es_label_tree = ns_es_label_tree,
-                year_list = ns_year_list,
-                esppu_scores = ns_esppu_scores,
-                custom_divisor_matrix = ns_custom_divisor_matrix,
-                between_importance_scores = ns_between_importance_scores,
-                within_importance_scores = ns_within_importance_scores,
-                ci_relevance_matrices = ns_ci_relevance_matrices,
-                indicator_directory = ns_indicator_directory,
-                return = "index_by_st"
-                )
+ncai_by_ecosystem_service_type <- get_ncai(
+    habitat_extent = ns_habitat_extent,
+    ci_scores = ns_ci_scores,
+    habitats_label_tree = ns_habitats_label_tree,
+    es_label_tree = ns_es_label_tree,
+    year_list = ns_year_list,
+    esppu_scores = ns_esppu_scores,
+    custom_divisor_matrix = ns_custom_divisor_matrix,
+    between_importance_scores = ns_between_importance_scores,
+    within_importance_scores = ns_within_importance_scores,
+    ci_relevance_matrices = ns_ci_relevance_matrices,
+    indicator_directory = ns_indicator_directory,
+    return = "by_ecosystem_service_type"
+  )
 
 # A named list of data frames is returned, with names as per the ES label tree:
-names(ncai_by_st)
+names(ncai_by_ecosystem_service_type)
 
 # See the contribution of cultural services to the index:
-cultural_breakdown <- ncai_by_st[["cultural"]]
+cultural_breakdown <- ncai_by_ecosystem_service_type[["cultural"]]
 cultural_breakdown
 ```
 
@@ -358,7 +358,7 @@ We can plot the breakdowns with the main trend line.
 <summary>Click to see the code used to build the graph</summary>
 ```{r build-st-plot}
 # Set up the data:
-by_st_for_plot <- ncai_by_st[names(ns_es_label_tree)] |>
+by_st_for_plot <- ncai_by_ecosystem_service_type[names(ns_es_label_tree)] |>
   lapply(function(df) {
     df |>
       rownames_to_column(var = "year") |>
@@ -421,26 +421,26 @@ st_plot +
 
 And we can use the same approach to generate a breakdown by broad habitat:
 ```{r index-breakdown-bh}
-ncai_by_bh <- get_ncai(
-                habitat_extent = ns_habitat_extent,
-                ci_scores = ns_ci_scores,
-                habitats_label_tree = ns_habitats_label_tree,
-                es_label_tree = ns_es_label_tree,
-                year_list = ns_year_list,
-                esppu_scores = ns_esppu_scores,
-                custom_divisor_matrix = ns_custom_divisor_matrix,
-                between_importance_scores = ns_between_importance_scores,
-                within_importance_scores = ns_within_importance_scores,
-                ci_relevance_matrices = ns_ci_relevance_matrices,
-                indicator_directory = ns_indicator_directory,
-                return = "index_by_bh"
-                )
+ncai_by_broad_habitat <- get_ncai(
+                          habitat_extent = ns_habitat_extent,
+                          ci_scores = ns_ci_scores,
+                          habitats_label_tree = ns_habitats_label_tree,
+                          es_label_tree = ns_es_label_tree,
+                          year_list = ns_year_list,
+                          esppu_scores = ns_esppu_scores,
+                          custom_divisor_matrix = ns_custom_divisor_matrix,
+                          between_importance_scores = ns_between_importance_scores,
+                          within_importance_scores = ns_within_importance_scores,
+                          ci_relevance_matrices = ns_ci_relevance_matrices,
+                          indicator_directory = ns_indicator_directory,
+                          return = "by_broad_habitat"
+                        )
 
 # We get a list of data frames with names as per the top level of the habitats label tree:
-names(ncai_by_bh)
+names(ncai_by_broad_habitat)
 
 # See the contribution to the index of the broad habitat group Mires, Bogs and Fens:
-bogs_breakdown <- ncai_by_bh[["d_mires_bogs_and_fens"]]
+bogs_breakdown <- ncai_by_broad_habitat[["d_mires_bogs_and_fens"]]
 bogs_breakdown
 ```
 NatureScot typically reports the contribution to the index of a subset seven of the broad habitats. We can build this list and, as before, graph these contributions with the main trend line.
@@ -452,7 +452,7 @@ NatureScot typically reports the contribution to the index of a subset seven of 
 ns_bh_breakdown_list <- c(names(ns_habitats_label_tree)[c(1:6, 8)])
 
 # Prepare the data:
-by_bh_for_plot <- ncai_by_bh[ns_bh_breakdown_list] |>
+by_bh_for_plot <- ncai_by_broad_habitat[ns_bh_breakdown_list] |>
   lapply(function(df) {
     df |>
       rownames_to_column(var = "year") |>
@@ -521,12 +521,12 @@ Using the optional `return` argument, we can access various elements of the calc
 ncai_options <- data.frame(
   `Value` = c(
     "**\"overall\"**", 
-    "**\"index_by_st\"**", 
-    "**\"index_by_bh\"**", 
+    "**\"by_ecosystem_service_type\"**", 
+    "**\"by_broad_habitat\"**", 
+    "**\"yearly_asset_matrices\"**", 
     "**\"espb\"**", 
     "**\"wellbeing_base\"**", 
     "**\"yearly_flow_matrices\"**", 
-    "**\"yearly_asset_matrices\"**", 
     "**\"everything\"**"
   ),
   `Output Type` = c(
@@ -535,12 +535,12 @@ ncai_options <- data.frame(
   ),
   `Description` = c(
     "The final smoothed and raw NCAI for the whole region (default).",
-    "Indices broken down by Ecosystem Service Type.",
-    "Indices broken down by Broad Habitat.",
+    "Index broken down by Ecosystem Service Type.",
+    "Index broken down by Broad Habitat.",
+    "Matrices of total asset value for every habitat/service combination per year, calculated by multiplying the Wellbeing Base by the Total Yearly Flow. The sum of these matrices form the basis of the final index.",
     "Ecosystem Service Potential Base: the potential of habitats to provide ecosystem services, calculated as habitat extent multiplied by Ecosystem Service Provision Potential per Unit weights.",
     "Wellbeing Base: the potential service provision, adjust for importance of each service to the population, calculated as the ESPB weighted by the regional Importance Weights.",
     "Total Yearly Flow: the estimated total yearly flow of services from each habitat/service combination, based on relevance- and salience-weighted Condition Indicator scores.",
-    "Matrices of total asset value for every habitat/service combination per year, calculated by multiplying the Wellbeing Base by the Total Yearly Flow. The sum of these matrices form the basis of the final index.",
     "A bundled list containing all of the above components."
   )
 )

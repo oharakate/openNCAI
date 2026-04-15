@@ -321,9 +321,10 @@ document()
 ?calc_ncai_by_bh
 
 # Tests
-use_test("calc_ncai")
+use_test("index_and_smooth")
 load_all()
-test_file("tests/testthat/test-calc_ncai.R")
+test_file("tests/testthat/test-index_and_smooth.R")
+?index_and_smooth
 document()
 
 load_all()

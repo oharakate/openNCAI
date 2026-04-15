@@ -32,8 +32,8 @@
 #' @param return Character. Specifies the object to return. Options include:
 #' \itemize{
 #'   \item \code{"overall"}: The standard overall NCAI data frame (default).
-#'   \item \code{"index_by_st"}: NCAI broken down by Ecosystem Service Type.
-#'   \item \code{"index_by_bh"}: NCAI broken down by Broad Habitat.
+#'   \item \code{"by_ecosystem_service_type"}: NCAI broken down by Ecosystem Service Type.
+#'   \item \code{"by_broad_habitat"}: NCAI broken down by Broad Habitat.
 #'   \item \code{"yearly_asset_matrices"}: A list of matrices containing asset
 #'     values for every year.
 #'   \item \code{"espb"}: The Ecosystem Service Potential Base matrix.
@@ -77,8 +77,8 @@ get_ncai <-  function(habitat_extent,
                       smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
                       return =
                         c("overall",
-                          "index_by_st",
-                          "index_by_bh",
+                          "by_ecosystem_service_type",
+                          "by_broad_habitat",
                           "yearly_asset_matrices",
                           "espb",
                           "wellbeing_base",
@@ -174,8 +174,8 @@ get_ncai <-  function(habitat_extent,
   # 5. Index the Natural Capital Assets (overall)
   # The sum of each year matrix is indexed on that of the year one
   # matrix.
-  overall_index <- calc_ncai(
-    total_assets_matrix_list = yearly_asset_matrices,
+  overall_index <- index_and_smooth(
+    matrix_list = yearly_asset_matrices,
     smoothing_weights = smoothing_weights,
     year_one = year_one
   )
@@ -184,25 +184,25 @@ get_ncai <-  function(habitat_extent,
     results$overall_index <- overall_index
 
   # 6. Calculate the index broken down by ecosystem service type
-  index_by_st <- calc_ncai_by_st(
+  by_ecosystem_service_type <- calc_ncai_by_st(
     total_assets_matrix_list = yearly_asset_matrices,
     es_label_tree = es_label_tree,
     year_one = year_one,
     smoothing_weights = smoothing_weights
   )
-  if (return_type == "index_by_st") return(index_by_st)
+  if (return_type == "by_ecosystem_service_type") return(by_ecosystem_service_type)
   if (return_type == "everything")
-    results$index_by_st <- index_by_st
+    results$by_ecosystem_service_type <- by_ecosystem_service_type
 
   # 7. Calculate the index broken down by broad habitat
-  index_by_bh <- calc_ncai_by_bh(
+  by_broad_habitat <- calc_ncai_by_bh(
     total_assets_matrix_list = yearly_asset_matrices,
     habitats_label_tree = habitats_label_tree,
     year_one = year_one,
     smoothing_weights = smoothing_weights
   )
-  if (return_type == "index_by_bh") return(index_by_bh)
-  if (return_type == "everything") results$index_by_bh <- index_by_bh
+  if (return_type == "by_broad_habitat") return(by_broad_habitat)
+  if (return_type == "everything") results$by_broad_habitat <- by_broad_habitat
 
   # Return list of everything if requested
   if (return_type == "everything") {
@@ -210,4 +210,61 @@ get_ncai <-  function(habitat_extent,
   } else {
     return(overall_index)
   }
+}
+
+
+#' Calculate NCAI Broken Down by Ecosystem Service Type
+#'
+#' Calculate the index subsetted by ecosystem service type.
+#'
+#' @param total_assets_matrix_list A named list of annual asset data frames.
+#' @param es_label_tree A named list where each element is a character
+#'   vector of ecosystem service labels (column names).
+#' @param year_one Optional: the year to index around. Default is the first
+#' year of the \code{year_list}.
+#' @param ... Additional arguments passed to \code{calc_ncai} (e.g., \code{smoothing_weights}).
+#'
+#' @return A list of NCAI data frames, one for each ecosystem service group.
+#' @keywords internal
+calc_ncai_by_st <- function(total_assets_matrix_list,
+                            es_label_tree,
+                            year_one = NULL,
+                            ...) {
+
+  lapply(es_label_tree, function(subset_labels) {
+
+    filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
+      m[, subset_labels, drop = FALSE]
+    })
+
+    index_and_smooth(filtered_matrix_list, ...)
+  })
+}
+
+#' Calculate NCAI Broken Down by Broad Habitat
+#'
+#' Calculates the index subsetted by broad habitat
+#'
+#' @param total_assets_matrix_list A named list of annual asset data frames.
+#' @param habitats_label_tree A named list where each element is a character
+#'   vector of habitat labels (row names).
+#' @param year_one Optional: year to index around. Default is year one of the
+#' \code{year_list}.
+#' @param ... Additional arguments passed to \code{calc_ncai}.
+#'
+#' @return A list of NCAI data frames, one for each habitat group.
+#' @keywords internal
+calc_ncai_by_bh <- function(total_assets_matrix_list,
+                            habitats_label_tree,
+                            year_one = NULL,
+                            ...) {
+
+  lapply(habitats_label_tree, function(subset_labels) {
+
+    filtered_matrix_list <- lapply(total_assets_matrix_list, function(m) {
+      m[subset_labels, , drop = FALSE]
+    })
+
+    index_and_smooth(filtered_matrix_list, ...)
+  })
 }

@@ -20,8 +20,9 @@ get_ncai(
   indicator_directory,
   tir_constant = 2,
   smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1),
-  return = c("overall", "index_by_st", "index_by_bh", "yearly_asset_matrices", "espb",
-    "wellbeing_base", "yearly_flow_matrices", "everything")
+  return = c("overall", "by_ecosystem_service_type", "by_broad_habitat",
+    "yearly_asset_matrices", "espb", "wellbeing_base", "yearly_flow_matrices",
+    "everything")
 )
 }
 \arguments{
@@ -67,8 +68,8 @@ smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 \item{return}{Character. Specifies the object to return. Options include:
 \itemize{
   \item \code{"overall"}: The standard overall NCAI data frame (default).
-  \item \code{"index_by_st"}: NCAI broken down by Ecosystem Service Type.
-  \item \code{"index_by_bh"}: NCAI broken down by Broad Habitat.
+  \item \code{"by_ecosystem_service_type"}: NCAI broken down by Ecosystem Service Type.
+  \item \code{"by_broad_habitat"}: NCAI broken down by Broad Habitat.
   \item \code{"yearly_asset_matrices"}: A list of matrices containing asset
     values for every year.
   \item \code{"espb"}: The Ecosystem Service Potential Base matrix.
