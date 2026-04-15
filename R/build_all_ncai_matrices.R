@@ -5,8 +5,8 @@
 #' methodology, combining condition, wellbeing, and extent.
 #'
 #' @param tyf_list A named list of Total Yearly Flow (TYF) matrices (one per year).
-#' @param wellbeing_base A matrix representing the base wellbeing values
-#'   (Spatial/Service relevance scores).
+#' @param wellbeing_base A data frame representing the base wellbeing values
+#'   (year one habitat extent weighted by provision per unit and demand).
 #' @param habitat_extent A data frame where rows represent habitats and
 #'   columns represent total extent per year.
 #' @param year_one The base year (e.g., 2000) used for indexing extent.
@@ -78,18 +78,12 @@ build_ncai_matrix <- function(tyf,
                               year_one,
                               habitat_labels) {
 
-  # Convert to characters for safe indexing
-  target_str <- as.character(target_year)
-  origin_str <- as.character(year_one)
+  # Get index habitat extent values for target year:
+  extent_index <- get_habitat_extent_year_vec(target_year = target_year,
+                                              year_one = year_one,
+                                              habitat_extent = habitat_extent)
 
-  # Extract extent vectors
-  extent_target_vec <- habitat_extent[[target_str]]
-  extent_origin_vec <- habitat_extent[[origin_str]]
-
-  # Index the habitat extent values (Target / Origin * 100)
-  extent_index <- (extent_target_vec / extent_origin_vec * 100)
-
-  # Step 1: Element-wise multiplication of condition (TYF) and relevance (WB)
+  # Step 1: Element-wise multiplication of condition (TYF) and wellbeing base (WB)
   wb_tyf <- as.matrix(tyf) * as.matrix(wellbeing_base)
 
   # Step 2: Apply the extent index across the rows (Habitats)

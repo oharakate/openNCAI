@@ -348,6 +348,25 @@ load_all()
 check()
 # Commit and push here.
 
+#### template() ####
+use_r("get_habitat_extent_year_vec")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?get_habitat_extent_year_vec
+
+# Tests
+use_test("get_habitat_extent_year_vec")
+load_all()
+test_file("tests/testthat/test-get_habitat_extent_year_vec.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
+
+
+
 
 
 #### template() ####
