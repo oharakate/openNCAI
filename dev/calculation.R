@@ -573,7 +573,7 @@ plot_df_fuller <- data.frame(
   Final = ncai_objects$overall_index$raw_index
 )
 
-ggplot(plot_df, aes(x = year)) +
+ggplot(plot_df_fuller, aes(x = year)) +
   # Lines
   geom_line(aes(y = Provision, color = "Potential service provision (1)"), linewidth = 1) +
   geom_line(aes(y = Wellbeing, color = "Potential wellbeing contribution (2)"), linewidth = 1) +

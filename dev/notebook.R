@@ -338,7 +338,15 @@ use_r("get_yearly_potentials")
 # Remember to put in the roxygen skeleton
 load_all()
 document()
-?get_habitat_extent_year_vec
+?get_yearly_potential_provision
+?get_yearly_potential_wellbeing
+
+use_test("get_yearly_potentials")
+load_all()
+test_file("tests/testthat/test-get_yearly_potentials.R")
+load_all()
+check()
+# Commit and push here.
 
 
 
