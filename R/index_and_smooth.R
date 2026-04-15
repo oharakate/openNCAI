@@ -38,8 +38,8 @@
 #' @importFrom utils tail
 #' @keywords internal
 index_and_smooth <- function(matrix_list,
-                                smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
-                                year_one = names(matrix_list)[[1]]) {
+                             smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
+                             year_one = names(matrix_list)[[1]]) {
 
   # Get the raw totals.
   yearly_sums <- vapply(matrix_list, sum, numeric(1), na.rm = TRUE)

@@ -81,7 +81,7 @@ remove(test_ref_overall_index)
 # Check if our index broken down by ecosystem service type matches the ref:
 # Are they equal?
 ref_index_by_st <- ref_index_breakdowns[names(ns_es_label_tree)]
-all.equal(ncai_objects$index_by_st, ref_index_by_st)
+all.equal(ncai_objects$by_ecosystem_service_type, ref_index_by_st)
 # Yes.
 
 # Same check for index broken down by broad habitat:
@@ -90,7 +90,7 @@ names(ref_index_breakdowns)
 # Make a list of the ones we can compare:
 ns_bh_breakdowns <- names(ref_index_breakdowns[5:11])
 ref_index_by_bh <- ref_index_breakdowns[ns_bh_breakdowns]
-all.equal(ncai_objects$index_by_bh[ns_bh_breakdowns], ref_index_by_bh)
+all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 # All matching.
 
 # The function works!
@@ -352,7 +352,7 @@ main_index_for_plot <- ncai_objects$overall_index |>
   )
 
 # Breakdown by ecosystem service type + main trend
-by_st_for_plot <- ncai_objects$index_by_st[names(ns_es_label_tree)] |>
+by_st_for_plot <- ncai_objects$by_ecosystem_service_type[names(ns_es_label_tree)] |>
   lapply(function(df) {
     df |>
       tibble::rownames_to_column(var = "year") |>
@@ -366,7 +366,7 @@ by_st_for_plot <- ncai_objects$index_by_st[names(ns_es_label_tree)] |>
 
 # Breakdown by broad habitat + main trend
 # Use the subsetted data with only the broad habitats graphed by NS
-by_bh_for_plot <- ncai_objects$index_by_bh[ns_bh_breakdown_list] |>
+by_bh_for_plot <- ncai_objects$by_broad_habitat[ns_bh_breakdown_list] |>
   lapply(function(df) {
     df |>
       tibble::rownames_to_column(var = "year") |>
@@ -483,3 +483,117 @@ ggsave(
   dpi = 300                 # High resolution for reports
 )
 
+
+#### BONUS CONTENT - test the functions which pull out time series of
+# esp potential and wellbeing potential
+prov_time_series_mats <- get_yearly_potential_provision(
+  habitat_extent = ns_habitat_extent,
+  year_one = 2000,
+  espb = ncai_objects$espb,
+  as_matrices = TRUE)
+# View(prov_time_series_mats[[1]])
+# View(prov_time_series_mats[["2005"]])
+str(prov_time_series_mats[[1]])
+str(prov_time_series_mats[["2005"]])
+
+prov_time_series <- get_yearly_potential_provision(
+  habitat_extent = ns_habitat_extent,
+  year_one = 2000,
+  espb = ncai_objects$espb,
+  as_matrices = FALSE)
+head(prov_time_series)
+
+
+wb_time_series <- get_yearly_potential_wellbeing(
+  habitat_extent = ns_habitat_extent,
+  year_one = 2000,
+  wellbeing_base = ncai_objects$wellbeing_base,
+  as_matrices = FALSE)
+head(wb_time_series)
+
+wb_time_series_mats <- get_yearly_potential_wellbeing(
+  habitat_extent = ns_habitat_extent,
+  year_one = 2000,
+  wellbeing_base = ncai_objects$wellbeing_base,
+  as_matrices = TRUE)
+# View(wb_time_series_mats[[1]])
+# View(wb_time_series_mats[["2005"]])
+str(wb_time_series_mats[[1]])
+str(wb_time_series_mats[["2005"]])
+
+# Graph these two together:
+library(ggplot2)
+
+# 1. Combine data
+plot_df <- data.frame(
+  year = as.numeric(rownames(prov_time_series)),
+  Provision = prov_time_series$raw_index,
+  Wellbeing = wb_time_series$raw_index
+)
+
+# 2. Pivot to long format or just plot layers
+ggplot(plot_df, aes(x = year)) +
+  geom_line(aes(y = Provision, color = "Provision"), size = 1) +
+  geom_line(aes(y = Wellbeing, color = "Wellbeing"), size = 1) +
+  geom_point(aes(y = Provision, color = "Provision")) +
+  geom_point(aes(y = Wellbeing, color = "Wellbeing")) +
+  scale_color_manual(values = c("Provision" = "darkseagreen", "Wellbeing" = "hotpink")) +
+  theme_minimal() +
+  labs(title = "NCAI Potential Indices",
+       x = "Year", y = "Raw Index (2000 = 100)",
+       color = "Index Type")
+
+
+
+# NB Arnab suggested the first thing he'd want to see would be the ratio
+# of the two over time. So:
+# 1. Add the ratio calculation
+plot_df$Ratio <- plot_df$Wellbeing / plot_df$Provision
+
+# 2. Plot the Ratio over time
+ggplot(plot_df, aes(x = year, y = Ratio)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue") +
+  # Adding a reference line at 1.0 (where Wellbeing = Provision)
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray50") +
+  theme_minimal() +
+  labs(
+    title = "Ratio of Wellbeing to Provision Potential",
+    subtitle = "Values < 1 indicate wellbeing potential output is not keeping up with physical potential provision",
+    x = "Year",
+    y = "Wellbeing / Provision"
+  )
+
+
+# Putting three stages of weighting together:
+plot_df_fuller <- data.frame(
+  year = as.numeric(rownames(prov_time_series)),
+  Provision = prov_time_series$raw_index,
+  Wellbeing = wb_time_series$raw_index,
+  Final = ncai_objects$overall_index$raw_index
+)
+
+ggplot(plot_df, aes(x = year)) +
+  # Lines
+  geom_line(aes(y = Provision, color = "Potential service provision (1)"), linewidth = 1) +
+  geom_line(aes(y = Wellbeing, color = "Potential wellbeing contribution (2)"), linewidth = 1) +
+  geom_line(aes(y = Final, color = "Final asset value (3)"), linewidth = 1) +
+  # Points
+  geom_point(aes(y = Provision, color = "Potential service provision (1)")) +
+  geom_point(aes(y = Wellbeing, color = "Potential wellbeing contribution (2)")) +
+  geom_point(aes(y = Final, color = "Final asset value (3)")) +
+#   ref line
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray70", alpha = 0.5) +
+  # Scales
+  scale_color_manual(values = c(
+    "Potential service provision (1)" = "darkseagreen",
+    "Potential wellbeing contribution (2)" = "hotpink",
+    "Final asset value (3)" = "steelblue"
+  )) +
+  theme_minimal() +
+  labs(
+    title = "NCAI Potential Indices",
+    x = "Year",
+    y = "Raw Index (2000 = 100)",
+    color = "Index Type"
+  )

@@ -2,6 +2,8 @@
 
 export(get_habitat_extent_year_vec)
 export(get_ncai)
+export(get_yearly_potential_provision)
+export(get_yearly_potential_wellbeing)
 export(label_ncai_matrix)
 importFrom(dplyr,across)
 importFrom(dplyr,everything)

@@ -135,7 +135,7 @@ test_that("get_ncai returns the full results list when requested", {
   expect_type(res_all, "list")
   expect_named(res_all, c("espb", "wellbeing_base", "yearly_flow_matrices",
                           "yearly_asset_matrices", "overall_index",
-                          "index_by_st", "index_by_bh"))
+                          "by_ecosystem_service_type", "by_broad_habitat"))
 })
 
 
@@ -180,3 +180,4 @@ test_that("calc_ncai_by_bh correctly filters rows before indexing", {
   val_g <- res$grassland$raw_total[which(rownames(res$grassland) == "2000")]
   expect_equal(as.numeric(val_g), 20)
 })
+

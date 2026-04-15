@@ -332,6 +332,16 @@ check()
 # Commit and push here.#### template()####
 
 
+
+#### template() ####
+use_r("get_yearly_potentials")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?get_habitat_extent_year_vec
+
+
+
 #### get_ncai() ####
 use_r("get_ncai")
 # Remember to put in the roxygen skeleton
@@ -348,6 +358,9 @@ document()
 load_all()
 check()
 # Commit and push here.
+
+
+
 
 #### template() ####
 use_r("get_habitat_extent_year_vec")
