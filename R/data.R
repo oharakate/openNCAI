@@ -127,3 +127,28 @@
 #'   \item Values are binary (0 or 1) indicating relevance.
 #' }
 "ns_ci_relevance_matrices"
+
+#' Dirty (Print) Habitats Label Tree
+#'
+#' Print version (no string cleaning) version of \code{ns_habitats_label_tree}
+#' which is used internally.
+#'
+#' @format A named list of character vectors:
+#' \itemize{
+#'   \item Names represent broad habitat groups (e.g., "Coastal habitats").
+#'   \item Values are character vectors of specific habitat types (e.g., "Coastal shingle").
+#' }
+"ns_dirty_habitats_label_tree"
+
+#' Dirty (Print) Ecosystem Services Label Tree
+#'
+#' Print version (no string cleaning) version of \code{ns_es_label_tree}
+#' which is used internally.
+#'
+#' @format A named list of character vectors:
+#' \itemize{
+#'   \item Names represent ecosystem service types (e.g., "Provisioning").
+#'   \item Values are character vectors of specific ecosystem services (e.g., "Cultivated crops").
+#' }
+"ns_dirty_es_label_tree"
+

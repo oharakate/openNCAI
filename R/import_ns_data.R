@@ -188,6 +188,59 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
                                         ci_ids = ci_ids)
   rownames(ci_scores) <- year_list
 
+  # 6. 'DIRTY' LABEL TREES FOR PRINT, TEMPLATE, ETC.
+  # Get and correct the habitat labels:
+  raw_habs <- readxl::read_excel(
+    path,
+    sheet = "ES Potential per SPU",
+    range = "C4:E34",
+    col_names = c("broad_cat", "code", "name"),
+    col_types = "text"
+  ) %>%
+    # Use quotes for select and fill
+    dplyr::select(-"code") %>%
+    tidyr::fill("broad_cat", .direction = "down") %>%
+    # Use .data pronoun for filter and mutate
+    dplyr::filter(!is.na(.data$name)) %>%
+    dplyr::mutate(
+      print_name = stringr::str_squish(.data$name)
+    ) %>%
+    dplyr::select("broad_cat", "print_name")
+
+  # Manual fix for the missing broad cats for coastal and montane
+  # Base R $ indexing is already R CMD check safe
+  raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "C ")] <- "C. INLAND SURFACE WATERS"
+  raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "K ")] <- "K. MONTANE"
+
+  # Create label tree:
+  dirty_habitats_label_tree <- split(raw_habs$print_name, raw_habs$broad_cat)
+
+  # Get the ecosystem service labels:
+  raw_es_header <- readxl::read_excel(
+    path,
+    sheet = "ES Potential per SPU",
+    range = "F1:AG3",
+    col_names = FALSE,
+    col_types = "text"
+  )
+
+  # Transpose and clean them:
+  raw_es <- as.data.frame(t(raw_es_header)) %>%
+    # rename handles strings or indices
+    dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) %>%
+    tidyr::fill("es_type", .direction = "down") %>%
+    dplyr::mutate(
+      # Use .data and handle potential NAs in the code column
+      print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name)),
+      es_type = stringr::str_squish(.data$es_type)
+    ) %>%
+    dplyr::select("es_type", "print_name")
+
+  # Create label tree:
+  dirty_es_label_tree <- split(raw_es$print_name, raw_es$es_type)
+
+#   RETURN
+
   return(list(
     ns_habitat_extent = habitat_extent,
     ns_ci_scores = ci_scores,
@@ -199,7 +252,9 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     ns_between_importance_scores = between_importance_scores,
     ns_within_importance_scores = within_importance_scores,
     ns_ci_relevance_matrices = ci_relevance_matrices,
-    ns_indicator_directory = indicator_directory
+    ns_indicator_directory = indicator_directory,
+    ns_dirty_habitats_label_tree = dirty_habitats_label_tree,
+    ns_dirty_es_label_tree = dirty_es_label_tree
   ))
 }
 

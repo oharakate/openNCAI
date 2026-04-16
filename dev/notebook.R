@@ -52,6 +52,7 @@ use_package("stats")
 use_package("tidyr")
 use_package("slider")
 use_package("magrittr")
+use_package("stringr")
 
 # Use Git
 # usethis::use_git_config(
