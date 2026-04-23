@@ -36,6 +36,21 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
                          indicator_directory = ns_indicator_directory,
                          return = "everything")
 
+# Get without custom esppu division for checking something
+# ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
+#                          ci_scores = ns_ci_scores,
+#                          habitats_label_tree = ns_habitats_label_tree,
+#                          es_label_tree = ns_es_label_tree,
+#                          year_list = ns_year_list,
+#                          esppu_scores = ns_esppu_scores,
+#                          esppu_divisor = 5,
+#                          between_importance_scores = ns_between_importance_scores,
+#                          within_importance_scores = ns_within_importance_scores,
+#                          ci_relevance_matrices = ns_ci_relevance_matrices,
+#                          indicator_directory = ns_indicator_directory,
+#                          return = "everything")
+
+
 # What did we get?
 names(ncai_objects)
 

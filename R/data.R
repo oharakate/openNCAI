@@ -152,3 +152,12 @@
 #' }
 "ns_dirty_es_label_tree"
 
+#' Dirty (Print) Condition Indicatory Names
+#'
+#' Print version (no string cleaning) list of condition indicator names which
+#' is used internally.
+#'
+#' @format A character vector where items are the original number and name of
+#' NatureScot's 38 condition indicators:
+#'
+"ns_dirty_ci_names"

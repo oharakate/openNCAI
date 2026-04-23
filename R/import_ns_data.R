@@ -145,7 +145,7 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     stats::setNames(c("raw_code", "raw_name", service_types, "used")) %>%
     dplyr::filter(.data$used == "Yes") %>%
     dplyr::mutate(
-      ci_id = janitor::make_clean_names(paste(.data$raw_name, .data$raw_code, sep = "_"), case = "snake"),
+      ci_id = janitor::make_clean_names(paste(.data$raw_name, .data$raw_code,  sep = "_"), case = "snake"),
       dplyr::across(dplyr::all_of(service_types), as.numeric)
     ) %>%
     dplyr::select("ci_id", dplyr::all_of(service_types))
@@ -188,7 +188,7 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
                                         ci_ids = ci_ids)
   rownames(ci_scores) <- year_list
 
-  # 6. 'DIRTY' LABEL TREES FOR PRINT, TEMPLATE, ETC.
+  # 6. 'DIRTY' LABELS FOR PRINT, TEMPLATE, ETC.
   # Get and correct the habitat labels:
   raw_habs <- readxl::read_excel(
     path,
@@ -212,8 +212,20 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "C ")] <- "C. INLAND SURFACE WATERS"
   raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "K ")] <- "K. MONTANE"
 
+#   Manually ensure order
+  hab_order <- c("B. COASTAL HABITATS",
+                 "C. INLAND SURFACE WATERS", "D. MIRES, BOGS AND FENS",
+                 "E. GRASSLANDS AND LANDS DOMINATED BY FORBS, MOSSES OR LICHENS",
+                 "F. HEATHLAND, SCRUB AND TUNDRA", "G. WOODLAND, FOREST AND OTHER WOODED LAND",
+                 "H. INLAND UNVEGETATED OR SPARSELY VEGETATED HABITATS",
+                 "I. CULTIVATED AGRICULTURAL, HORTICULTURAL AND DOMESTIC HABITATS",
+                 "J. CONSTRUCTED, INDUSTRIAL AND OTHER ARTIFICIAL HABITATS", "K. MONTANE")
+
   # Create label tree:
-  dirty_habitats_label_tree <- split(raw_habs$print_name, raw_habs$broad_cat)
+  dirty_habitats_label_tree <- raw_habs %>%
+    dplyr::mutate(broad_cat = factor(.data$broad_cat, levels = hab_order)) %>%
+    dplyr::arrange(.data$broad_cat) %>% # CRITICAL: Sort the DF by the factor
+    { split(.$print_name, .$broad_cat) }
 
   # Get the ecosystem service labels:
   raw_es_header <- readxl::read_excel(
@@ -224,20 +236,36 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     col_types = "text"
   )
 
+  # Standard order for CICES categories
+  es_order <- c("PROVISIONING", "REGULATION AND MAINTENANCE", "CULTURAL")
+
   # Transpose and clean them:
   raw_es <- as.data.frame(t(raw_es_header)) %>%
-    # rename handles strings or indices
     dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) %>%
     tidyr::fill("es_type", .direction = "down") %>%
     dplyr::mutate(
-      # Use .data and handle potential NAs in the code column
-      print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name)),
-      es_type = stringr::str_squish(.data$es_type)
+      # Force es_type to be a factor with standard levels for sorting
+      es_type = factor(stringr::str_squish(.data$es_type), levels = es_order),
+      print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name))
     ) %>%
     dplyr::select("es_type", "print_name")
 
   # Create label tree:
   dirty_es_label_tree <- split(raw_es$print_name, raw_es$es_type)
+
+  # Get Condition Indicator names:
+  raw_ind_names <- readxl::read_excel(
+    path,
+    sheet = "Indicator Directory",
+    range = "A3:R106",
+    col_names = FALSE,
+    col_types = "text"
+  ) %>%
+    dplyr::select(c(1,4, 18)) %>%
+    setNames(c("num", "name", "used")) %>%
+    filter(used=="Yes") %>%
+    mutate(dirty_name = paste(num, name))
+  dirty_ci_names <- raw_ind_names$dirty_name
 
 #   RETURN
 
@@ -254,7 +282,8 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     ns_ci_relevance_matrices = ci_relevance_matrices,
     ns_indicator_directory = indicator_directory,
     ns_dirty_habitats_label_tree = dirty_habitats_label_tree,
-    ns_dirty_es_label_tree = dirty_es_label_tree
+    ns_dirty_es_label_tree = dirty_es_label_tree,
+    ns_dirty_ci_names = dirty_ci_names
   ))
 }
 

@@ -41,6 +41,7 @@ usethis::use_data(ns_habitat_extent,
                   ns_indicator_directory,
                   ns_dirty_habitats_label_tree,
                   ns_dirty_es_label_tree,
+                  ns_dirty_ci_names,
                   overwrite = TRUE)
 
 
