@@ -1,8 +1,8 @@
-library(readxl)
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(openxlsx)
+# library(readxl)
+# library(dplyr)
+# library(tidyr)
+# library(stringr)
+# library(openxlsx)
 
 # ==============================================================================
 # HELPER FUNCTIONS
@@ -501,3 +501,30 @@ create_ncai_template(template_out = "dev/test_clean.xlsx",
                      es_label_tree = ns_es_label_tree,
                      ci_names = names(ns_ci_relevance_matrices),
                      year_list = ns_year_list)
+
+new_hab_tree <- list(
+  'B. Coastal Habitats' = c(
+    "Coastal vegetated shingle",
+    "Coastal dunes and sandy shores"
+  ),
+  'E. Grasslands' = c(
+    "Dry Grasslands",
+    "Mesic Grasslands"
+  )
+)
+
+new_es_tree <- list(
+  'PROVISIONING' = c(
+    "1.1 Cultivated Crops",
+    "1.2 Reared Animals And Their Outputs"
+  ),
+  'CULTURAL' = c(
+    "3.5. Existence & bequest"
+  )
+)
+
+create_ncai_template(template_out = "dev/test_new.xlsx",
+                     habitats_label_tree = new_hab_tree,
+                     es_label_tree = new_es_tree,
+                     ci_names = c("National Water Quality Index", "AgriSCOR"),
+                     year_list = 2020:2025)

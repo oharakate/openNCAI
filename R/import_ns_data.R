@@ -110,8 +110,12 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
       clean = janitor::make_clean_names(.data$full_str),
       # Strip the leading 'x' using regex
       clean = gsub("^x", "", .data$clean),
-      # Apply your specific Crops fix
-      clean = ifelse(.data$clean == "1_1_1_cultivated_crops", "1_1_cultivated_crops", .data$clean)
+      # Apply manual crop label fix
+      clean = ifelse(.data$clean == "1_1_1_cultivated_crops", "1_1_cultivated_crops", .data$clean),
+      # And one for the apostrophe in 2.10
+      clean = ifelse(clean == "2_10_maintenance_of_water_s_chemical_condition",
+                     "2_10_maintenance_of_waters_chemical_condition",
+                     clean)
     ) %>%
     dplyr::pull(.data$clean)
 

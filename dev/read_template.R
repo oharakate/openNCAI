@@ -17,11 +17,13 @@ read_ncai_template <- function(path,
 
   # --- 1. SETUP & CLEANING ---
   clean_vec <- function(x) {
-    x %>%
-      stringr::str_trim() %>%
-      stringr::str_replace_all("[[:punct:] ]+", "_") %>%
-      stringr::str_to_lower() %>%
-      stringr::str_replace_all("^_+|_+$", "")
+    # 1. Clean the names
+    cleaned <- janitor::make_clean_names(x)
+    # 2. Strip the leading 'x' that janitor adds to numeric strings
+    cleaned <- stringr::str_replace(cleaned, "^x", "")
+    # 3. Apply the specific manual fix for Crops to maintain consistency
+    cleaned <- ifelse(cleaned == "1_1_1_cultivated_crops", "1_1_cultivated_crops", cleaned)
+    return(cleaned)
   }
 
   clean_habitats_label_tree <- lapply(habitats_label_tree, clean_vec)
@@ -143,7 +145,6 @@ new_objects_list <- read_ncai_template("dev/NCAI_Data_Entry_Template.xlsx",
 
 names(new_objects_list)
 
-
 # Create NS custom divisor matrix (adjustments to provision per unit)
 # NOTE TO NATURESCOT: You could take this opportunity to just adjust the
 # provision per unit weights in that weight matrix. I.e. divide everything
@@ -154,7 +155,7 @@ rownames(new_divisor_matrix) <- unlist(new_objects_list$clean_habitats_label_tre
 colnames(new_divisor_matrix) <- unlist(new_objects_list$clean_es_label_tree, use.names = FALSE)
 
 
-get_ncai(habitat_extent = new_objects_list$habitat_extent,
+ncai_objects <- get_ncai(habitat_extent = new_objects_list$habitat_extent,
          ci_scores = new_objects_list$ci_scores,
          habitats_label_tree = new_objects_list$clean_habitats_label_tree,
          es_label_tree = new_objects_list$clean_es_label_tree,
@@ -168,29 +169,17 @@ get_ncai(habitat_extent = new_objects_list$habitat_extent,
          indicator_directory = new_objects_list$indicator_directory,
          return = "everything")
 
+names(new_ncai_objects)
+new_espb <- new_ncai_objects$espb
+new_wellbeing_base <- new_ncai_objects$wellbeing_base
+new_yearly_flow_matrices <- new_ncai_objects$yearly_flow_matrices
+new_yearly_asset_matrices <- new_ncai_objects$yearly_asset_matrices
+new_overall_index <- new_ncai_objects$overall_index
+new_by_ecosystem_service_type <- new_ncai_objects$by_ecosystem_service_type
+new_by_broad_habitat <- new_ncai_objects$by_broad_habitat
 
-get_ncai(habitat_extent = ns_habitat_extent,
-         ci_scores = get_ncai(habitat_extent = new_objects_list$habitat_extent,
-         ci_scores = new_objects_list$ci_scores,
-         habitats_label_tree = new_objects_list$clean_habitats_label_tree,
-         es_label_tree = new_objects_list$clean_es_label_tree,
-         year_list = new_objects_list$year_list,
-         year_one = new_objects_list$year_list[1],
-         esppu_scores = new_objects_list$esppu_scores,
-         custom_divisor_matrix = new_divisor_matrix,
-         between_importance_scores = new_objects_list$between_importance,
-         within_importance_scores = new_objects_list$within_importance,
-         ci_relevance_matrices = new_objects_list$ci_relevance_matrices,
-         indicator_directory = new_objects_list$indicator_directory,
-         return = "everything"),
-         habitats_label_tree = new_objects_list$clean_habitats_label_tree,
-         es_label_tree = new_objects_list$clean_es_label_tree,
-         year_list = new_objects_list$year_list,
-         year_one = new_objects_list$year_list[1],
-         esppu_scores = new_objects_list$esppu_scores,
-         custom_divisor_matrix = new_divisor_matrix,
-         between_importance_scores = new_objects_list$between_importance,
-         within_importance_scores = new_objects_list$within_importance,
-         ci_relevance_matrices = new_objects_list$ci_relevance_matrices,
-         indicator_directory = new_objects_list$indicator_directory,
-         return = "everything")
+
+
+
+
+
