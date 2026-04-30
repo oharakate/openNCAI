@@ -19,6 +19,51 @@ prepare_template_matrix <- function(hab_tree, es_tree) {
   return(df)
 }
 
+#' Write a clean Instructions sheet at the start of the workbook
+write_instructions_sheet <- function(wb, sheet_name) {
+  openxlsx::addWorksheet(wb, sheet_name)
+
+  # Define Styles
+  title_style <- openxlsx::createStyle(
+    fontSize = 20, fontColour = "#2F5597", textDecoration = "bold",
+    halign = "left", valign = "center"
+  )
+
+  text_style <- openxlsx::createStyle(
+    fontSize = 12, halign = "left", valign = "top", wrapText = TRUE
+  )
+
+  # 1. Create a large white background by "painting" a huge range
+  bg_style <- openxlsx::createStyle(fgFill = "white")
+  openxlsx::addStyle(wb, sheet_name, style = bg_style, rows = 1:100, cols = 1:20, gridExpand = TRUE)
+
+  # 2. Add Header
+  openxlsx::writeData(wb, sheet_name, "Instructions", startCol = 2, startRow = 2)
+  openxlsx::addStyle(wb, sheet_name, style = title_style, rows = 2, cols = 2)
+
+  # 3. Add Holding Text Paragraph
+  instr_text <- paste(
+    "Welcome to the NCAI Data Entry Template. Complete the sheets with your own data as follows:\n\n",
+    "\n\n",
+    "Habitat extent: area of each habitat (e.g. in hectares) each year.\n\n",
+    "Provision Per Unit: score, typically out of 5, representing the expemplary per unit provision of ecosystem services per unit of area. If scoring out of a different number, specify the divisor in get_ncai(). \n\n",
+    "Importance: define relative importance of ecosystem service types, and the specific ecosystems within them.\n\n",
+    "Condition Indicator Scores: raw scores of each condition indicator in each year.\n\n",
+    "Indicator Directory: salience (between 0 and 1) of condition indicators in representing likely flow of services in each ecosystem service type. \n\n",
+    "Individual condition indicator relevance shets: binary values denoting whether a condition indicator is relevant for each combination of habitat/ecosystem service (1 = relevant; 0 = not relevant). \n\n"
+  )
+
+  # Merge a large area for the text to sit in
+  openxlsx::mergeCells(wb, sheet_name, cols = 2:10, rows = 4:30)
+  openxlsx::writeData(wb, sheet_name, instr_text, startCol = 2, startRow = 4)
+  openxlsx::addStyle(wb, sheet_name, style = text_style, rows = 4, cols = 2)
+  openxlsx::setRowHeights(wb, sheet_name, rows = 4:25, heights = 25)
+
+  # Clean up dimensions
+  openxlsx::setColWidths(wb, sheet_name, cols = 1, widths = 3) # Margin
+  openxlsx::setColWidths(wb, sheet_name, cols = 2, widths = 80)
+}
+
 #' Write standard Matrix sheets (e.g., ES Potential or CI Relevance)
 write_input_matrix <- function(wb, sheet_name, data_df, hab_tree, es_tree,
                                style_obj, hab_palette, thick_border_style,
@@ -233,14 +278,14 @@ write_indicator_directory <- function(wb,
   )
 
   # 4. Styling
-  openxlsx::addStyle(
-    wb, sheet_name,
-    style = openxlsx::createStyle(
-      textDecoration = "bold", fgFill = "#DCE6F1",
-      border = "Bottom", halign = "center"
-    ),
-    rows = 1, cols = 1:(1 + length(es_types))
+  header_style_rot <- openxlsx::createStyle(
+    textDecoration = "bold", fgFill = "#DCE6F1",
+    border = "Bottom", halign = "center", valign = "bottom",
+    textRotation = 90, fontSize = 9 # <--- Added rotation
   )
+
+  openxlsx::addStyle(wb, sheet_name, style = header_style_rot, rows = 1, cols = 1:(1 + length(es_types)))
+  openxlsx::setRowHeights(wb, sheet_name, rows = 1, heights = 180) # <--- Added height for vertical text
 
   for (i in seq_along(ci_names)) {
     this_row <- i + 1
@@ -382,6 +427,8 @@ create_ncai_template <- function(template_out,
   wb <- openxlsx::createWorkbook()
 
   # --- 3. Sheet Generation ---
+  # Instructions
+  write_instructions_sheet(wb, "Instructions")
 
   # Habitat Extent
   write_extent_sheet(
@@ -523,7 +570,7 @@ new_es_tree <- list(
   )
 )
 
-create_ncai_template(template_out = "dev/test_new.xlsx",
+create_ncai_template(template_out = "dev/test_small_new.xlsx",
                      habitats_label_tree = new_hab_tree,
                      es_label_tree = new_es_tree,
                      ci_names = c("National Water Quality Index", "AgriSCOR"),
