@@ -151,14 +151,14 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   services_to_adjust <- unlist(c(
     "mediation_of_mass_flows",
     "soil_formation_and_composition",
-    ns_es_label_tree[["cultural"]], # Automatically expands to all 5 cultural IDs
-    ns_es_label_tree[["cultural"]],
-    ns_es_label_tree[["cultural"]],
+    es_tree[["cultural"]], # Automatically expands to all 5 cultural IDs
+    es_tree[["cultural"]],
+    es_tree[["cultural"]],
     "global_regional",              # Matches "2_11_global_regional_..."
     "global_regional",
-    ns_es_label_tree[["cultural"]],
-    ns_es_label_tree[["cultural"]],
-    ns_es_label_tree[["cultural"]]
+    es_tree[["cultural"]],
+    es_tree[["cultural"]],
+    es_tree[["cultural"]]
   ))
 
   custom_divisor_matrix <- make_custom_divisor_matrix(

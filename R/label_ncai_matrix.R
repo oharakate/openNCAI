@@ -51,24 +51,22 @@
 #' # Column names will be: "crops", "timber"
 #'
 label_ncai_matrix <- function(matrix, habitats_label_tree, es_label_tree) {
-  # CRITICAL: check.names = FALSE prevents R from prepending 'X' to numeric IDs
+  # check.names = FALSE prevents R from prepending 'X' to numeric IDs
   out <- as.data.frame(matrix, check.names = FALSE)
 
   flat_h <- unlist(habitats_label_tree, use.names = FALSE)
   flat_es <- unlist(es_label_tree, use.names = FALSE)
 
-  # Check dimensions to ensure we aren't mislabeling
+  # Dimension check: This is the only "strict" check we need.
   if (nrow(out) != length(flat_h) || ncol(out) != length(flat_es)) {
     stop(paste0("Dimension mismatch! Matrix is ", nrow(out), "x", ncol(out),
                 ", but labels are ", length(flat_h), "x", length(flat_es)))
   }
 
-  # Assign names explicitly to ensure they match the tree exactly
+  # FORCE the names to match the trees
+  # This fixes the 'undefined columns' error by ensuring alignment
   rownames(out) <- flat_h
   colnames(out) <- flat_es
-
-  # Re-order/Subset safely
-  out <- out[flat_h, flat_es, drop = FALSE]
 
   return(out)
 }
