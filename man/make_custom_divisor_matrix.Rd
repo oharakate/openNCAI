@@ -14,19 +14,28 @@ make_custom_divisor_matrix(
 )
 }
 \arguments{
-\item{all_habitat_labels}{Vector of habitat labels.}
+\item{all_habitat_labels}{A character vector of all cleaned habitat names.}
 
-\item{all_es_labels}{Vector of service labels.}
+\item{all_es_labels}{A character vector of all cleaned ecosystem service names.}
 
-\item{habitats_to_adjust}{Vector of habitat shorthands (e.g., "b1").}
+\item{habitats_to_adjust}{A character vector of habitat shorthands or patterns
+(e.g., "b1") to be matched for custom divisors.}
 
-\item{services_to_adjust}{Vector of service keywords for partial matching.}
+\item{services_to_adjust}{A character vector of service shorthands or patterns
+to be matched for custom divisors.}
 
-\item{usual_divisor}{Numeric default divisor (e.g., 5).}
+\item{usual_divisor}{Numeric. The default divisor applied to most combinations (e.g., 5).}
 
-\item{custom_divisor}{Numeric adjustment divisor (e.g., 1).}
+\item{custom_divisor}{Numeric. The adjustment divisor for specified matches (e.g., 1).}
+}
+\value{
+A data frame where rows represent habitats and columns represent
+  ecosystem services, containing the divisor values for each intersection.
 }
 \description{
-Generate Custom Divisor Matrix
+Creates a matrix of normalization divisors (e.g., scoring scales) for every
+habitat-service combination. It allows for specific adjustments where certain
+services or habitats use a different scale (e.g., a 1-point scale instead
+of a 5-point scale).
 }
 \keyword{internal}

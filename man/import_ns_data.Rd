@@ -9,27 +9,30 @@ import_ns_data(path, year_list = 2000:2022, tir_constant = 2)
 \arguments{
 \item{path}{A string representing the file path to the .xlsx data source.}
 
-\item{year_list}{A vector of years to include in the account (e.g., 2000:2022).
-Can be numeric or character.}
+\item{year_list}{A vector of years to include in the account (e.g., 2000:2022).}
 
-\item{tir_constant}{A numeric constant added to the Total Indicator Relevances
-to avoid zero divisions. Default is 2.}
+\item{tir_constant}{A numeric constant added to the Total Indicator Relevances.}
 }
 \value{
-A named list containing 11 components:
+A named list containing 14 components:
 \itemize{
-  \item \code{ns_year_list}: Character vector of years.
-  \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
-  \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
+  \item \code{ns_habitat_extent}: Data frame of habitat area per year.
+  \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
+  \item \code{ns_habitats_label_tree}: Nested list of cleaned broad and detailed habitat labels.
+  \item \code{ns_es_label_tree}: Nested list of cleaned ecosystem service types and specific labels.
+  \item \code{ns_year_list}: Character vector of years included in the account.
   \item \code{ns_esppu_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
-  \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
   \item \code{ns_ci_relevance_matrices}: List of binary Condition Indicator Relevance Matrices.
-  \item \code{ns_habitat_extent}: Data frame of habitat area per year.
-  \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
+  \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
+  \item \code{ns_dirty_habitats_label_tree}: Nested list of original habitat names for display.
+  \item \code{ns_dirty_es_label_tree}: Nested list of original ecosystem service names for display.
+  \item \code{ns_dirty_ci_names}: Character vector of condition indicator names in "Number Name" format.
 }
+
+A named list containing structured NCAI data objects.
 }
 \description{
 This is the primary wrapper function for importing data from the NatureScot NCAI
@@ -37,4 +40,11 @@ Excel template. It extracts habitat classifications, ecosystem service weights,
 condition indicators, and yearly measurements, bundling them into a structured
 list for subsequent index calculations.
 }
+\keyword{Account}
+\keyword{Capital}
+\keyword{Data}
+\keyword{Import}
+\keyword{Natural}
+\keyword{Process}
+\keyword{and}
 \keyword{internal}

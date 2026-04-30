@@ -5,8 +5,9 @@
 \alias{ns_between_importance_scores}
 \title{Ecosystem Service Importance Scores (between-service-type)}
 \format{
-A named numeric vector where values range from 0 to 20,
-representing the relative importance of each ecosystem service type.
+A named list of scores where values range from 0 to 20,
+representing the relative importance of each ecosystem service type. Item
+names are ecosystem service types.
 }
 \usage{
 ns_between_importance_scores

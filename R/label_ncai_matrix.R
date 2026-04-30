@@ -51,18 +51,23 @@
 #' # Column names will be: "crops", "timber"
 #'
 label_ncai_matrix <- function(matrix, habitats_label_tree, es_label_tree) {
+  # CRITICAL: check.names = FALSE prevents R from prepending 'X' to numeric IDs
+  out <- as.data.frame(matrix, check.names = FALSE)
 
   flat_h <- unlist(habitats_label_tree, use.names = FALSE)
   flat_es <- unlist(es_label_tree, use.names = FALSE)
 
-  # 1. Verification: Do the sets match?
-  if (!all(rownames(matrix) %in% flat_h) || !all(flat_h %in% rownames(matrix))) {
-    stop("Mismatch: The row names in the data do not match the names provided in the habitat_label_tree.")
+  # Check dimensions to ensure we aren't mislabeling
+  if (nrow(out) != length(flat_h) || ncol(out) != length(flat_es)) {
+    stop(paste0("Dimension mismatch! Matrix is ", nrow(out), "x", ncol(out),
+                ", but labels are ", length(flat_h), "x", length(flat_es)))
   }
 
-  # 2. Alignment: Reorder the data frame to match the Tree's order
-  # This handles the 'wrong order' situations you mentioned.
-  out <- as.data.frame(matrix)
+  # Assign names explicitly to ensure they match the tree exactly
+  rownames(out) <- flat_h
+  colnames(out) <- flat_es
+
+  # Re-order/Subset safely
   out <- out[flat_h, flat_es, drop = FALSE]
 
   return(out)

@@ -4,495 +4,500 @@ library(tidyr)
 library(stringr)
 library(openxlsx)
 
-# --- CONFIGURATION ---
-source_path <- "data-raw/ncai_corrected.xlsx"
-template_out <- "dev/NCAI_Data_Entry_Template.xlsx"
+# ==============================================================================
+# HELPER FUNCTIONS
+# ==============================================================================
 
-# --- PALETTE & STYLES ---
-# THIS WILL NEED UPDATED IF A NEW NUMBER OF
-hab_palette <- c(
-  "#FFDEAD", # Coastal: Navajo White/Peach
-  "#E0FFFF", # Inland Waters: Light Sky Blue
-  "#EEEEE0", # Mires, Bogs, Fens: Olive/Khaki Green
-  "#CAFF70", # Grasslands: Bright Lime/Chartreuse
-  "#FFBBFF", # Heathland: Plum/Light Purple
-  "#B4EEB4", # Woodland: Pale Green
-  "#CDCDC1", # Unvegetated: Ash Grey
-  "#EE9572", # Cultivated:
-  "#9FB6CD", # Constructed: Slate/Steel Blue
-  "#D8BFD8"  # Montane: Thistle/Pale Violet
-)
-
-thick_border_style <- openxlsx::createStyle(
-  border = "Left",
-  borderStyle = "thick",
-  borderColour = "black"
-)
-
-# Only a bottom border for the vertical headers
-header_style <- openxlsx::createStyle(
-  textDecoration = "bold",
-  halign = "center",
-  valign = "bottom",
-  fgFill = "#DCE6F1",
-  border = "Bottom",
-  textRotation = 90,
-  wrapText = TRUE,
-  fontSize = 9
-)
-
-# No borders for the main data body
-body_style <- openxlsx::createStyle(
-  halign = "center",
-  border = NULL
-)
-
-# Instruction text style for importance weights (Blue, bold)
-instruction_style <- openxlsx::createStyle(
-  fontColour = "#0070C0",
-  textDecoration = "bold",
-  fontSize = 10,
-  wrapText = TRUE
-)
-
-# Score entry style for importance weights (Peach background, centered)
-entry_style <- openxlsx::createStyle(
-  fgFill = "#FDE9D9",
-  halign = "center",
-  border = "TopBottomLeftRight"
-)
-
-# Score entry style (Peach background, centered)
-entry_style <- openxlsx::createStyle(
-  fgFill = "#FDE9D9",
-  halign = "center",
-  border = "TopBottomLeftRight"
-)
-
-style_obj <- list(
-  vert = header_style,
-  body = body_style
-)
-
-# --- FUNCTIONS ---
-
+#' Prepare a blank data frame based on Habitat and ES trees
 prepare_template_matrix <- function(hab_tree, es_tree) {
   all_habs <- unlist(hab_tree, use.names = FALSE)
-  all_es   <- unlist(es_tree, use.names = FALSE)
+  all_es <- unlist(es_tree, use.names = FALSE)
   mat <- matrix(0, nrow = length(all_habs), ncol = length(all_es))
   df <- as.data.frame(mat)
   row.names(df) <- all_habs
-  names(df)     <- all_es
+  names(df) <- all_es
   return(df)
 }
 
+#' Write standard Matrix sheets (e.g., ES Potential or CI Relevance)
 write_input_matrix <- function(wb, sheet_name, data_df, hab_tree, es_tree,
-                               style_obj,
-                               instruction) {
-
+                               style_obj, hab_palette, thick_border_style,
+                               instruction_style, instruction) {
   openxlsx::addWorksheet(wb, sheet_name)
-
   all_habs <- unlist(hab_tree, use.names = FALSE)
-  all_es   <- unlist(es_tree, use.names = FALSE)
+  all_es <- unlist(es_tree, use.names = FALSE)
 
-  # Write the Skeleton
+  # 1. Write the Skeleton
   openxlsx::writeData(wb, sheet_name, instruction, startCol = 1, startRow = 1)
   openxlsx::addStyle(wb, sheet_name, style = instruction_style, rows = 1, cols = 1)
   openxlsx::writeData(wb, sheet_name, t(all_es), startCol = 2, startRow = 1, colNames = FALSE)
   openxlsx::writeData(wb, sheet_name, all_habs, startCol = 1, startRow = 2, colNames = FALSE)
-  openxlsx::writeData(wb, sheet_name, data_df, startCol = 2, startRow = 2, colNames = FALSE, rowNames = FALSE)
+  openxlsx::writeData(wb, sheet_name, as.matrix(data_df), startCol = 2, startRow = 2, colNames = FALSE, rowNames = FALSE)
 
-  # --- ES HEADER SHADING (Row 1) ---
+  # 2. ES HEADER SHADING (Row 1)
   current_col <- 2
   es_colors <- c("#F2F2F2", "#E6E6E6")
-
   for (i in seq_along(names(es_tree))) {
     group_size <- length(es_tree[[i]])
     cols_to_style <- current_col:(current_col + group_size - 1)
-
     cat_header_style <- openxlsx::createStyle(
       textDecoration = "bold", halign = "center", valign = "bottom",
-      fgFill = es_colors[(i %% 2) + 1],
-      border = "Bottom",
+      fgFill = es_colors[(i %% 2) + 1], border = "Bottom",
       textRotation = 90, wrapText = TRUE, fontSize = 9
     )
-
-    openxlsx::addStyle(wb, sheet_name, style = cat_header_style,
-                       rows = 1, cols = cols_to_style, gridExpand = TRUE)
+    openxlsx::addStyle(wb, sheet_name, style = cat_header_style, rows = 1, cols = cols_to_style, gridExpand = TRUE)
     current_col <- current_col + group_size
   }
 
-  # --- HABITAT COLOURING & BODY (Rows) ---
+  # 3. HABITAT COLOURING & BODY (Rows)
   current_row <- 2
   for (i in seq_along(names(hab_tree))) {
     group_size <- length(hab_tree[[i]])
     rows_to_style <- current_row:(current_row + group_size - 1)
-
-    # Use modulo to recycle colors if i exceeds the number of colors in hab_palette
-    # The +1 is needed because R is 1-indexed and modulo returns 0 at the end of the set
     current_color <- hab_palette[((i - 1) %% length(hab_palette)) + 1]
 
-    # 1. Data area: background color with NO internal borders
-    row_bg_style <- openxlsx::createStyle(
-      fgFill = current_color,
-      halign = "center",
-      border = NULL
+    row_bg_style <- openxlsx::createStyle(fgFill = current_color, halign = "center", border = NULL)
+    openxlsx::addStyle(wb, sheet_name,
+      style = row_bg_style, rows = rows_to_style,
+      cols = 2:(1 + length(all_es)), gridExpand = TRUE, stack = TRUE
     )
 
-    openxlsx::addStyle(wb, sheet_name, style = row_bg_style,
-                       rows = rows_to_style, cols = 2:(1 + length(all_es)),
-                       gridExpand = TRUE, stack = TRUE)
-
-    # 2. Habitat labels: background color with RIGHT border only
-    label_col_style <- openxlsx::createStyle(
-      fgFill = current_color,
-      textDecoration = "bold",
-      border = "Right",
-      halign = "left"
-    )
-
-    openxlsx::addStyle(wb, sheet_name, style = label_col_style,
-                       rows = rows_to_style, cols = 1)
-
+    label_col_style <- openxlsx::createStyle(fgFill = current_color, textDecoration = "bold", border = "Right", halign = "left")
+    openxlsx::addStyle(wb, sheet_name, style = label_col_style, rows = rows_to_style, cols = 1)
     current_row <- current_row + group_size
   }
 
-  # --- ES TYPE DIVIDERS (Thick Lines) ---
+  # 4. ES TYPE DIVIDERS (Thick Lines)
   current_col <- 2
   for (i in seq_along(names(es_tree))) {
     group_size <- length(es_tree[[i]])
     if (i > 1) {
       openxlsx::addStyle(wb, sheet_name,
-                         style = thick_border_style,
-                         rows = 1:(1 + length(all_habs)),
-                         cols = current_col,
-                         stack = TRUE)
+        style = thick_border_style,
+        rows = 1:(1 + length(all_habs)), cols = current_col, stack = TRUE
+      )
     }
     current_col <- current_col + group_size
   }
 
-  # --- A1 CLEANUP ---
+  # 5. A1 CLEANUP & DIMENSIONS
   openxlsx::addStyle(wb, sheet_name,
-                     style = openxlsx::createStyle(fgFill = "white", wrapText = TRUE, fontSize = 9),
-                     rows = 1, cols = 1, stack = TRUE)
-
-  # Dimensions & Freeze
+    style = openxlsx::createStyle(fgFill = "white", wrapText = TRUE, fontSize = 9),
+    rows = 1, cols = 1, stack = TRUE
+  )
   openxlsx::setRowHeights(wb, sheet_name, rows = 1, heights = 180)
   openxlsx::setColWidths(wb, sheet_name, cols = 1, width = 50)
   openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(all_es)), width = 4.5)
   openxlsx::freezePane(wb, sheet_name, firstActiveRow = 2, firstActiveCol = 2)
 }
 
-write_importance_sheet <- function(wb, sheet_name, es_tree) {
+#' Write the specialized Importance Weights sheet
+write_importance_sheet_with_data <- function(wb, sheet_name, es_tree,
+                                             between_data, within_list,
+                                             instruction_style, entry_style) {
   openxlsx::addWorksheet(wb, sheet_name)
-
-  # --- SECTION 1: BETWEEN ES TYPES ---
   between_types <- names(es_tree)
 
-  openxlsx::writeData(wb, sheet_name, "Step 1: ecosystem service type (SEEA) section. The most important service type is assigned a value of 20, and the other two are assigned a value (between 0 and 20) in terms of their relative importance.", startRow = 1)
+  # --- STEP 1 ---
+  instr1 <- paste(
+    "Step 1: ecosystem service type (SEEA) section. The most important",
+    "service type is assigned a value of 20, and the other two are assigned",
+    "a value (between 0 and 20) in terms of their relative importance."
+  )
+
+  openxlsx::writeData(wb, sheet_name, instr1, startRow = 1)
   openxlsx::addStyle(wb, sheet_name, instruction_style, rows = 1, cols = 1)
 
-  # Table Header
-  header_df <- data.frame(Type = between_types, Score = 0)
+  b_vals <- if (!is.null(between_data)) {
+    unlist(between_data)
+  } else {
+    rep(0, length(between_types))
+  }
+
+  header_df <- data.frame(Type = between_types, Score = b_vals)
   openxlsx::writeData(wb, sheet_name, header_df, startRow = 2, colNames = TRUE)
 
-  # Style the entry cells
-  openxlsx::addStyle(wb, sheet_name, entry_style, rows = 3:(3 + length(between_types)-1), cols = 2)
+  openxlsx::addStyle(
+    wb, sheet_name, entry_style,
+    rows = 3:(3 + length(between_types) - 1),
+    cols = 2
+  )
 
-  # --- SECTION 2: WITHIN ES TYPES (The Groups) ---
+  # --- STEP 2 ---
   current_row <- 8
-
   for (i in seq_along(names(es_tree))) {
     cat_name <- names(es_tree)[i]
     services <- es_tree[[cat_name]]
 
-    # Construct the instructions
-    instr <- sprintf("Step 2: %s services. The most important is assigned a value of 20, and the others are assigned a value (between 0 and 20) in terms of their relative importance.",
-                     cat_name)
+    w_vals <- if (!is.null(within_list)) {
+      unlist(within_list[[i]])
+    } else {
+      rep(0, length(services))
+    }
 
-    openxlsx::writeData(wb, sheet_name, instr, startRow = current_row)
+    instr2 <- sprintf(
+      "Step 2: %s services. The most important is assigned a value of 20, %s",
+      cat_name,
+      "and the others are assigned a value in terms of their relative importance."
+    )
+
+    openxlsx::writeData(wb, sheet_name, instr2, startRow = current_row)
     openxlsx::addStyle(wb, sheet_name, instruction_style, rows = current_row, cols = 1)
 
-    # Data Table (Header and Services)
-    df <- data.frame(Service = services, Raw_Score = 0)
+    df <- data.frame(Service = services, Raw_Score = w_vals)
     openxlsx::writeData(wb, sheet_name, df, startRow = current_row + 1, colNames = TRUE)
 
-    # Entry Cells Styling (Peach)
-    entry_rows <- (current_row + 2):(current_row + 1 + length(services))
-    openxlsx::addStyle(wb, sheet_name, entry_style, rows = entry_rows, cols = 2)
+    openxlsx::addStyle(
+      wb, sheet_name, entry_style,
+      rows = (current_row + 2):(current_row + 1 + length(services)),
+      cols = 2
+    )
 
-    # Move cursor down for next group (adding gap)
     current_row <- current_row + length(services) + 4
   }
 
-  # Formatting
   openxlsx::setColWidths(wb, sheet_name, cols = 1, widths = 60)
   openxlsx::setColWidths(wb, sheet_name, cols = 2, widths = 15)
 }
 
-
-
 #' Write Habitat Extent Time-Series Sheet
-#'
-#' @param wb A workbook object
-#' @param sheet_name Name of the sheet
-#' @param hab_tree The nested list of habitats
-#' @param years Numeric vector (e.g., 2010:2024)
-#' @param source_data Optional matrix or data frame of extent values
-write_extent_sheet <- function(wb, sheet_name, hab_tree, years, source_data = NULL) {
-
+write_extent_sheet <- function(wb, sheet_name, hab_tree, years, hab_palette, source_data = NULL) {
   openxlsx::addWorksheet(wb, sheet_name)
-
   all_habs <- unlist(hab_tree, use.names = FALSE)
-
-  # 1. Write headers and labels
   openxlsx::writeData(wb, sheet_name, "Habitat extent in hectares", startCol = 1, startRow = 1)
-  openxlsx::addStyle(wb, sheet_name,
-                     style = openxlsx::createStyle(fgFill = "white", wrapText = TRUE, fontSize = 10),
-                     rows = 1, cols = 1, stack = FALSE)
   openxlsx::writeData(wb, sheet_name, t(years), startCol = 2, startRow = 1, colNames = FALSE)
   openxlsx::writeData(wb, sheet_name, all_habs, startCol = 1, startRow = 2, colNames = FALSE)
 
-  # 2. Write data (source or zeros)
-  if (is.null(source_data)) {
-    ext_data <- matrix(0, nrow = length(all_habs), ncol = length(years))
-  } else {
-    ext_data <- source_data
-  }
+  ext_data <- if (is.null(source_data)) matrix(0, nrow = length(all_habs), ncol = length(years)) else source_data
   openxlsx::writeData(wb, sheet_name, ext_data, startCol = 2, startRow = 2, colNames = FALSE)
 
-  # 3. Apply Styling
-
-  # Header Style (Row 1)
-  year_header_style <- openxlsx::createStyle(
-    textDecoration = "bold",
-    border = "Bottom",
-    halign = "center",
-    fgFill = "#F2F2F2"
-  )
-  openxlsx::addStyle(wb, sheet_name, style = year_header_style,
-                     rows = 1, cols = 1:(1 + length(years)))
-
-  # Habitat Row Coloring Loop
   current_row <- 2
   for (i in seq_along(names(hab_tree))) {
     group_size <- length(hab_tree[[i]])
     rows_to_style <- current_row:(current_row + group_size - 1)
-
-    # Recycle colors from palette
     current_color <- hab_palette[((i - 1) %% length(hab_palette)) + 1]
 
-    # Style for data area (Swimlanes)
-    row_bg_style <- openxlsx::createStyle(
-      fgFill = current_color,
-      halign = "center",
-      border = NULL
+    openxlsx::addStyle(wb, sheet_name,
+      style = openxlsx::createStyle(fgFill = current_color, halign = "center"),
+      rows = rows_to_style, cols = 2:(1 + length(years)), gridExpand = TRUE
     )
-
-    openxlsx::addStyle(wb, sheet_name, style = row_bg_style,
-                       rows = rows_to_style,
-                       cols = 2:(1 + length(years)),
-                       gridExpand = TRUE, stack = TRUE)
-
-    # Style for habitat labels (Column A)
-    label_col_style <- openxlsx::createStyle(
-      fgFill = current_color,
-      textDecoration = "bold",
-      border = "Right",
-      halign = "left"
+    openxlsx::addStyle(wb, sheet_name,
+      style = openxlsx::createStyle(fgFill = current_color, textDecoration = "bold", border = "Right"),
+      rows = rows_to_style, cols = 1
     )
-
-    openxlsx::addStyle(wb, sheet_name, style = label_col_style,
-                       rows = rows_to_style, cols = 1)
-
     current_row <- current_row + group_size
   }
-
-  # 4. Final Cleanup
-  # Corner A1 Style
-  openxlsx::addStyle(wb, sheet_name, style = openxlsx::createStyle(fgFill = "white"),
-                     rows = 1, cols = 1, stack = FALSE)
-
+  openxlsx::addStyle(wb, sheet_name, style = openxlsx::createStyle(fgFill = "white", border = "Bottom", textDecoration = "bold"), rows = 1, cols = 1:(1 + length(years)))
   openxlsx::setColWidths(wb, sheet_name, cols = 1, width = 50)
-  openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(years)), width = 5)
-  openxlsx::freezePane(wb, sheet_name, firstActiveRow = 2, firstActiveCol = 2)
+  openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(years)), width = 8)
 }
 
 #' Write Indicator Directory Sheet
-#'
-#' @param wb A workbook object
-#' @param sheet_name Name of the sheet
-#' @param ci_names Vector of indicator names (ns_dirty_ci_names)
-#' @param es_types Vector of ES categories (names(ns_dirty_es_label_tree))
-#' @param source_data Optional matrix or data frame of relevance scores
-write_indicator_directory <- function(wb, sheet_name, ci_names, es_types, source_data = NULL) {
-
+write_indicator_directory <- function(wb,
+                                      sheet_name,
+                                      ci_names,
+                                      es_types,
+                                      source_data = NULL) {
   openxlsx::addWorksheet(wb, sheet_name)
 
-  # 1. Prepare the Header Row
-  # Column A is "Condition Indicator", followed by the ES Types
+  # 1. Headers
   headers <- c("Condition Indicator", es_types)
-  openxlsx::writeData(wb, sheet_name, t(headers), startCol = 1, startRow = 1, colNames = FALSE)
+  openxlsx::writeData(
+    wb, sheet_name, t(headers),
+    startCol = 1, startRow = 1, colNames = FALSE
+  )
 
-  # 2. Write the Indicator Names (Column A)
-  openxlsx::writeData(wb, sheet_name, ci_names, startCol = 1, startRow = 2, colNames = FALSE)
+  # 2. Indicator Names (Column A)
+  openxlsx::writeData(
+    wb, sheet_name, ci_names,
+    startCol = 1, startRow = 2, colNames = FALSE
+  )
 
-  # 3. Write Data (Scores)
+  # 3. Handle Data Subsetting
   if (is.null(source_data)) {
-    # Default to 0 if no data provided
     dir_data <- matrix(0, nrow = length(ci_names), ncol = length(es_types))
   } else {
-    dir_data <- source_data
+    # If the data frame has the ID column as column 1,
+    # we take only the score columns (column 2 onwards)
+    if (ncol(source_data) > length(es_types)) {
+      dir_data <- source_data[, 2:(length(es_types) + 1)]
+    } else {
+      dir_data <- source_data
+    }
   }
-  openxlsx::writeData(wb, sheet_name, dir_data, startCol = 2, startRow = 2, colNames = FALSE)
+
+  openxlsx::writeData(
+    wb, sheet_name, dir_data,
+    startCol = 2, startRow = 2,
+    colNames = FALSE, rowNames = FALSE
+  )
 
   # 4. Styling
-
-  # Vertical Header Style for ES Types (Cols 2 onwards)
-  # Reusing your vertical logic but without the 90-degree rotation unless you prefer it
-  # Here I'll keep it bold and centered to match the Matrix headers
-  dir_header_style <- openxlsx::createStyle(
-    textDecoration = "bold",
-    halign = "center",
-    valign = "center",
-    fgFill = "#DCE6F1",
-    border = "Bottom"
+  openxlsx::addStyle(
+    wb, sheet_name,
+    style = openxlsx::createStyle(
+      textDecoration = "bold", fgFill = "#DCE6F1",
+      border = "Bottom", halign = "center"
+    ),
+    rows = 1, cols = 1:(1 + length(es_types))
   )
-  openxlsx::addStyle(wb, sheet_name, style = dir_header_style, rows = 1, cols = 1:(1 + length(es_types)))
-
-  # Alternating Row Styles
-  grey_style <- openxlsx::createStyle(fgFill = "#F2F2F2", halign = "center")
-  white_style <- openxlsx::createStyle(fgFill = "white", halign = "center")
-  indicator_col_style <- openxlsx::createStyle(textDecoration = "bold", halign = "left", border = "Right")
 
   for (i in seq_along(ci_names)) {
     this_row <- i + 1
-    this_style <- if (i %% 2 == 0) grey_style else white_style
+    bg <- if (i %% 2 == 0) "#F2F2F2" else "white"
 
-    # Apply background to the data area (Cols 2+)
-    openxlsx::addStyle(wb, sheet_name, style = this_style,
-                       rows = this_row, cols = 2:(1 + length(es_types)), gridExpand = TRUE)
+    openxlsx::addStyle(
+      wb, sheet_name,
+      style = openxlsx::createStyle(fgFill = bg, halign = "center"),
+      rows = this_row, cols = 2:(1 + length(es_types))
+    )
 
-    # Apply bold label style to Column A (keeps it distinct)
-    openxlsx::addStyle(wb, sheet_name, style = indicator_col_style, rows = this_row, cols = 1)
+    openxlsx::addStyle(
+      wb, sheet_name,
+      style = openxlsx::createStyle(
+        textDecoration = "bold", border = "Right", fgFill = bg
+      ),
+      rows = this_row, cols = 1
+    )
   }
-
-  # 5. Dimensions
   openxlsx::setColWidths(wb, sheet_name, cols = 1, width = 60)
-  openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(es_types)), width = 20)
-  openxlsx::freezePane(wb, sheet_name, firstActiveRow = 2, firstActiveCol = 2)
 }
 
-
 #' Write Condition Scores Time-Series Sheet
-#'
-#' @param wb A workbook object
-#' @param sheet_name Name of the sheet
-#' @param ci_names Vector of full indicator names (ns_dirty_ci_names)
-#' @param years Numeric vector (e.g., 2000:2019)
-#' @param source_data Optional matrix or data frame of scores
 write_condition_scores_sheet <- function(wb, sheet_name, ci_names, years, source_data = NULL) {
-
   openxlsx::addWorksheet(wb, sheet_name)
 
   # 1. Write headers and labels
-  # Column A is "Year", Row 1 (B onwards) are the Indicators
   openxlsx::writeData(wb, sheet_name, "Year", startCol = 1, startRow = 1)
   openxlsx::writeData(wb, sheet_name, t(ci_names), startCol = 2, startRow = 1, colNames = FALSE)
   openxlsx::writeData(wb, sheet_name, years, startCol = 1, startRow = 2, colNames = FALSE)
 
   # 2. Write data (source or zeros)
-  if (is.null(source_data)) {
-    score_data <- matrix(0, nrow = length(years), ncol = length(ci_names))
+  score_data <- if (is.null(source_data)) {
+    matrix(0, nrow = length(years), ncol = length(ci_names))
   } else {
-    score_data <- source_data
+    source_data
   }
   openxlsx::writeData(wb, sheet_name, score_data, startCol = 2, startRow = 2, colNames = FALSE)
 
   # 3. Styling
+  header_st <- openxlsx::createStyle(
+    textDecoration = "bold", fgFill = "#DCE6F1", border = "Bottom",
+    textRotation = 90, fontSize = 9, halign = "center", valign = "bottom"
+  )
+  openxlsx::addStyle(wb, sheet_name, style = header_st, rows = 1, cols = 1:(1 + length(ci_names)))
 
-  # Rotated Header Style for Indicators (to match Matrix style)
-  ci_header_style <- openxlsx::createStyle(
+  # Styles for Column Banding
+  grey_col <- openxlsx::createStyle(fgFill = "#F2F2F2", halign = "center")
+  white_col <- openxlsx::createStyle(fgFill = "white", halign = "center")
+  year_col_style <- openxlsx::createStyle(textDecoration = "bold", border = "Right", halign = "center")
+
+  # Apply alternate column styling (Starting from Col 2)
+  for (j in seq_along(ci_names)) {
+    this_col <- j + 1
+    this_style <- if (j %% 2 == 0) grey_col else white_col
+
+    openxlsx::addStyle(
+      wb, sheet_name,
+      style = this_style,
+      rows = 2:(1 + length(years)),
+      cols = this_col,
+      gridExpand = TRUE
+    )
+  }
+
+  # Apply persistent style to the Year column (Column A)
+  openxlsx::addStyle(
+    wb, sheet_name,
+    style = year_col_style,
+    rows = 2:(1 + length(years)),
+    cols = 1
+  )
+
+  # 4. Dimensions & Freeze
+  openxlsx::setRowHeights(wb, sheet_name, rows = 1, heights = 180)
+  openxlsx::setColWidths(wb, sheet_name, cols = 1, width = 10)
+  openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(ci_names)), width = 6)
+  openxlsx::freezePane(wb, sheet_name, firstActiveRow = 2, firstActiveCol = 2)
+}
+
+# ==============================================================================
+# MASTER GENERATOR FUNCTION
+# ==============================================================================
+create_ncai_template <- function(template_out,
+                                 habitats_label_tree,
+                                 es_label_tree,
+                                 ci_names,
+                                 year_list,
+                                 habitat_extent = NULL,
+                                 esppu_scores = NULL,
+                                 between_importance_scores = NULL,
+                                 within_importance_scores = NULL,
+                                 ci_scores = NULL,
+                                 indicator_directory = NULL,
+                                 ci_relevance_matrices = NULL) {
+
+  # --- 1. Internal Styles ---
+  hab_palette <- c(
+    "#FFDEAD", "#E0FFFF", "#EEEEE0", "#CAFF70", "#FFBBFF",
+    "#B4EEB4", "#CDCDC1", "#EE9572", "#9FB6CD", "#D8BFD8"
+  )
+
+  thick_border_style <- openxlsx::createStyle(
+    border = "Left",
+    borderStyle = "thick",
+    borderColour = "black"
+  )
+
+  header_style <- openxlsx::createStyle(
     textDecoration = "bold",
     halign = "center",
     valign = "bottom",
     fgFill = "#DCE6F1",
     border = "Bottom",
     textRotation = 90,
+    wrapText = TRUE,
     fontSize = 9
   )
 
-  # Apply to the whole top row (Year + Indicators)
-  openxlsx::addStyle(wb, sheet_name, style = ci_header_style,
-                     rows = 1, cols = 1:(1 + length(ci_names)))
+  instruction_style <- openxlsx::createStyle(
+    fontColour = "#0070C0",
+    textDecoration = "bold",
+    fontSize = 10,
+    wrapText = TRUE
+  )
 
-  # Alternating row colors for better tracking across many columns
-  grey_row <- openxlsx::createStyle(fgFill = "#F2F2F2", halign = "center")
-  white_row <- openxlsx::createStyle(fgFill = "white", halign = "center")
-  year_col_style <- openxlsx::createStyle(textDecoration = "bold", border = "Right", halign = "center")
+  entry_style <- openxlsx::createStyle(
+    fgFill = "#FDE9D9",
+    halign = "center",
+    border = "TopBottomLeftRight"
+  )
 
-  for (i in seq_along(years)) {
-    this_row <- i + 1
-    this_style <- if (i %% 2 == 0) grey_row else white_row
+  style_obj <- list(
+    vert = header_style,
+    body = openxlsx::createStyle(halign = "center", border = NULL)
+  )
 
-    # Style data area
-    openxlsx::addStyle(wb, sheet_name, style = this_style,
-                       rows = this_row, cols = 2:(1 + length(ci_names)), gridExpand = TRUE)
+  # --- 2. Workbook Setup ---
+  wb <- openxlsx::createWorkbook()
 
-    # Style Year column
-    openxlsx::addStyle(wb, sheet_name, style = year_col_style, rows = this_row, cols = 1)
+  # --- 3. Sheet Generation ---
+
+  # Habitat Extent
+  write_extent_sheet(
+    wb,
+    "Habitat Extent",
+    habitats_label_tree,
+    year_list,
+    hab_palette,
+    habitat_extent
+  )
+
+  # ES Potential (Provision Per Unit)
+  esppu_data <- if (!is.null(esppu_scores)) {
+    esppu_scores
+  } else {
+    prepare_template_matrix(habitats_label_tree, es_label_tree)
   }
 
-  # 4. Dimensions & Freeze
-  openxlsx::setRowHeights(wb, sheet_name, rows = 1, heights = 180) # Space for rotated text
-  openxlsx::setColWidths(wb, sheet_name, cols = 1, width = 10)
-  openxlsx::setColWidths(wb, sheet_name, cols = 2:(1 + length(ci_names)), width = 6)
-  openxlsx::freezePane(wb, sheet_name, firstActiveRow = 2, firstActiveCol = 2)
+  write_input_matrix(
+    wb,
+    "Provision Per Unit",
+    esppu_data,
+    habitats_label_tree,
+    es_label_tree,
+    style_obj,
+    hab_palette,
+    thick_border_style,
+    instruction_style,
+    instruction = paste(
+      "Enter exemplary ecosystem service potential per",
+      "service-providing unit - score out of 5"
+    )
+  )
+
+  # Importance Weights
+  write_importance_sheet_with_data(
+    wb,
+    "Importance",
+    es_label_tree,
+    between_importance_scores,
+    within_importance_scores,
+    instruction_style,
+    entry_style
+  )
+
+  # Condition Scores
+  write_condition_scores_sheet(
+    wb,
+    "Condition Indicator Scores",
+    ci_names,
+    year_list,
+    ci_scores
+  )
+
+  # Indicator Salience (Directory)
+  write_indicator_directory(
+    wb,
+    "Indicator Directory",
+    ci_names,
+    names(es_label_tree),
+    indicator_directory
+  )
+
+  # Relevance Matrices Loop
+  for (i in seq_along(ci_names)) {
+    ci_name <- ci_names[i]
+
+    clean_name <- stringr::str_replace_all(ci_name, "[[:punct:]]", " ")
+    short_name <- trimws(substr(clean_name, 1, 31))
+
+    ci_data <- if (!is.null(ci_relevance_matrices)) {
+      ci_relevance_matrices[[i]]
+    } else {
+      prepare_template_matrix(habitats_label_tree, es_label_tree)
+    }
+
+    write_input_matrix(
+      wb,
+      short_name,
+      ci_data,
+      habitats_label_tree,
+      es_label_tree,
+      style_obj,
+      hab_palette,
+      thick_border_style,
+      instruction_style,
+      instruction = paste(
+        "Enter 1 or 0 in each cell of the matrix to denote whether this",
+        "condition indicator is relevant in gauging flow."
+      )
+    )
+  }
+
+  # --- 4. Save ---
+  openxlsx::saveWorkbook(wb, template_out, overwrite = TRUE)
+  message(paste("Workbook generated:", template_out))
 }
 
+####### EXECUTE ########
 
-# --- EXECUTION ---
-wb <- openxlsx::createWorkbook()
+create_ncai_template(template_out = "dev/NCAI_Data_Entry_Template.xlsx",
+                     habitats_label_tree = ns_dirty_habitats_label_tree,
+                     es_label_tree = ns_dirty_es_label_tree,
+                     ci_names = ns_dirty_ci_names,
+                     year_list = ns_year_list,
+                     habitat_extent = ns_habitat_extent,
+                     esppu_scores = ns_esppu_scores,
+                     between_importance_scores = ns_between_importance_scores,
+                     within_importance_scores = ns_within_importance_scores,
+                     ci_scores = ns_ci_scores,
+                     indicator_directory = ns_indicator_directory,
+                     ci_relevance_matrices = ns_ci_relevance_matrices)
 
-# 1. Habitat Extent input
-write_extent_sheet(wb, "Habitat Extent", ns_dirty_habitats_label_tree, ns_year_list)
 
-# 2. Weights - ES Potential per SPU input
-esppu_skeleton <- prepare_template_matrix(ns_dirty_habitats_label_tree, ns_dirty_es_label_tree)
-write_input_matrix(wb, "Provision Per Unit", esppu_skeleton,
-                   ns_dirty_habitats_label_tree, ns_dirty_es_label_tree, style_obj,
-                   instruction = "Enter exemplary ecosystem service potential per service-providing unit - score out of 5")
-
-# 3. Weights - Importance
-# Note: This uses the function we just designed for the vertical layout
-write_importance_sheet(wb, "Importance", ns_dirty_es_label_tree)
-
-# 4. Condition Indicator
-write_condition_scores_sheet(wb, "Condition Indicator Scores",
-                             ns_dirty_ci_names,
-                             ns_year_list)
-
-# 5. Condition Indicator directory
-write_indicator_directory(wb, "Condition Indicator Salience",
-                          ns_dirty_ci_names,
-                          names(ns_dirty_es_label_tree))
-
-# 6. Condition Indicator relevance matrices
-for(ci_name in ns_dirty_ci_names) {
-
-  # Clean the name for Excel sheet compatibility
-  clean_name <- stringr::str_replace_all(ci_name, "[[:punct:]]", " ")
-  short_name <- trimws(substr(clean_name, 1, 31))
-
-  # Build a 0-filled skeleton for this specific indicator
-  ci_skeleton <- prepare_template_matrix(ns_dirty_habitats_label_tree, ns_dirty_es_label_tree)
-
-  # Write the sheet using the matrix function
-  write_input_matrix(wb, short_name, ci_skeleton,
-                     ns_dirty_habitats_label_tree, ns_dirty_es_label_tree,
-                     style_obj,
-                     instruction = "Enter 1 or 0 in each cell of the matrix to denote whether this condition indicator is relevant in gauging flow of each ecosystem service from each habitat")
-}
-
-# 4. Save final workbook
-openxlsx::saveWorkbook(wb, template_out, overwrite = TRUE)
+create_ncai_template(template_out = "dev/test_clean.xlsx",
+                     habitats_label_tree = ns_habitats_label_tree,
+                     es_label_tree = ns_es_label_tree,
+                     ci_names = names(ns_ci_relevance_matrices),
+                     year_list = ns_year_list)

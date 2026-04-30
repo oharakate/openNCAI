@@ -11,86 +11,155 @@
 #' @param tir_constant A numeric constant added to the Total Indicator Relevances
 #'   to avoid zero divisions. Default is 2.
 #'
-#' @return A named list containing 11 components:
+#' @return A named list containing 14 components:
 #' \itemize{
-#'   \item \code{ns_year_list}: Character vector of years.
-#'   \item \code{ns_habitats_label_tree}: Nested list of broad and detailed habitat labels.
-#'   \item \code{ns_es_label_tree}: Nested list of ecosystem service types and specific labels.
+#'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
+#'   \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
+#'   \item \code{ns_habitats_label_tree}: Nested list of cleaned broad and detailed habitat labels.
+#'   \item \code{ns_es_label_tree}: Nested list of cleaned ecosystem service types and specific labels.
+#'   \item \code{ns_year_list}: Character vector of years included in the account.
 #'   \item \code{ns_esppu_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
 #'   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
 #'   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
 #'   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
-#'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
 #'   \item \code{ns_ci_relevance_matrices}: List of binary Condition Indicator Relevance Matrices.
-#'   \item \code{ns_habitat_extent}: Data frame of habitat area per year.
-#'   \item \code{ns_ci_scores}: Data frame of yearly scores for each condition indicator.
+#'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
+#'   \item \code{ns_dirty_habitats_label_tree}: Nested list of original habitat names for display.
+#'   \item \code{ns_dirty_es_label_tree}: Nested list of original ecosystem service names for display.
+#'   \item \code{ns_dirty_ci_names}: Character vector of condition indicator names in "Number Name" format.
 #' }
 #'
 #' @importFrom janitor make_clean_names
+#' @importFrom readxl read_xlsx read_excel
+#' @importFrom dplyr mutate select filter across all_of arrange pull
+#' @importFrom tidyr fill
+#' @importFrom stringr str_squish str_starts
+#' @importFrom stats setNames
+#' @keywords internal
+#' Import and Process Natural Capital Account Data
+#'
+#' @param path A string representing the file path to the .xlsx data source.
+#' @param year_list A vector of years to include in the account (e.g., 2000:2022).
+#' @param tir_constant A numeric constant added to the Total Indicator Relevances.
+#'
+#' @return A named list containing structured NCAI data objects.
+#' @importFrom janitor make_clean_names
+#' @importFrom readxl read_xlsx read_excel
+#' @importFrom dplyr mutate select filter across all_of arrange pull
+#' @importFrom tidyr fill
+#' @importFrom stringr str_squish str_starts
+#' @importFrom stats setNames
 #' @keywords internal
 import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   year_list <- as.character(year_list)
 
-  # 1. HABITAT AND ECOSYSTEM SERVICE LABEL TREES
-  habitat_tree <- get_ns_habitat_tree(
-    path = path,
-    sheet = 3,
-    bh_range = "C4:C34",
-    dh_ranges = c("E4:E6", "E7", "E8:E11", "E12:E16", "E17:E20",
-                  "E21:E25", "E26:E27", "E28:E29", "E30:E33", "E34")
-  )
-  broad_habitats <- names(habitat_tree)
-  all_habitat_labels <- unlist(habitat_tree, use.names = FALSE)
-
-  es_tree <- get_ns_es_tree(
-    path = path,
-    sheet = 3,
-    est_range = "F1:AC1",
-    es_code_ranges = c("F2:Q2", "R2:AB2", "AC2:AG2"),
-    es_name_ranges = c("F3:Q3", "R3:AB3", "AC3:AG3")
-  )
-  service_types <- names(es_tree)
-  all_service_labels <- unlist(es_tree, use.names = FALSE)
-
-  # 2. ECOSYSTEM SERVICE POTENTIAL WEIGHTING (esppu)
-  esppu <- readxl::read_xlsx(
-    path = path,
-    sheet = 3,
-    range = "F4:AG34",
-    col_names = FALSE,
-    col_types = "numeric",
-    trim_ws = TRUE,
-    .name_repair = "minimal",
-    progress = FALSE
+  # 1. HABITAT LABELS & TREE
+  raw_habs_df <- readxl::read_excel(
+    path, sheet = "ES Potential per SPU", range = "C4:E34",
+    col_names = c("broad_cat", "code", "name"), col_types = "text"
   ) %>%
-    as.data.frame() # Convert to data frame to allow row naming
+    tidyr::fill("broad_cat", .direction = "down") %>%
+    dplyr::filter(!is.na(.data$name)) %>%
+    dplyr::mutate(print_name = stringr::str_squish(.data$name))
 
-  # Check/throw error if some mismatch
-  if (nrow(esppu) != length(unlist(habitat_tree))) {
-    stop("Excel range height does not match habitat tree length!")
-  }
+  # Manual fix for broad categories
+  raw_habs_df$broad_cat[stringr::str_starts(raw_habs_df$print_name, "C ")] <- "C. INLAND SURFACE WATERS"
+  raw_habs_df$broad_cat[stringr::str_starts(raw_habs_df$print_name, "K ")] <- "K. MONTANE"
 
-  # Explicitly set names to suit label_ncai_matrix
-  rownames(esppu) <- unlist(habitat_tree, use.names = FALSE)
-  colnames(esppu) <- unlist(es_tree, use.names = FALSE)
+  # FLAT LABELS: Use these for matrix dimensions (Length: 31)
+  all_habitat_labels <- janitor::make_clean_names(raw_habs_df$print_name)
+  # print(length(all_habitat_labels))
 
-  esppu <- esppu %>%
-    label_ncai_matrix(habitats_label_tree = habitat_tree,
-                      es_label_tree = es_tree)
+  # TREE STRUCTURE: Build the list manually to ensure character vectors
+  hab_order <- c("B. COASTAL HABITATS", "C. INLAND SURFACE WATERS", "D. MIRES, BOGS AND FENS",
+                 "E. GRASSLANDS AND LANDS DOMINATED BY FORBS, MOSSES OR LICHENS",
+                 "F. HEATHLAND, SCRUB AND TUNDRA", "G. WOODLAND, FOREST AND OTHER WOODED LAND",
+                 "H. INLAND UNVEGETATED OR SPARSELY VEGETATED HABITATS",
+                 "I. CULTIVATED AGRICULTURAL, HORTICULTURAL AND DOMESTIC HABITATS",
+                 "J. CONSTRUCTED, INDUSTRIAL AND OTHER ARTIFICIAL HABITATS", "K. MONTANE")
 
-  # 2b. Custom divisor matrix
-  habitats_to_adjust = c(rep("b1",7), rep("b2",5), rep("b3",5), "d1",
-                         rep("i2",6), rep("j1",5), rep("j2",5))
-  # Note that just the start of the name is enough here.
-  services_to_adjust = unlist(c("mediation_of_mass_flows", "soil_formation_and_composition",
-                                es_tree[["cultural"]],
-                                es_tree[["cultural"]],
-                                es_tree[["cultural"]],
-                                "global_regional",
-                                "global_regional",
-                                es_tree[["cultural"]],
-                                es_tree[["cultural"]],
-                                es_tree[["cultural"]]))
+  habitat_tree <- lapply(hab_order, function(b) {
+    janitor::make_clean_names(raw_habs_df$print_name[raw_habs_df$broad_cat == b])
+  }) %>% stats::setNames(janitor::make_clean_names(hab_order))
+
+  dirty_habitats_label_tree <- lapply(hab_order, function(b) {
+    raw_habs_df$print_name[raw_habs_df$broad_cat == b]
+  }) %>% stats::setNames(hab_order)
+
+
+  # 2. ES LABELS & TREE
+  raw_es_header <- readxl::read_excel(
+    path, sheet = "ES Potential per SPU", range = "F1:AG3",
+    col_names = FALSE, col_types = "text"
+  )
+
+  raw_es_df <- as.data.frame(t(raw_es_header)) %>%
+    dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) %>%
+    tidyr::fill("es_type", .direction = "down") %>%
+    dplyr::mutate(
+      es_type = stringr::str_squish(.data$es_type),
+      print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name))
+    )
+
+  # FLAT LABELS: Create clean names and strip the leading 'x'
+  all_service_labels <- raw_es_df %>%
+    dplyr::mutate(
+      # Create the concatenated string: "1.1.1 Cultivated crops"
+      full_str = paste(.data$code, .data$name),
+      # Clean it: results in "x1_1_1_cultivated_crops"
+      clean = janitor::make_clean_names(.data$full_str),
+      # Strip the leading 'x' using regex
+      clean = gsub("^x", "", .data$clean),
+      # Apply your specific Crops fix
+      clean = ifelse(.data$clean == "1_1_1_cultivated_crops", "1_1_cultivated_crops", .data$clean)
+    ) %>%
+    dplyr::pull(.data$clean)
+
+  # TREE STRUCTURE: Build using the updated flat labels
+  es_order <- c("PROVISIONING", "REGULATION AND MAINTENANCE", "CULTURAL")
+
+  # Attach the corrected labels back to the dataframe for tree building
+  raw_es_df$clean_name <- all_service_labels
+
+  es_tree <- lapply(es_order, function(e) {
+    raw_es_df$clean_name[raw_es_df$es_type == e]
+  }) %>% stats::setNames(janitor::make_clean_names(es_order))
+
+  dirty_es_label_tree <- lapply(es_order, function(e) {
+    raw_es_df$print_name[raw_es_df$es_type == e]
+  }) %>% stats::setNames(es_order)
+
+  service_types <- names(es_tree)
+
+  # 3. ECOSYSTEM SERVICE POTENTIAL (esppu)
+  esppu <- readxl::read_xlsx(
+    path = path, sheet = 3, range = "F4:AG34",
+    col_names = FALSE, col_types = "numeric", trim_ws = TRUE, .name_repair = "minimal"
+  ) %>% as.data.frame()
+
+  rownames(esppu) <- all_habitat_labels
+  colnames(esppu) <- all_service_labels
+
+  # 4. CUSTOM DIVISOR MATRIX
+  habitats_to_adjust <- c(
+    rep("b1", 7), rep("b2", 5), rep("b3", 5), # Coastal adjustments
+    "d1",                                     # Peatland adjustment
+    rep("i2", 6),                             # Urban/Garden adjustments
+    rep("j1", 5), rep("j2", 5)                # Constructed land adjustments
+  )
+
+  services_to_adjust <- unlist(c(
+    "mediation_of_mass_flows",
+    "soil_formation_and_composition",
+    ns_es_label_tree[["cultural"]], # Automatically expands to all 5 cultural IDs
+    ns_es_label_tree[["cultural"]],
+    ns_es_label_tree[["cultural"]],
+    "global_regional",              # Matches "2_11_global_regional_..."
+    "global_regional",
+    ns_es_label_tree[["cultural"]],
+    ns_es_label_tree[["cultural"]],
+    ns_es_label_tree[["cultural"]]
+  ))
 
   custom_divisor_matrix <- make_custom_divisor_matrix(
     all_habitat_labels = all_habitat_labels,
@@ -101,173 +170,57 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     custom_divisor = 1
   )
 
-  # 3. IMPORTANCE WEIGHTING
+  # 5. IMPORTANCE WEIGHTS
   between_importance_scores <- readxl::read_xlsx(
-    path = path,
-    sheet = 4,
-    range = "D6:D8",
-    col_names = "score",
-    col_types = "numeric",
-    trim_ws = TRUE,
-    .name_repair = "minimal",
-    progress = FALSE
-  ) %>%
-    dplyr::pull(.data$score) %>%
-    as.list() %>%
-    stats::setNames(service_types)
+    path = path, sheet = 4, range = "D6:D8", col_names = "score", col_types = "numeric"
+  ) %>% dplyr::pull(.data$score) %>% as.list() %>% stats::setNames(service_types)
 
   within_importance_scores <- get_ns_importance_scores(
-    path = path,
-    sheet = 4,
-    importance_ranges = list(
-      provisioning = "D13:D24",
-      regulation_and_maintenance = "D29:D39",
-      cultural = "D44:D48"
-    ),
+    path = path, sheet = 4,
+    importance_ranges = list(provisioning = "D13:D24", regulation_and_maintenance = "D29:D39", cultural = "D44:D48"),
     es_tree = es_tree
   )
 
-  # 4. CONDITION INDICATORS
-  indicator_directory <- suppressMessages(
-    readxl::read_xlsx(
-      path = path,
-      sheet = 8,
-      range = "A3:R106",
-      col_names = FALSE,
-      col_types = NULL,
-      trim_ws = TRUE,
-      .name_repair = "unique",
-      progress = FALSE
-      )
-    ) %>%
-    as.data.frame() %>%
+  # 6. CONDITION INDICATORS (Unified Logic)
+  raw_ind_data <- readxl::read_excel(
+    path = path, sheet = "Indicator Directory", range = "A3:R106",
+    col_names = FALSE, col_types = "text"
+  ) %>% as.data.frame() %>%
     dplyr::select(1, 4, 14, 15, 16, 18) %>%
-    stats::setNames(c("raw_code", "raw_name", service_types, "used")) %>%
+    stats::setNames(c("num", "name", service_types, "used")) %>%
     dplyr::filter(.data$used == "Yes") %>%
     dplyr::mutate(
-      ci_id = janitor::make_clean_names(paste(.data$raw_name, .data$raw_code,  sep = "_"), case = "snake"),
+      num = stringr::str_squish(.data$num),
+      name = stringr::str_squish(.data$name),
+      dirty_name = paste(.data$num, .data$name),
+      # Create the clean ID
+      ci_id = janitor::make_clean_names(.data$dirty_name, case = "snake"),
+      # STRIP THE LEADING 'x'
+      ci_id = gsub("^x", "", .data$ci_id),
       dplyr::across(dplyr::all_of(service_types), as.numeric)
-    ) %>%
-    dplyr::select("ci_id", dplyr::all_of(service_types))
+    )
 
-  ci_ids <- as.character(indicator_directory$ci_id)
+  dirty_ci_names <- raw_ind_data$dirty_name
+  ci_ids         <- raw_ind_data$ci_id # Now contains clean IDs without 'x'
+  indicator_directory <- raw_ind_data %>% dplyr::select("ci_id", dplyr::all_of(service_types))
 
+
+  # 7. MATRICES AND MEASUREMENTS
   ci_relevance_matrices <- get_ns_cirm_list(
-    path = path,
-    sheet_list = 9:46,
-    matrix_range = "F4:AG34",
-    ci_ids = ci_ids,
-    all_service_labels = all_service_labels,
-    all_habitat_labels = all_habitat_labels
+    path = path, sheet_list = 9:46, matrix_range = "F4:AG34",
+    ci_ids = ci_ids, all_service_labels = all_service_labels, all_habitat_labels = all_habitat_labels
   )
 
-  # Check that there is a sheet for each condition indicator marked
-  # yes in the directory:
-  if (length(ci_ids) != length(9:46)) {
-    stop("Number of 'Yes' indicators in directory does not match sheet range 9:46.")
-  }
-
-  # 5. ENVIRONMENTAL MEASUREMENTS
   habitat_extent <- readxl::read_xlsx(
-    path = path,
-    sheet = 5,
-    range = "E4:AA34",
-    col_names = FALSE,
-    col_types = "numeric",
-    trim_ws = TRUE,
-    .name_repair = "minimal",
-    progress = FALSE
-  ) %>%
-    as.data.frame()
+    path = path, sheet = 5, range = "E4:AA34", col_names = FALSE, col_types = "numeric"
+  ) %>% as.data.frame()
   names(habitat_extent) <- year_list
   rownames(habitat_extent) <- all_habitat_labels
 
-  ci_scores <- read_the_ci_scores(path = path,
-                                        sheet_list = 9:46,
-                                        vector_range = "I36:I58",
-                                        ci_ids = ci_ids)
-  rownames(ci_scores) <- year_list
-
-  # 6. 'DIRTY' LABELS FOR PRINT, TEMPLATE, ETC.
-  # Get and correct the habitat labels:
-  raw_habs <- readxl::read_excel(
-    path,
-    sheet = "ES Potential per SPU",
-    range = "C4:E34",
-    col_names = c("broad_cat", "code", "name"),
-    col_types = "text"
-  ) %>%
-    # Use quotes for select and fill
-    dplyr::select(-"code") %>%
-    tidyr::fill("broad_cat", .direction = "down") %>%
-    # Use .data pronoun for filter and mutate
-    dplyr::filter(!is.na(.data$name)) %>%
-    dplyr::mutate(
-      print_name = stringr::str_squish(.data$name)
-    ) %>%
-    dplyr::select("broad_cat", "print_name")
-
-  # Manual fix for the missing broad cats for coastal and montane
-  # Base R $ indexing is already R CMD check safe
-  raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "C ")] <- "C. INLAND SURFACE WATERS"
-  raw_habs$broad_cat[stringr::str_starts(raw_habs$print_name, "K ")] <- "K. MONTANE"
-
-#   Manually ensure order
-  hab_order <- c("B. COASTAL HABITATS",
-                 "C. INLAND SURFACE WATERS", "D. MIRES, BOGS AND FENS",
-                 "E. GRASSLANDS AND LANDS DOMINATED BY FORBS, MOSSES OR LICHENS",
-                 "F. HEATHLAND, SCRUB AND TUNDRA", "G. WOODLAND, FOREST AND OTHER WOODED LAND",
-                 "H. INLAND UNVEGETATED OR SPARSELY VEGETATED HABITATS",
-                 "I. CULTIVATED AGRICULTURAL, HORTICULTURAL AND DOMESTIC HABITATS",
-                 "J. CONSTRUCTED, INDUSTRIAL AND OTHER ARTIFICIAL HABITATS", "K. MONTANE")
-
-  # Create label tree:
-  dirty_habitats_label_tree <- raw_habs %>%
-    dplyr::mutate(broad_cat = factor(.data$broad_cat, levels = hab_order)) %>%
-    dplyr::arrange(.data$broad_cat) %>% # CRITICAL: Sort the DF by the factor
-    { split(.$print_name, .$broad_cat) }
-
-  # Get the ecosystem service labels:
-  raw_es_header <- readxl::read_excel(
-    path,
-    sheet = "ES Potential per SPU",
-    range = "F1:AG3",
-    col_names = FALSE,
-    col_types = "text"
+  ci_scores <- read_the_ci_scores(
+    path = path, sheet_list = 9:46, vector_range = "I36:I58", ci_ids = ci_ids
   )
-
-  # Standard order for CICES categories
-  es_order <- c("PROVISIONING", "REGULATION AND MAINTENANCE", "CULTURAL")
-
-  # Transpose and clean them:
-  raw_es <- as.data.frame(t(raw_es_header)) %>%
-    dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) %>%
-    tidyr::fill("es_type", .direction = "down") %>%
-    dplyr::mutate(
-      # Force es_type to be a factor with standard levels for sorting
-      es_type = factor(stringr::str_squish(.data$es_type), levels = es_order),
-      print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name))
-    ) %>%
-    dplyr::select("es_type", "print_name")
-
-  # Create label tree:
-  dirty_es_label_tree <- split(raw_es$print_name, raw_es$es_type)
-
-  # Get Condition Indicator names:
-  raw_ind_names <- readxl::read_excel(
-    path,
-    sheet = "Indicator Directory",
-    range = "A3:R106",
-    col_names = FALSE,
-    col_types = "text"
-  ) %>%
-    dplyr::select(c(1,4, 18)) %>%
-    setNames(c("num", "name", "used")) %>%
-    filter(used=="Yes") %>%
-    mutate(dirty_name = paste(num, name))
-  dirty_ci_names <- raw_ind_names$dirty_name
-
-#   RETURN
+  rownames(ci_scores) <- year_list
 
   return(list(
     ns_habitat_extent = habitat_extent,
@@ -287,99 +240,6 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
   ))
 }
 
-#' Extract and Clean Habitat Classification Tree
-#'
-#' @param path Path to Excel source.
-#' @param sheet Sheet index.
-#' @param bh_range Range for broad habitats.
-#' @param dh_ranges Vector of ranges for detailed habitats.
-#' @keywords internal
-get_ns_habitat_tree <- function(path, sheet, bh_range, dh_ranges) {
-  # 1. Process Broad Habitats
-  # Using col_names = FALSE ensures we don't lose the first row of the range
-  broad_habitats <- readxl::read_xlsx(
-    path = path,
-    sheet = sheet,
-    range = bh_range,
-    col_names = FALSE,
-    col_types = "text",
-    trim_ws = TRUE,
-    .name_repair = "minimal",
-    progress = FALSE
-  ) %>%
-    # Manually name the column to avoid the header-guessing bug
-    stats::setNames("category") %>%
-    dplyr::filter(!is.na(.data$category)) %>%
-    dplyr::mutate(category = janitor::make_clean_names(.data$category, case = "snake")) %>%
-    dplyr::pull(.data$category)
-
-  # Add missing categories specific to the NatureScot structure
-  full_category_names <- c(
-    broad_habitats[1],
-    "c_inland_surface_waters",
-    broad_habitats[2:length(broad_habitats)],
-    "k_montane"
-  )
-
-  # 2. Process Detailed Habitats
-  habitat_tree <- lapply(dh_ranges, function(rng) {
-    readxl::read_xlsx(
-      path = path,
-      sheet = sheet,
-      range = rng,
-      col_names = FALSE, # FIX: Capture every row including the first one
-      col_types = "text",
-      trim_ws = TRUE,
-      .name_repair = "minimal",
-      progress = FALSE
-    ) %>%
-      # Manually name the column 'label'
-      stats::setNames("label") %>%
-      dplyr::filter(!is.na(.data$label)) %>%
-      dplyr::mutate(label = janitor::make_clean_names(.data$label, case = "snake")) %>%
-      dplyr::pull(.data$label)
-  })
-
-  names(habitat_tree) <- full_category_names
-  return(habitat_tree)
-}
-#' Extract and Clean Ecosystem Service Tree
-#'
-#' @param path Path to Excel source.
-#' @param sheet Sheet index.
-#' @param est_range Range for ES categories.
-#' @param es_code_ranges Vector of ranges for ES codes.
-#' @param es_name_ranges Vector of ranges for ES names.
-#' @keywords internal
-get_ns_es_tree <- function(path, sheet, est_range, es_code_ranges, es_name_ranges) {
-  es_categories <- suppressMessages(
-    readxl::read_xlsx(path = path, sheet = sheet, range = est_range,
-                      col_names = FALSE, col_types = "text", trim_ws = TRUE,
-                      .name_repair = "unique", progress = FALSE)
-  ) %>%
-    unlist(use.names = FALSE) %>%
-    stats::na.omit() %>%
-    janitor::make_clean_names(case = "snake")
-
-  es_tree <- lapply(seq_along(es_code_ranges), function(i) {
-    codes <- readxl::read_xlsx(path = path, sheet = sheet, range = es_code_ranges[i],
-                               col_names = FALSE, col_types = "text", trim_ws = TRUE,
-                               .name_repair = "minimal",
-                               progress = FALSE) %>%
-      unlist(use.names = FALSE) %>% as.character()
-
-    names_full <- readxl::read_xlsx(path = path, sheet = sheet, range = es_name_ranges[i],
-                                    col_names = FALSE, col_types = "text", trim_ws = TRUE) %>%
-      unlist(use.names = FALSE)
-
-    combined_labels <- janitor::make_clean_names(paste(names_full, codes, sep = "_"), case = "snake")
-    if (i == 1) combined_labels[1] <- "cultivated_crops_1_1"
-    return(combined_labels)
-  })
-
-  names(es_tree) <- es_categories
-  return(es_tree)
-}
 
 #' Extract Ecosystem Service Importance Scores
 #'
@@ -402,7 +262,6 @@ get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
   names(importance_scores_list) <- names(importance_ranges)
   return(importance_scores_list)
 }
-
 #' Extract List of Condition Indicator Relevance Matrices (CIRMs)
 #'
 #' @param path Path to Excel source.
@@ -440,43 +299,66 @@ get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids,
   names(list_of_dfs) <- ci_ids
   return(list_of_dfs)
 }
-
 #' Generate Custom Divisor Matrix
 #'
-#' @param all_habitat_labels Vector of habitat labels.
-#' @param all_es_labels Vector of service labels.
-#' @param habitats_to_adjust Vector of habitat shorthands (e.g., "b1").
-#' @param services_to_adjust Vector of service keywords for partial matching.
-#' @param usual_divisor Numeric default divisor (e.g., 5).
-#' @param custom_divisor Numeric adjustment divisor (e.g., 1).
+#' Creates a matrix of normalization divisors (e.g., scoring scales) for every
+#' habitat-service combination. It allows for specific adjustments where certain
+#' services or habitats use a different scale (e.g., a 1-point scale instead
+#' of a 5-point scale).
+#'
+#' @param all_habitat_labels A character vector of all cleaned habitat names.
+#' @param all_es_labels A character vector of all cleaned ecosystem service names.
+#' @param habitats_to_adjust A character vector of habitat shorthands or patterns
+#'   (e.g., "b1") to be matched for custom divisors.
+#' @param services_to_adjust A character vector of service shorthands or patterns
+#'   to be matched for custom divisors.
+#' @param usual_divisor Numeric. The default divisor applied to most combinations (e.g., 5).
+#' @param custom_divisor Numeric. The adjustment divisor for specified matches (e.g., 1).
+#'
+#' @return A data frame where rows represent habitats and columns represent
+#'   ecosystem services, containing the divisor values for each intersection.
+#'
+#' @importFrom dplyr mutate
+#' @importFrom tidyr pivot_wider
 #' @keywords internal
 make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
                                        habitats_to_adjust, services_to_adjust,
                                        usual_divisor, custom_divisor) {
+
+  # Safety check for documentation/reproducibility
+  if (length(habitats_to_adjust) != length(services_to_adjust)) {
+    stop("habitats_to_adjust and services_to_adjust must be the same length.")
+  }
+
   htst <- expand.grid(habitat = all_habitat_labels, service_type = all_es_labels,
                       stringsAsFactors = FALSE) %>%
     dplyr::mutate(divisor = usual_divisor)
 
   for (i in seq_along(habitats_to_adjust)) {
+    # We keep ^ for habitats (e.g., ^b1) because they start with the code.
     h_pattern <- paste0("^", habitats_to_adjust[i])
-    s_pattern <- paste0("^", services_to_adjust[i])
+
+    # We REMOVE ^ for services because the name now follows a numeric prefix.
+    # This allows "mediation_of_mass_flows" to match "2_3_mediation_of_mass_flows".
+    s_pattern <- services_to_adjust[i]
+
     matches <- grepl(h_pattern, htst$habitat) & grepl(s_pattern, htst$service_type)
     htst$divisor[matches] <- custom_divisor
   }
 
   htst_wide <- htst %>%
     tidyr::pivot_wider(
-      names_from = "service_type", # Use strings here
-      values_from = "divisor"      # Use strings here
+      names_from = "service_type",
+      values_from = "divisor"
     ) %>%
     as.data.frame()
 
-  htst_wide <- htst_wide[, !names(htst_wide) %in% "habitat"]
-  rownames(htst_wide) <- all_habitat_labels
+  # Clean up and restore row order based on original habitat list
+  rownames(htst_wide) <- htst_wide$habitat
+  htst_wide <- htst_wide[all_habitat_labels, all_es_labels]
 
-  return(as.data.frame(htst_wide))
+  return(htst_wide)
 }
-
 #' Read Yearly Condition Indicator Scores
 #'
 #' @param path Path to Excel source.

@@ -36,6 +36,7 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
                          indicator_directory = ns_indicator_directory,
                          return = "everything")
 
+
 # Get without custom esppu division for checking something
 # ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
 #                          ci_scores = ns_ci_scores,

@@ -5,9 +5,10 @@
 \alias{ns_within_importance_scores}
 \title{Ecosystem Service Importance Scores (within-service-type)}
 \format{
-A named list of numeric vectors:
+A named list of named lists of scores:
 \itemize{
   \item Names represent ecosystem service types.
+  \item Names of scores represent individual ecosystem services
   \item Values are numeric scores (0-20) for specific services within that group.
 }
 }

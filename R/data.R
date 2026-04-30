@@ -85,8 +85,9 @@
 #' A set of scores denoting the importance of each type
 #' group of ecosystem services to Scotland.
 #'
-#' @format A named numeric vector where values range from 0 to 20,
-#' representing the relative importance of each ecosystem service type.
+#' @format A named list of scores where values range from 0 to 20,
+#' representing the relative importance of each ecosystem service type. Item
+#' names are ecosystem service types.
 "ns_between_importance_scores"
 
 #' Ecosystem Service Importance Scores (within-service-type)
@@ -94,9 +95,10 @@
 #' Sets of scores denoting the importance of each ecosystem service
 #' to Scotland, within its type group.
 #'
-#' @format A named list of numeric vectors:
+#' @format A named list of named lists of scores:
 #' \itemize{
 #'   \item Names represent ecosystem service types.
+#'   \item Names of scores represent individual ecosystem services
 #'   \item Values are numeric scores (0-20) for specific services within that group.
 #' }
 "ns_within_importance_scores"
