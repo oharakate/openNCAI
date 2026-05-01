@@ -15,9 +15,10 @@
 #' Syntactical names only (no spaces or special characters).
 #'
 #' @return A labelled data frame.
-#' @export
+#' @keywords internal
 #'
 #' @examples
+#' \dontrun{
 #' # 1. Define the habitat tree (Total of 3 sub-habitats)
 #' h_tree <- list(
 #'    coastal = c("b1", "b2"),
@@ -49,7 +50,7 @@
 #' print(labeled_df)
 #' # Row names will be: "b1", "b2", "g1"
 #' # Column names will be: "crops", "timber"
-#'
+#' }
 label_ncai_matrix <- function(matrix, habitats_label_tree, es_label_tree) {
   # check.names = FALSE prevents R from prepending 'X' to numeric IDs
   out <- as.data.frame(matrix, check.names = FALSE)

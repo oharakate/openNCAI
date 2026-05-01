@@ -53,6 +53,7 @@ use_package("tidyr")
 use_package("slider")
 use_package("magrittr")
 use_package("stringr")
+use_package("openxlsx")
 
 # Use Git
 # usethis::use_git_config(
@@ -389,7 +390,23 @@ check()
 # Commit and push here.
 
 
+#### make_and_read_data_template() ####
+use_r("make_and_read_data_template")
+# Remember to put in the roxygen skeleton
+load_all()
+document()
+?create_ncai_template
+?read_ncai_template
 
+# Tests
+use_test("make_and_read_template")
+load_all()
+test_file("tests/testthat/test-make_and_read_template.R")
+document()
+
+load_all()
+check()
+# Commit and push here.
 
 
 #### template() ####

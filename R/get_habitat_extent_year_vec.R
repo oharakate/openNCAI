@@ -16,7 +16,7 @@
 #' The function performs the calculation: \cr
 #' \eqn{(Target Extent / Baseline Extent) * 100}
 #'
-#' @export
+#' @keywords internal
 get_habitat_extent_year_vec <- function(target_year, year_one, habitat_extent) {
 
   # Convert to characters for safe indexing

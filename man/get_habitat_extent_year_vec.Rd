@@ -27,3 +27,4 @@ and a baseline year, then calculates a percentage-based index.
 The function performs the calculation: \cr
 \eqn{(Target Extent / Baseline Extent) * 100}
 }
+\keyword{internal}

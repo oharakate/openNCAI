@@ -33,6 +33,7 @@ openNCAI and returns it as a data frame with the habitat and ecosystem
 service labels applied.
 }
 \examples{
+\dontrun{
 # 1. Define the habitat tree (Total of 3 sub-habitats)
 h_tree <- list(
    coastal = c("b1", "b2"),
@@ -64,5 +65,6 @@ labeled_df <- label_ncai_matrix(matrix = raw_values,
 print(labeled_df)
 # Row names will be: "b1", "b2", "g1"
 # Column names will be: "crops", "timber"
-
 }
+}
+\keyword{internal}
