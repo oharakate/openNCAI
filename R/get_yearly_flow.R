@@ -17,33 +17,7 @@
 #' @return A named list of Total Yearly Flow (TYF) matrices, one for each year
 #'   in \code{year_list}.
 #'
-#' @examples
-#' # 1. Load the bundled NatureScot example data
-#' data("ns_ci_relevance_matrices", package = "openNCAI")
-#' data("ns_indicator_directory", package = "openNCAI")
-#' data("ns_es_label_tree", package = "openNCAI")
-#' data("ns_habitats_label_tree", package = "openNCAI")
-#' data("ns_ci_scores", package = "openNCAI")
-#' data("ns_year_list", package = "openNCAI")
-#'
-#' # 2. Generate Total Yearly Flow (TYF) matrices
-#' # This orchestrates the full transformation from raw scores to normalized flow.
-#' flow_of_services_ts <- get_yearly_flow(
-#'   cirm_list = ns_ci_relevance_matrices,
-#'   indicator_directory = ns_indicator_directory,
-#'   es_label_tree = ns_es_label_tree,
-#'   habitats_label_tree = ns_habitats_label_tree,
-#'   ci_scores = ns_ci_scores,
-#'   year_list = ns_year_list,
-#'   tir_constant = 2
-#' )
-#'
-#' # 3. Inspect the results
-#' # Access the flow matrix for a specific year (e.g., the first year in the series)
-#' first_year <- ns_year_list[1]
-#' print(flow_of_services_ts[[first_year]][1:5, 1:5])
-#'
-#' @export
+#' @keywords internal
 get_yearly_flow <- function(cirm_list,
                            indicator_directory,
                            es_label_tree,

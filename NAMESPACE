@@ -2,7 +2,6 @@
 
 export(create_ncai_template)
 export(get_ncai)
-export(get_yearly_flow)
 export(read_ncai_template)
 importFrom(dplyr,across)
 importFrom(dplyr,all_of)

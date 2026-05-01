@@ -429,13 +429,13 @@ check()
 # Run all examples
 devtools::run_examples()
 
-# End things
-# We can install the package with
-install()
-
-library(openNCAI)
-# And then get rid to continue developing with
-remove.packages("openNCAI")
+# # End things
+# # We can install the package with
+# install()
+#
+# library(openNCAI)
+# # And then get rid to continue developing with
+# remove.packages("openNCAI")
 
 
 
