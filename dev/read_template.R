@@ -179,7 +179,46 @@ new_by_ecosystem_service_type <- new_ncai_objects$by_ecosystem_service_type
 new_by_broad_habitat <- new_ncai_objects$by_broad_habitat
 
 
+# Test the small fake set:
+# These were already assigned:
+# new_hab_tree <- list(
+#   'B. Coastal Habitats' = c(
+#     "Coastal vegetated shingle",
+#     "Coastal dunes and sandy shores"
+#   ),
+#   'E. Grasslands' = c(
+#     "Dry Grasslands",
+#     "Mesic Grasslands"
+#   )
+# )
+#
+# new_es_tree <- list(
+#   'PROVISIONING' = c(
+#     "1.1 Cultivated Crops",
+#     "1.2 Reared Animals And Their Outputs"
+#   ),
+#   'CULTURAL' = c(
+#     "3.5. Existence & bequest"
+#   )
+# )
+#
+# new_dirty_ci_names <- c("National Water Quality Index", "AgriSCOR")
 
 
-
-
+smalltest_things <- read_ncai_template("dev/test_small_complete_data.xlsx",
+                                        new_hab_tree,
+                                        new_es_tree,
+                                        new_dirty_ci_names)
+# Check:
+names(smalltest_things)
+smalltest_things$clean_es_label_tree
+smalltest_things$clean_habitats_label_tree
+smalltest_things$year_list
+smalltest_things$between_importance
+smalltest_things$within_importance
+View(smalltest_things$indicator_directory)
+View(smalltest_things$habitat_extent)
+View(smalltest_things$ci_scores)
+View(smalltest_things$esppu_scores)
+View(smalltest_things$ci_relevance_matrices[[1]])
+View(smalltest_things$ci_relevance_matrices[[2]])
