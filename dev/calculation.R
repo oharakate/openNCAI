@@ -198,8 +198,8 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 # # habitat/service combination and weighted by their relevance in
 # # the different ecosystem service type groups.
 #
-# # We use the function calc_flow_rate().
-# made_tyfs_list <- calc_flow_rate(
+# # We use the function get_yearly_flow().
+# made_tyfs_list <- get_yearly_flow(
 #   cirm_list = ns_ci_relevance_matrices,
 #   indicator_directory = ns_indicator_directory,
 #   es_label_tree = ns_es_label_tree,
@@ -613,3 +613,4 @@ ggplot(plot_df_fuller, aes(x = year)) +
     y = "Raw Index (2000 = 100)",
     color = "Index Type"
   )
+#

@@ -34,3 +34,4 @@ Depending on the value of \code{as_matrices}:
 Calculates the potential provision time series by multiplying indexed
 habitat extent by the Ecosystem Service Potential Base (ESPB).
 }
+\keyword{internal}

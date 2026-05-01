@@ -31,15 +31,29 @@
 #'   smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.
 #' @param return Character. Specifies the object to return. Options include:
 #' \itemize{
-#'   \item \code{"overall"}: The standard overall NCAI data frame (default).
+#'   \item \code{"overall_index"}: The standard overall NCAI data frame (default).
 #'   \item \code{"by_ecosystem_service_type"}: NCAI broken down by Ecosystem Service Type.
 #'   \item \code{"by_broad_habitat"}: NCAI broken down by Broad Habitat.
-#'   \item \code{"yearly_asset_matrices"}: A list of matrices containing asset
-#'     values for every year.
-#'   \item \code{"espb"}: The Ecosystem Service Potential Base matrix.
-#'   \item \code{"wellbeing_base"}: The Wellbeing Base matrix.
-#'   \item \code{"yearly_flow_matrices"}: A list of yearly condition/flow
-#'   matrices.
+#'   \item \code{"wellbeing_index"}: The potential wellbeing contribution of the
+#'   habitats (before weighting by likely flow of services) over the years,
+#'   indexed.
+#'   \item \code{"flow_index"}: The likely flow of ecosystem services (based on
+#'   information from condition indicators) over the years,
+#'   indexed.
+#'   \item \code{"yearly_asset_matrices"}: The overall NCAI in its unaggregated
+#'   form, expressed as yearly matrices of value per habitat/ecosystem service.
+#'   \item \code{"yearly_wellbeing_matrices"}: The yearly potential wellbeing in
+#'    its unaggregated form, expressed as yearly matrices of value per
+#'    habitat/ecosystem service.
+#'   \item \code{"yearly_flow_matrices"}: The yearly likely flow of ecosystem
+#'    services in its unaggregated form, expressed as yearly matrices of value
+#'    per habitat/ecosystem service.
+#'   \item \code{"espb"}: The Ecosystem Service Potential Base matrix, i.e. the
+#'   habitat extent weighted weighted by exemplary provision-per-unit scores in
+#'   year one.
+#'   \item \code{"wellbeing_base"}: The Wellbeing Base, ie. year one potential
+#'   wellbeing matrix.
+#'   \item \code{"flow_base"}: The year one likely flow of services matrix.
 #'   \item \code{"everything"}: A named list containing all of the above.
 #' }
 #'
@@ -76,13 +90,16 @@ get_ncai <-  function(habitat_extent,
                       tir_constant = 2,
                       smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
                       return =
-                        c("overall",
+                        c("overall_index",
                           "by_ecosystem_service_type",
                           "by_broad_habitat",
+                          "wellbeing_index",
+                          "flow_index",
                           "yearly_asset_matrices",
+                          "yearly_wellbeing_matrices",
+                          "flow_matrices",
                           "espb",
                           "wellbeing_base",
-                          "yearly_flow_matrices",
                           "everything")) {
 
   # Assign return type:
@@ -121,7 +138,7 @@ get_ncai <-  function(habitat_extent,
   if (return_type == "everything") results$espb <- espb
 
 
-  # 2. Make the Wellbeing Base.
+  # 2a. Make the Wellbeing Base.
   # Between- and within-service-type importance scores are converted
   # to weights and multiplied by the ESPB
   importance_weights <- calc_importance_weights(
@@ -139,10 +156,36 @@ get_ncai <-  function(habitat_extent,
   if (return_type == "everything")
     results$wellbeing_base <- wellbeing_base
 
+  # 2b. Make the yearly wellbeing matrices if requested
+  if (return_type %in% c("yearly_wellbeing_matrices", "everything")) {
+    yearly_wellbeing_matrices <- get_yearly_potential_wellbeing(
+      habitat_extent = habitat_extent,
+      year_one = year_one,
+      wellbeing_base = wellbeing_base,
+      as_matrices = TRUE
+    )
+    if (return_type == "yearly_wellbeing_matrices")
+      return(yearly_wellbeing_matrices)
+    if (return_type == "everything")
+      results$yearly_wellbeing_matrices <- yearly_wellbeing_matrices
+  }
+
+  # 2c. Make the yearly wellbeing index if requested
+  if (return_type %in% c("wellbeing_index", "everything")) {
+    wellbeing_index <- get_yearly_potential_wellbeing(
+      habitat_extent = habitat_extent,
+      year_one = year_one,
+      wellbeing_base = wellbeing_base,
+      as_matrices = FALSE
+    )
+    if (return_type == "wellbeing_index")
+      return(wellbeing_index)
+    if (return_type == "everything")
+      results$wellbeing_index <- wellbeing_index
+  }
+
   # 3. Make the Total Yearly Flow matrices.
-  # Condition scores are weighted by relevance and combined into
-  # yearly matrices of flow rate by habitat/service combination.
-  yearly_flow_matrices <- calc_flow_rate(
+  yearly_flow_matrices <- get_yearly_flow(
     cirm_list = ci_relevance_matrices,
     indicator_directory = indicator_directory,
     es_label_tree = es_label_tree,
@@ -151,10 +194,29 @@ get_ncai <-  function(habitat_extent,
     year_list = year_list,
     tir_constant = tir_constant
   )
-  if (return_type == "yearly_flow_matrices")
-    return(yearly_flow_matrices)
-  if (return_type == "everything")
-    results$yearly_flow_matrices <- yearly_flow_matrices
+
+  # 3a. Return or store full matrices
+  if (return_type == "flow_matrices") return(yearly_flow_matrices)
+  if (return_type == "everything") results$yearly_flow_matrices <- yearly_flow_matrices
+
+  # NEW: Return the specific matrix for the baseline year (flow_base)
+  if (return_type %in% c("flow_base", "everything")) {
+    flow_base <- yearly_flow_matrices[[as.character(year_one)]]
+
+    if (return_type == "flow_base") return(flow_base)
+    if (return_type == "everything") results$flow_base <- flow_base
+  }
+
+  # 3b. Make the Yearly Flow Index
+  if (return_type %in% c("flow_index", "everything")) {
+    flow_index <- index_and_smooth(
+      matrix_list = yearly_flow_matrices,
+      year_one = year_one
+    )
+
+    if (return_type == "flow_index") return(flow_index)
+    if (return_type == "everything") results$flow_index <- flow_index
+  }
 
   # 4. Count the total yearly Natural Capital Assets
   # Multiply Flow by Well-being Base.
@@ -179,7 +241,7 @@ get_ncai <-  function(habitat_extent,
     smoothing_weights = smoothing_weights,
     year_one = year_one
   )
-  if (return_type == "overall") return(overall_index)
+  if (return_type == "overall_index") return(overall_index)
   if (return_type == "everything")
     results$overall_index <- overall_index
 
@@ -206,7 +268,22 @@ get_ncai <-  function(habitat_extent,
 
   # Return list of everything if requested
   if (return_type == "everything") {
-    return(results)
+    # order of return list:
+    documented_order <- c(
+      "overall_index",
+      "by_ecosystem_service_type",
+      "by_broad_habitat",
+      "wellbeing_index",
+      "flow_index",
+      "yearly_asset_matrices",
+      "yearly_wellbeing_matrices",
+      "yearly_flow_matrices",
+      "espb",
+      "wellbeing_base",
+      "flow_base"
+    )
+    return(results[intersect(documented_order, names(results))])
+
   } else {
     return(overall_index)
   }

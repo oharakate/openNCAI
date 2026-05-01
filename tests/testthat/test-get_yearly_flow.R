@@ -1,4 +1,4 @@
-test_that("calc_flow_rate returns a list with correct length and names", {
+test_that("get_yearly_flow returns a list with correct length and names", {
 
   # 1. Setup minimal mock objects
   years <- c("2000", "2001")
@@ -31,7 +31,7 @@ test_that("calc_flow_rate returns a list with correct length and names", {
 
 
   # 2. Run the master function
-  results <- openNCAI:::calc_flow_rate(
+  results <- openNCAI:::get_yearly_flow(
     cirm_list = mock_cirm_list,
     indicator_directory = mock_ind_dir,
     es_label_tree = mock_es_tree,

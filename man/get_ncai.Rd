@@ -20,9 +20,9 @@ get_ncai(
   indicator_directory,
   tir_constant = 2,
   smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1),
-  return = c("overall", "by_ecosystem_service_type", "by_broad_habitat",
-    "yearly_asset_matrices", "espb", "wellbeing_base", "yearly_flow_matrices",
-    "everything")
+  return = c("overall_index", "by_ecosystem_service_type", "by_broad_habitat",
+    "wellbeing_index", "flow_index", "yearly_asset_matrices",
+    "yearly_wellbeing_matrices", "flow_matrices", "espb", "wellbeing_base", "everything")
 )
 }
 \arguments{
@@ -67,15 +67,29 @@ smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 
 \item{return}{Character. Specifies the object to return. Options include:
 \itemize{
-  \item \code{"overall"}: The standard overall NCAI data frame (default).
+  \item \code{"overall_index"}: The standard overall NCAI data frame (default).
   \item \code{"by_ecosystem_service_type"}: NCAI broken down by Ecosystem Service Type.
   \item \code{"by_broad_habitat"}: NCAI broken down by Broad Habitat.
-  \item \code{"yearly_asset_matrices"}: A list of matrices containing asset
-    values for every year.
-  \item \code{"espb"}: The Ecosystem Service Potential Base matrix.
-  \item \code{"wellbeing_base"}: The Wellbeing Base matrix.
-  \item \code{"yearly_flow_matrices"}: A list of yearly condition/flow
-  matrices.
+  \item \code{"wellbeing_index"}: The potential wellbeing contribution of the
+  habitats (before weighting by likely flow of services) over the years,
+  indexed.
+  \item \code{"flow_index"}: The likely flow of ecosystem services (based on
+  information from condition indicators) over the years,
+  indexed.
+  \item \code{"yearly_asset_matrices"}: The overall NCAI in its unaggregated
+  form, expressed as yearly matrices of value per habitat/ecosystem service.
+  \item \code{"yearly_wellbeing_matrices"}: The yearly potential wellbeing in
+   its unaggregated form, expressed as yearly matrices of value per
+   habitat/ecosystem service.
+  \item \code{"flow_matrices"}: The yearly likely flow of ecosystem
+   services in its unaggregated form, expressed as yearly matrices of value
+   per habitat/ecosystem service.
+  \item \code{"espb"}: The Ecosystem Service Potential Base matrix, i.e. the
+  habitat extent weighted weighted by exemplary provision-per-unit scores in
+  year one.
+  \item \code{"wellbeing_base"}: The Wellbeing Base, ie. year one potential
+  wellbeing matrix.
+  \item \code{"flow_base"}: The year one likely flow of services matrix.
   \item \code{"everything"}: A named list containing all of the above.
 }}
 }

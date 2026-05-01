@@ -58,7 +58,7 @@ calc_weighted_habitat_extent <- function(habitat_extent,
 #'     \code{raw_index}, and \code{smoothed_index}.
 #'   \item If \code{TRUE}: A named list of annual provision matrices.
 #' }
-#' @export
+#' @keywords internal
 get_yearly_potential_provision <- function(habitat_extent,
                                            year_one,
                                            espb,
@@ -72,8 +72,11 @@ get_yearly_potential_provision <- function(habitat_extent,
 
 #' Calculate Yearly Potential Wellbeing Contribution
 #'
-#' Calculates the potential wellbeing time series by multiplying indexed
-#' habitat extent by the Wellbeing Base.
+#' Calculates the potential wellbeing contribution time series by multiplying
+#' indexed habitat extent by the Wellbeing Base. It can be understood as the
+#' the potential wellbeing contribution of the habitat assets over the years,
+#' before weighting by likely flow of ecosystem services based on habitat
+#' condition.
 #'
 #' @inheritParams calc_weighted_habitat_extent
 #' @param wellbeing_base A matrix or data frame of Wellbeing Base values.
@@ -84,7 +87,23 @@ get_yearly_potential_provision <- function(habitat_extent,
 #'     \code{raw_index}, and \code{smoothed_index}.
 #'   \item If \code{TRUE}: A named list of annual wellbeing matrices.
 #' }
-#' @export
+#'
+#' @examples
+#' # 1. Load the bundled example data
+#' data("ns_habitat_extent", package = "openNCAI")
+#' data("ns_es_label_tree", package = "openNCAI")
+#'
+#' extent_subset <- ns_habitat_extent
+#'
+#' # 2. Calculate potential wellbeing contribution
+#' potential_wellbeing_contribution_ts <- get_yearly_potential_wellbeing(
+#'   habitat_extent = extent_subset,
+#'   year_one = "2000",
+#'   wellbeing_base = ns_wellbeing_base, # Use your bundled base matrix
+#'   as_matrices = FALSE
+#' )
+#'
+#' @keywords internal
 get_yearly_potential_wellbeing <- function(habitat_extent,
                                            year_one,
                                            wellbeing_base,

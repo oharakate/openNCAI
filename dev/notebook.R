@@ -274,17 +274,17 @@ check()
 # Commit and push here.
 
 
-#### calc_flow_rate() ####
-use_r("calc_flow_rate")
+#### get_yearly_flow() ####
+use_r("get_yearly_flow")
 # Remember to put in the roxygen skeleton
 load_all()
 document()
-?calc_flow_rate
+?get_yearly_flow
 
 # Tests
-use_test("calc_flow_rate")
+use_test("get_yearly_flow")
 load_all()
-test_file("tests/testthat/test-calc_flow_rate.R")
+test_file("tests/testthat/test-get_yearly_flow.R")
 document()
 
 load_all()
@@ -496,3 +496,4 @@ remove.packages("openNCAI")
 # document()
 # check()
 # # Commit and push here.
+#
