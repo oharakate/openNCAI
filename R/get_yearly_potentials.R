@@ -88,21 +88,6 @@ get_yearly_potential_provision <- function(habitat_extent,
 #'   \item If \code{TRUE}: A named list of annual wellbeing matrices.
 #' }
 #'
-#' @examples
-#' # 1. Load the bundled example data
-#' data("ns_habitat_extent", package = "openNCAI")
-#' data("ns_es_label_tree", package = "openNCAI")
-#'
-#' extent_subset <- ns_habitat_extent
-#'
-#' # 2. Calculate potential wellbeing contribution
-#' potential_wellbeing_contribution_ts <- get_yearly_potential_wellbeing(
-#'   habitat_extent = extent_subset,
-#'   year_one = "2000",
-#'   wellbeing_base = ns_wellbeing_base, # Use your bundled base matrix
-#'   as_matrices = FALSE
-#' )
-#'
 #' @keywords internal
 get_yearly_potential_wellbeing <- function(habitat_extent,
                                            year_one,

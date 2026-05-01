@@ -81,7 +81,7 @@ smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
   \item \code{"yearly_wellbeing_matrices"}: The yearly potential wellbeing in
    its unaggregated form, expressed as yearly matrices of value per
    habitat/ecosystem service.
-  \item \code{"flow_matrices"}: The yearly likely flow of ecosystem
+  \item \code{"yearly_flow_matrices"}: The yearly likely flow of ecosystem
    services in its unaggregated form, expressed as yearly matrices of value
    per habitat/ecosystem service.
   \item \code{"espb"}: The Ecosystem Service Potential Base matrix, i.e. the

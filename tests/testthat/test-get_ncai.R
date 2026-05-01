@@ -133,9 +133,19 @@ test_that("get_ncai returns the full results list when requested", {
   )
 
   expect_type(res_all, "list")
-  expect_named(res_all, c("espb", "wellbeing_base", "yearly_flow_matrices",
-                          "yearly_asset_matrices", "overall_index",
-                          "by_ecosystem_service_type", "by_broad_habitat"))
+  expect_named(res_all, c(
+    "overall_index",
+    "by_ecosystem_service_type",
+    "by_broad_habitat",
+    "wellbeing_index",
+    "flow_index",
+    "yearly_asset_matrices",
+    "yearly_wellbeing_matrices",
+    "yearly_flow_matrices",
+    "espb",
+    "wellbeing_base",
+    "flow_base"
+  ))
 })
 
 
