@@ -502,6 +502,8 @@ ggsave(
 
 #### BONUS CONTENT - test the functions which pull out time series of
 # esp potential and wellbeing potential
+# NEEDS RECODED BECAUSE WE NOW DRAW THESE ITEMS FROM THE MAIN get_ncai()
+# function.
 prov_time_series_mats <- get_yearly_potential_provision(
   habitat_extent = ns_habitat_extent,
   year_one = 2000,
