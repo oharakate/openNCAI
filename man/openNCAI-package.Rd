@@ -6,7 +6,7 @@
 \alias{openNCAI-package}
 \title{openNCAI: Calculates a Natural Capital Assets Index}
 \description{
-Calculates natural capital assets.
+openNCAI is an R package for calculating a regional natural capital assets index (NCAI), using the method designed by NatureScot to calculate Scotland's NCAI. It uses habitat extent and condition data, along with metadata and systems of weights, and produces a yearly single figure indexed around a year one value of 100.
 }
 \seealso{
 Useful links:
