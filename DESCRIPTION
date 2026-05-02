@@ -6,7 +6,7 @@ Authors@R: person(given = "Kate",
                       family = "O'Hara",
                       role = c("aut", "cre"),
                       email = "k.a.ohara@stir.ac.uk")
-Description: openNCAI calculates natural capital assets index for a region of interest. It uses the method used by NatureScot to calculate Scotland's Natural Capital Assets Index.
+Description: openNCAI is an R package for calculating a regional natural capital assets index (NCAI), using the method designed by NatureScot to calculate Scotland's NCAI. It uses habitat extent and condition data, along with metadata and systems of weights, and produces a yearly single figure indexed around a year one value of 100.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
