@@ -12,8 +12,6 @@ Note that `build_vignettes = TRUE` is recommended to be able to see all document
 
 ### Further Information ###
 
-![openNCAI calculation process](https://github.com/oharakate/openNCAI/blob/master/man/figures/ncai_calculation_process.png)
-
 The calculation of the NCAI is based on the following core measurable or estimable quantities and concepts:
 
 | Concept | Explanation |
@@ -33,6 +31,9 @@ Calculation relies on three types of information. These are:
 2. Lists of habitats in Scotland and the ecosystem services they provide – decided by expert opinion at the beginning of the process,
 3. Weighting schemes which denote importance of ecosystem services, the potential of habitats to provide them, and the relevance and salience of habitat condition indicators in representing flow of services from habitats – decided by expert opinion at the beginning of the process.
 
+The following diagram outlines the calculation process:
+
+![openNCAI calculation process](https://github.com/oharakate/openNCAI/blob/master/man/figures/ncai_calculation_process.png)
 
 # References #
 
