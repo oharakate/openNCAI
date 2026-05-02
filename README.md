@@ -12,7 +12,7 @@ Note that `build_vignettes = TRUE` is recommended to be able to see all document
 
 ### Further Information ###
 
-![openNCAI calculation process](https://github.com/oharakate/openNCAI/raw/main/man/figures/ncai_calculation_process.png)
+![openNCAI calculation process](https://github.com/oharakate/openNCAI/blob/master/man/figures/ncai_calculation_process.png)
 
 The calculation of the NCAI is based on the following core measurable or estimable quantities and concepts:
 
