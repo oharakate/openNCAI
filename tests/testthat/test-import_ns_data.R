@@ -19,7 +19,7 @@ test_that("import_ns_data returns the correct 11-component list structure", {
   # 2. Verify all named components exist
   expected_names <- c(
     "ns_habitat_extent", "ns_ci_scores", "ns_habitats_label_tree",
-    "ns_es_label_tree", "ns_year_list", "ns_esppu_scores", "ns_custom_divisor_matrix",
+    "ns_es_label_tree", "ns_year_list", "ns_provision_per_uniot_scores", "ns_custom_divisor_matrix",
     "ns_between_importance_scores", "ns_within_importance_scores",
     "ns_ci_relevance_matrices", "ns_indicator_directory"
   )
@@ -40,11 +40,11 @@ test_that("Label Trees and Matrices are perfectly aligned", {
   expect_equal(rownames(result$ns_habitat_extent), all_habitats)
   expect_equal(colnames(result$ns_habitat_extent), result$ns_year_list)
 
-  # 2. Check ESPPU Alignment
-  expect_equal(nrow(result$ns_esppu_scores), length(all_habitats))
-  expect_equal(ncol(result$ns_esppu_scores), length(all_services))
-  expect_equal(rownames(result$ns_esppu_scores), all_habitats)
-  expect_equal(colnames(result$ns_esppu_scores), all_services)
+  # 2. Check Provision Per Unit Alignment
+  expect_equal(nrow(result$ns_provision_per_uniot_scores), length(all_habitats))
+  expect_equal(ncol(result$ns_provision_per_uniot_scores), length(all_services))
+  expect_equal(rownames(result$ns_provision_per_uniot_scores), all_habitats)
+  expect_equal(colnames(result$ns_provision_per_uniot_scores), all_services)
 
   # 3. Check Custom Divisor Alignment
   expect_equal(nrow(result$ns_custom_divisor_matrix), length(all_habitats))

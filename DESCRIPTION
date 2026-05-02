@@ -1,9 +1,11 @@
 Package: openNCAI
 Type: Package
-Title: Calculates a Natural Capital Assets Indicator for a particular area of interest
+Title: Calculates a Natural Capital Assets Index
 Version: 0.1.0
-Author: Kate O'Hara
-Maintainer: Kate O'Hara <k.a.ohara@stir.ac.uk>
+Authors@R: person(given = "Kate",
+                      family = "O'Hara",
+                      role = c("aut", "cre"),
+                      email = "k.a.ohara@stir.ac.uk")
 Description: Calculates natural capital assets. 
 License: MIT + file LICENSE
 Encoding: UTF-8

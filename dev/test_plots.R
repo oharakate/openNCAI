@@ -1,10 +1,10 @@
 # How are the values of final index, wellbeing index and flow index related?
 
 # 1. Make the plot
-years <- as.numeric(rownames(ncai_objects$overall_index))
-ncai_raw <- ncai_objects$overall_index$raw_index
+years <- as.numeric(rownames(ncai_objects$overall_ncai))
+ncai_raw <- ncai_objects$overall_ncai$raw_index
 wellbeing_raw <- ncai_objects$wellbeing_index$raw_index
-flow_raw <- ncai_objects$flow_index$raw_index
+flow_raw <- ncai_objects$flow_of_es_index$raw_index
 
 plot(years, ncai_raw,
      type = "b", col = "blue", pch = 16, lwd = 2,

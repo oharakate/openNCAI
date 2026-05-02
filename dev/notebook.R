@@ -140,17 +140,17 @@ document()
 test_file("tests/testthat/test-import_ns_testing_data.R")
 check()
 
-#### esppu_scores_to_weights()####
+#### provision_per_unit_scores_to_weights()####
 
-use_r("calc_potential_weights")
+use_r("calc_provision_per_unit_weights")
 # Remember to put in the roxygen skeleton
 load_all()
 document()
 
 # Tests
-use_test("calc_potential_weights")
+use_test("calc_provision_per_unit_weights")
 load_all()
-test_file("tests/testthat/test-calc_potential_weights.R")
+test_file("tests/testthat/test-calc_provision_per_unit_weights.R")
 document()
 
 load_all()
@@ -159,18 +159,18 @@ check()
  ## THINK ABOUT LABELLING THIS DF?
 
 
-#### calc_espb()####
+#### calc_es_potential_base()####
 
-use_r("calc_espb")
+use_r("calc_es_potential_base")
 # Remember to put in the roxygen skeleton
 load_all()
-run_examples(pkg = ".", test = "calc_espb")
+run_examples(pkg = ".", test = "calc_es_potential_base")
 document()
 
 # Tests
-use_test("calc_espb")
+use_test("calc_es_potential_base")
 load_all()
-test_file("tests/testthat/test-calc_espb.R")
+test_file("tests/testthat/test-calc_es_potential_base.R")
 document()
 
 load_all()
@@ -197,17 +197,17 @@ check()
 
 
 
-#### calc_wellbeing_base()####
+#### calc_wellbeing_potential_base()####
 
-use_r("calc_wellbeing_base")
+use_r("calc_wellbeing_potential_base")
 # Remember to put in the roxygen skeleton
 load_all()
 document()
 
 # Tests
-use_test("calc_wellbeing_base")
+use_test("calc_wellbeing_potential_base")
 load_all()
-test_file("tests/testthat/test-calc_wellbeing_base.R")
+test_file("tests/testthat/test-calc_wellbeing_potential_base.R")
 document()
 
 load_all()
@@ -235,18 +235,18 @@ check()
 
 
 
-#### calc_tir()####
+#### calc_total_indicator_relevances()####
 
-use_r("calc_tir")
+use_r("calc_total_indicator_relevances")
 # Remember to put in the roxygen skeleton
 load_all()
-?calc_tir
+?calc_total_indicator_relevances
 document()
 
 # Tests
-use_test("calc_tir")
+use_test("calc_total_indicator_relevances")
 load_all()
-test_file("tests/testthat/test-calc_tir.R")
+test_file("tests/testthat/test-calc_total_indicator_relevances.R")
 document()
 
 load_all()

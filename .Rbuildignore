@@ -10,3 +10,4 @@ dev/
 
 ^\.positai$
 ^\.claude$
+^vignettes/openNCAI_in_brief_files$

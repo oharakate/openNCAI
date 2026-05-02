@@ -28,7 +28,7 @@ test_that("build_all_ncai_matrices returns named list of data frames", {
 
   results <- openNCAI:::build_all_ncai_matrices(
     tyf_list = tyf_list,
-    wellbeing_base = wb,
+    wellbeing_potential_base = wb,
     habitat_extent = extent,
     year_one = "2000",
     year_list = years,

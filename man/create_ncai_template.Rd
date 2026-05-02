@@ -10,8 +10,9 @@ create_ncai_template(
   es_label_tree,
   ci_names,
   year_list,
+  overwrite = FALSE,
   habitat_extent = NULL,
-  esppu_scores = NULL,
+  provision_per_unit_scores = NULL,
   between_importance_scores = NULL,
   within_importance_scores = NULL,
   ci_scores = NULL,
@@ -30,19 +31,36 @@ create_ncai_template(
 
 \item{year_list}{A vector of years (numeric or character) to be included in the account.}
 
-\item{habitat_extent}{Optional data frame of existing habitat extent data. Row and column order MUST matched label trees/year list.}
+\item{overwrite}{Logical. If \code{TRUE}, an existing file at \code{template_out} will
+be overwritten without warning. Default is \code{FALSE} to prevent accidental loss
+of manually entered data.}
 
-\item{esppu_scores}{Optional data frame of existing ES Potential Per Unit scores. Row and column order MUST match label trees/year list/condition indicator names.}
+\item{habitat_extent}{Optional data frame of existing habitat extent data.
+Row and column order and dimensions MUST matched label trees/year list.}
 
-\item{between_importance_scores}{Optional list of broad ES importance weights. Row and column order MUST matched label trees.}
+\item{provision_per_unit_scores}{Optional data frame of existing ES Potential
+Per Unit scores. Row and column order MUST match lower levels of
+\code{habitats_label_tree} and \code{es_label_tree}.}
 
-\item{within_importance_scores}{Optional list of weights for specific services.}
+\item{between_importance_scores}{Optional list of ecosystem service type
+importance weights. Order MUST match names of \code{es_label_tree}.}
 
-\item{ci_scores}{Optional data frame of existing condition indicator scores.}
+\item{within_importance_scores}{Optional list of lists of weights for
+specific services. Order MUST match the order and dimensions of the lower
+level of \code{es_label_tree}.}
 
-\item{indicator_directory}{Optional data frame of existing indicator salience data.}
+\item{ci_scores}{Optional data frame of existing condition indicator scores.
+Rows and columns MUST match dimensions and order of \code{year_list} and
+\code{ci_names}.}
 
-\item{ci_relevance_matrices}{Optional list of existing binary relevance matrices.}
+\item{indicator_directory}{Optional data frame of existing indicator salience
+data. Row order and length MUST match \code{ci_names}. Column order and
+length MUST match \code{es_label_tree} names.}
+
+\item{ci_relevance_matrices}{Optional list of existing binary relevance
+matrices. Matrix list order and length must mach \code{ci_names}. Each
+matrix row and column order MUST match lower levels of
+ \code{habitats_label_tree} and \code{es_label_tree}.}
 }
 \value{
 Generates an Excel file at the specified path and returns a message of success.
@@ -54,9 +72,13 @@ includes internal logic for habitat and ecosystem service trees, automated
 styling, and cell locking to ensure data integrity for subsequent re-import.
 Note that the habitats and ecosystem service label trees passed here may be
 used to subsequently read in the data with read_ncai_template().
+}
+\details{
 Optional arguments to pre-populate the template with data assume that the
 passed-in data matches those of the label trees, year list and condition
-indicator list as relevant.
+indicator list as relevant. Users are recommended to create an empty
+template first to verify the required formats before attempting to pass in
+data.
 }
 \examples{
 \dontrun{

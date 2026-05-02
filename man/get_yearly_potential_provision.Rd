@@ -7,7 +7,7 @@
 get_yearly_potential_provision(
   habitat_extent,
   year_one,
-  espb,
+  es_potential_base,
   as_matrices = FALSE
 )
 }
@@ -17,7 +17,7 @@ and rows represent habitats.}
 
 \item{year_one}{Character or Numeric. The baseline year for indexing.}
 
-\item{espb}{A matrix or data frame of Ecosystem Service Potential Base values.}
+\item{es_potential_base}{A matrix or data frame of Ecosystem Service Potential Base values.}
 
 \item{as_matrices}{Logical. If \code{TRUE}, returns annual matrices;
 if \code{FALSE}, returns a smoothed index data frame.}
@@ -32,6 +32,6 @@ Depending on the value of \code{as_matrices}:
 }
 \description{
 Calculates the potential provision time series by multiplying indexed
-habitat extent by the Ecosystem Service Potential Base (ESPB).
+habitat extent by the Ecosystem Service (ES) Potential Base.
 }
 \keyword{internal}

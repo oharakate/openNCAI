@@ -38,7 +38,7 @@ test_that("get_yearly_flow returns a list with correct length and names", {
     habitats_label_tree = mock_hab_tree,
     ci_scores = mock_scores,
     year_list = years,
-    tir_constant = 2
+    total_indicator_relevances_constant = 2
   )
 
   # 3. Verifications
@@ -47,7 +47,7 @@ test_that("get_yearly_flow returns a list with correct length and names", {
   expect_named(results, years)
 
   # Verify math:
-  # TIR = (Weight 1.0 * Relevance 1) + Constant 2 = 3
+  # Total Indicator Relevances = (Weight 1.0 * Relevance 1) + Constant 2 = 3
   # Year 2000 Flow: (Condition 100 + (2 * 100)) / 3 = 100
   # Year 2001 Flow: (Condition 110 + (2 * 100)) / 3 = 103.333
   expect_equal(as.numeric(results[["2000"]][1,1]), 100)

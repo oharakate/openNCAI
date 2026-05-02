@@ -2,7 +2,7 @@
 #'
 #' This high-level function orchestrates the transformation of raw condition scores
 #' into normalized Total Yearly Flow (TYF) matrices. It builds the weighted
-#' relevance matrices (CIWMs), calculates the total relevance (TIR), and
+#' relevance matrices (CIWMs), calculates the total indicator relevances, and
 #' processes every year in the series.
 #'
 #' @param cirm_list A list of Condition Indicator Relevance Matrices.
@@ -11,7 +11,7 @@
 #' @param habitats_label_tree A named list of habitat labels.
 #' @param ci_scores A data frame or matrix of raw condition scores (years as rows).
 #' @param year_list A vector of years to be processed.
-#' @param tir_constant A numeric constant (default 2) to prevent zero-division
+#' @param total_indicator_relevances_constant A numeric constant (default 2) to prevent zero-division
 #'   and ensure indexing congruency.
 #'
 #' @return A named list of Total Yearly Flow (TYF) matrices, one for each year
@@ -24,7 +24,7 @@ get_yearly_flow <- function(cirm_list,
                            habitats_label_tree,
                            ci_scores,
                            year_list,
-                           tir_constant = 2) {
+                           total_indicator_relevances_constant = 2) {
 
   # 1. Generate the list of weighted relevance matrices (CIWMs)
   # This weights each indicator according to its importance to specific service groups.
@@ -35,11 +35,11 @@ get_yearly_flow <- function(cirm_list,
     habitats_label_tree = habitats_label_tree
   )
 
-  # 2. Calculate the Total Indicator Relevances (TIR) matrix
+  # 2. Calculate the Total Indicator Relevances matrix
   # This serves as the denominator for normalization.
-  tir <- calc_tir(
+  total_indicator_relevances <- calc_total_indicator_relevances(
     all_ciwms_list = ciwms_list,
-    tir_constant = tir_constant
+    total_indicator_relevances_constant = total_indicator_relevances_constant
   )
 
   # 3. Calculate the Total Yearly Flow (TYF) matrices for all years
@@ -48,8 +48,8 @@ get_yearly_flow <- function(cirm_list,
     raw_cis = ci_scores,
     year_list = year_list,
     ciwms_list = ciwms_list,
-    tir = tir,
-    tir_constant = tir_constant
+    total_indicator_relevances = total_indicator_relevances,
+    total_indicator_relevances_constant = total_indicator_relevances_constant
   )
 
   return(tyfs_list)

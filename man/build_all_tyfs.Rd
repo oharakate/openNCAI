@@ -4,7 +4,13 @@
 \alias{build_all_tyfs}
 \title{Build All Total Yearly Flow Matrices (TYFs)}
 \usage{
-build_all_tyfs(raw_cis, year_list, ciwms_list, tir, tir_constant)
+build_all_tyfs(
+  raw_cis,
+  year_list,
+  ciwms_list,
+  total_indicator_relevances,
+  total_indicator_relevances_constant
+)
 }
 \arguments{
 \item{raw_cis}{A data frame of raw condition indicator scores.}
@@ -13,9 +19,9 @@ build_all_tyfs(raw_cis, year_list, ciwms_list, tir, tir_constant)
 
 \item{ciwms_list}{A named list of Condition Indicator Weighting Matrices (CIWMs).}
 
-\item{tir}{The Total Indicator Relevance matrix (output from \code{calc_tir}).}
+\item{total_indicator_relevances}{The Total Indicator Relevance matrix (output from \code{calc_total_indicator_relevances}).}
 
-\item{tir_constant}{A numeric value (usually 2) used for normalization.}
+\item{total_indicator_relevances_constant}{A numeric value (usually 2) used for normalization.}
 }
 \value{
 A named list of matrices, one for each year in \code{year_list}.

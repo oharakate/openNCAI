@@ -1,0 +1,170 @@
+---
+title: "Using openNCAI's Data Entry Templates"
+output:
+  rmarkdown::html_vignette:
+    toc: yes
+    toc_depth: 2
+    self_contained: yes
+    highlight: pygments
+vignette: >
+  %\VignetteIndexEntry{using_openNCAIs_data_entry_templates}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+openNCAI requires data inputs in specific formats. The helper functions `create_ncai_template()` and `read_ncai_template()` are can be used to make this process easier and to ensure that data entry matches the format required by the package.
+
+```{r setup}
+library(openNCAI)
+```
+
+## Step 1: Assembling the metadata
+
+We start by defining the metadata for the region we wish to study, specifically:
+
+ * The natural habitats found in the region which we wish to monitor,
+ * The ecosystem services produced by those habitats,
+ * The habitat condition indicators which we will use to estimate the likely flow of ecosystemservices from habitats,
+ * The list of years over which we will calculate the index.
+ 
+It is sensible to take time to get these right at the start as they define the scope of the whole calculation. 
+
+For this demonstration, we use the display-ready versions of the metadata bundled with the package: ns_display_habitats_label_tree, ns_display_es_label_tree, and ns_display_ci_names. Note carefully the format of the label trees...
+
+The Habitats Label Tree contains EUNIS[^1] level 2 habitats, nested within EUNIS level 1 broad habitat categories. The structure is a named list of character vectors. Let's see the first three broad habitat groups and the habitats within them:
+
+```{r show-hab-tree-snippet}
+ns_display_habitats_label_tree[1:3]
+```
+
+To input a tree like this manually, we would use this form:
+
+``` {r demo-manual-tree-input}
+my_hab_tree <- list(
+  "Woodlands" = c("Deciduous woodland",
+                 "Evergreen woodland", 
+                 "Scrub woodland"),
+  "Coastal" = c("Dunes and sandy shores",
+               "Shingle")
+) 
+```
+
+The Ecosystem Services Label Tree has a similar form, with SEEA[^2] ecosystem service types at the top level, and individual CICES-style[^3] ecosystem services within:
+
+``` {r show-es-tree-snippet}
+ns_display_es_label_tree[1:3]
+```
+
+The Condition Indicator List is a simple character vector:
+
+```{r show-ci-list}
+ns_display_ci_names[1:4]
+```
+
+We could input a list like this manually using this form:
+```{r demo-manual-cilist-inpu}
+my_ci_list <- c("Bathing water quality index", "Forestry yield", "Woodland bird count")
+```
+
+We will also need a list of years, and this can be input either as a numeric list or a character vector of year names. We will define a numeric list:
+
+```{r show-year-list}
+my_num_year_list <- 2000:2022
+```
+
+[^1]: [European Nature Information System](https://eunis.eea.europa.eu/)
+[^2]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^3]: [Common International Classification of Ecosystem Services](https://cices.eu/)
+
+## Step 2: Creating the data input spreadsheet
+
+We use the function `create_ncai_template()` to build a spreadsheet into which we can enter data. For a blank template, we only need to pass a file path to save the new template and the four metadata arguments:
+
+```{r create-blank-template, eval = FALSE}
+create_ncai_template(template_out = "Blank_NS_Data_Entry_Template.xlsx",
+                     habitats_label_tree = ns_display_habitats_label_tree,
+                     es_label_tree = ns_display_es_label_tree,
+                     ci_names = ns_display_ci_names,
+                     year_list = my_num_year_list)
+```
+
+The function generates a spreadsheet into which you can manually enter data. Additional optional arguments allow you to pass in data to pre-populate the template. **Use these with caution**: the order and dimensions of the data must match what is passed in to the spreadsheet, and no automatic sorting or ordering takes place. Create a blank template first to verify the formats which need to be matched.
+
+The row and column headers are locked. Take care not to edit these. If you make any changes, these will need to be reflected in the metadata you use to read the data into R in the next step. If you decide to change the metadata, it is probably easiest to start with a fresh blank template. 
+
+## Step 3: Read in data from the completed template
+
+The function `read_ncai_template()` is designed to read the data back in to R, producing a list of objects ready to use with `get_ncai()`. As part of the process, the labels are cleaned to remove capital letters and special characters, and replace spaces with "_". So "K. MONTANE" in \code{ns_display_habitats_label_tree} becomes "k_montane" in `ns_habitats_label_tree`.
+
+We read the completed template back in using **the same label trees and condition indicator list that we used to create the template**. 
+
+```{r read-complete-template, eval = FALSE}
+ncai_data_objects <- read_ncai_template(
+  path = "Complete_NS_Data_Entry_Template.xlsx",
+  habitats_label_tree = ns_display_habitats_label_tree,
+  es_label_tree = ns_display_es_label_tree,
+  ci_names = ns_display_ci_names)
+```
+
+The function returns a list of data objects ready to use with `get_ncai()`. We can see the names of the objects by running:
+
+``` {r list-read-template-outputs, eval = FALSE}
+names(ncai_data_objects)
+```
+
+And access individual items on the list with `$` notation:
+``` {r show-one-template-output, eval = FALSE}
+ncai_data_objects$clean_habitats_label_tree
+```
+
+The objects returned are:
+
+``` {r read-ncai-template-outputs, echo = FALSE}
+read_outputs <- data.frame(
+  `Object Name` = c(
+    "clean_habitats_label_tree",
+    "clean_es_label_tree",
+    "habitat_extent",
+    "ci_scores",
+    "provision_per_unit_scores",
+    "between_importance",
+    "within_importance",
+    "indicator_directory",
+    "ci_relevance_matrices"
+  ),
+  `Description` = c(
+    "Cleaned version of the habitats label tree.",
+    "Cleaned version of the ecosystem service label tree.",
+    "Habitat areas over time.",
+    "Condition indicator scores over time.",
+    "Provision-per-unit scores, denoting relative capacity of habitats to provide ecosystem services.",
+    "Importance scores for each ecosystem service type.",
+    "Importance scores for individual ecosystem services within each type group.",
+    "Table recording the salience of each condition indicator in representing flow of services of each SEEA type.",
+    "Binary relevance matrices for every condition indicator, recording for which habitat/ecosystem service combinations that indicator is relevant."
+  ),
+  `Data Format` = c(
+    "A named list of character vectors.",
+    "A named list of character vectors.",
+    "A data frame where rows are habitats and columns are years.",
+    "A data frame where rows are years and columns are condition indicators.",
+    "A data frame where rows are habitats and columns are ecosystem services.",
+    "A named list of numeric values.",
+    "A nested list of named lists.",
+    "A data frame with a column for condition indicator names, and a column for each of the ecosystem service types.",
+    "A named list of data frames (one per indicator)."
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(read_outputs)
+```

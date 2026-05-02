@@ -6,7 +6,7 @@
 \usage{
 build_all_ncai_matrices(
   tyf_list,
-  wellbeing_base,
+  wellbeing_potential_base,
   habitat_extent,
   year_one = NULL,
   year_list,
@@ -16,7 +16,7 @@ build_all_ncai_matrices(
 \arguments{
 \item{tyf_list}{A named list of Total Yearly Flow (TYF) matrices (one per year).}
 
-\item{wellbeing_base}{A data frame representing the base wellbeing values
+\item{wellbeing_potential_base}{A data frame representing the base wellbeing values
 (year one habitat extent weighted by provision per unit and demand).}
 
 \item{habitat_extent}{A data frame where rows represent habitats and

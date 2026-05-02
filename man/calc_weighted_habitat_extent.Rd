@@ -17,7 +17,7 @@ and rows represent habitats.}
 
 \item{year_one}{Character or Numeric. The baseline year for indexing.}
 
-\item{weight_matrix}{A matrix (e.g., ESPB or Wellbeing Base) to be
+\item{weight_matrix}{A matrix (e.g., ES Potential Base or Wellbeing Base) to be
 multiplied by the indexed extent.}
 
 \item{as_matrices}{Logical. If \code{TRUE}, returns annual matrices;

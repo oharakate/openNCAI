@@ -22,7 +22,7 @@ A named list of data structures ready for use in \code{get_ncai}:
   \item \code{clean_es_label_tree}: Cleaned version of ES hierarchy.
   \item \code{habitat_extent}: Data frame of habitat areas over time.
   \item \code{ci_scores}: Data frame of indicator scores over time.
-  \item \code{esppu_scores}: Data frame of ES potential per unit area.
+  \item \code{provision_per_unit_scores}: Data frame of ES potential per unit area.
   \item \code{between_importance}: List of broad ES type weights.
   \item \code{within_importance}: List of specific ES service weights.
   \item \code{indicator_directory}: Data frame mapping indicators to service types.

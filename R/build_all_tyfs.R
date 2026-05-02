@@ -7,13 +7,13 @@
 #' @param raw_cis A data frame of raw condition indicator scores.
 #' @param year_list A vector of all years in the account (e.g., 2000:2022).
 #' @param ciwms_list A named list of Condition Indicator Weighting Matrices (CIWMs).
-#' @param tir The Total Indicator Relevance matrix (output from \code{calc_tir}).
-#' @param tir_constant A numeric value (usually 2) used for normalization.
+#' @param total_indicator_relevances The Total Indicator Relevance matrix (output from \code{calc_total_indicator_relevances}).
+#' @param total_indicator_relevances_constant A numeric value (usually 2) used for normalization.
 #'
 #' @return A named list of matrices, one for each year in \code{year_list}.
 #'   Each matrix represents the aggregated flow of ecosystem services for that year.
 #' @keywords internal
-build_all_tyfs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
+build_all_tyfs <- function(raw_cis, year_list, ciwms_list, total_indicator_relevances, total_indicator_relevances_constant) {
 
   # Call the process for every year in the list
   raw_tyf_list <- lapply(year_list, function(yr) {
@@ -29,8 +29,8 @@ build_all_tyfs <- function(raw_cis, year_list, ciwms_list, tir, tir_constant) {
     # STEP B: Sum them and normalize
     tyf <- build_tyf(
       list_of_ywccms = current_year_ywccms,
-      tir = tir,
-      tir_constant = tir_constant
+      total_indicator_relevances = total_indicator_relevances,
+      total_indicator_relevances_constant = total_indicator_relevances_constant
     )
 
     return(tyf)
@@ -79,21 +79,22 @@ build_all_ywccms <- function(raw_cis, year, year_list, ciwms_list) {
 
 #' Build Total Yearly Flow (TYF) for a Single Year
 #'
-#' Aggregates a list of YWCCMs and normalizes the sum against the TIR matrix.
+#' Aggregates a list of YWCCMs and normalizes the sum against the Total
+#' Indicator Relevances matrix.
 #'
 #' @param list_of_ywccms A list of Yearly Weighted Condition Contribution Matrices.
-#' @param tir The Total Indicator Relevance matrix.
-#' @param tir_constant Numeric. Added to denominator for stability and numerator for indexing.
+#' @param total_indicator_relevances The Total Indicator Relevance matrix.
+#' @param total_indicator_relevances_constant Numeric. Added to denominator for stability and numerator for indexing.
 #'
 #' @return A numeric matrix for one year.
 #' @keywords internal
-build_tyf <- function(list_of_ywccms, tir, tir_constant) {
+build_tyf <- function(list_of_ywccms, total_indicator_relevances, total_indicator_relevances_constant) {
 
   # Aggregation across the list of indicators
   sum_ywccms <- Reduce("+", list_of_ywccms)
 
   # Normalize: (Sum + Constant * 100) / (Sum of Weights + Constant)
-  tyf <- (sum_ywccms + (100 * tir_constant)) / tir
+  tyf <- (sum_ywccms + (100 * total_indicator_relevances_constant)) / total_indicator_relevances
 
   return(tyf)
 }

@@ -19,8 +19,7 @@ columns = ecosystem service type. The names of the list must be the years.}
 5-year weighted smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 
 \item{year_one}{Character or Numeric. The year used as the baseline
-(where index = 100). Defaults to the first name in
-\code{total_assets_matrix_list}.}
+(where index = 100). Defaults to the first name in \code{matrix_list}.}
 }
 \value{
 A data frame containing:

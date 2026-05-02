@@ -11,18 +11,19 @@ get_ncai(
   es_label_tree,
   year_list,
   year_one = NULL,
-  esppu_scores,
-  esppu_divisor = NULL,
+  provision_per_unit_scores,
+  provision_per_unit_divisor = 5,
   custom_divisor_matrix = NULL,
   between_importance_scores,
   within_importance_scores,
   ci_relevance_matrices,
   indicator_directory,
-  tir_constant = 2,
+  total_indicator_relevances_constant = 2,
   smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1),
-  return = c("overall_index", "by_ecosystem_service_type", "by_broad_habitat",
-    "wellbeing_index", "flow_index", "yearly_asset_matrices",
-    "yearly_wellbeing_matrices", "flow_matrices", "espb", "wellbeing_base", "everything")
+  return = c("overall_ncai", "by_ecosystem_service_type", "by_broad_habitat",
+    "wellbeing_index", "flow_of_es_index", "yearly_ncai_matrices",
+    "yearly_wellbeing_matrices", "flow_of_es_matrices", "es_potential_base",
+    "wellbeing_potential_base", "flow_of_es_base", "everything")
 )
 }
 \arguments{
@@ -40,11 +41,13 @@ services.}
 \item{year_one}{Optional. The baseline year for indexing (where index = 100).
 Defaults to the first year in \code{year_list}.}
 
-\item{esppu_scores}{A data frame of Ecosystem Service Provision Potential
+\item{provision_per_unit_scores}{A data frame of Ecosystem Service Provision Potential
 per Unit.}
 
-\item{esppu_divisor}{Numeric. A standard divisor to convert ESPPU scores to
-weights. Used if \code{custom_divisor_matrix} is NULL.}
+\item{provision_per_unit_divisor}{Numeric. A standard divisor to convert
+Provision Per Unit scores to  weights; the number out of which Provision
+Per Unit scores have been awarded. Default value is 5.
+Alternatively, a \code{custom_divisor_matrix} may be provided.}
 
 \item{custom_divisor_matrix}{Optional. A matrix of divisors specific to
 habitat/service combinations.}
@@ -59,37 +62,37 @@ within ecosystem service types.}
 
 \item{indicator_directory}{Directory mapping indicators to services/habitats.}
 
-\item{tir_constant}{Numeric. The constant used in the Total Indicator
-Relevance (TIR) calculation. Defaults to 2.}
+\item{total_indicator_relevances_constant}{Numeric. The constant used in the Total Indicator
+Relevance calculation. Defaults to 2.}
 
 \item{smoothing_weights}{Numeric vector of weights for 5-year trailing
 smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 
 \item{return}{Character. Specifies the object to return. Options include:
 \itemize{
-  \item \code{"overall_index"}: The standard overall NCAI data frame (default).
+  \item \code{"overall_ncai"}: The standard overall NCAI data frame (default).
   \item \code{"by_ecosystem_service_type"}: NCAI broken down by Ecosystem Service Type.
   \item \code{"by_broad_habitat"}: NCAI broken down by Broad Habitat.
   \item \code{"wellbeing_index"}: The potential wellbeing contribution of the
   habitats (before weighting by likely flow of services) over the years,
   indexed.
-  \item \code{"flow_index"}: The likely flow of ecosystem services (based on
+  \item \code{"flow_of_es_index"}: The likely flow of ecosystem services (based on
   information from condition indicators) over the years,
   indexed.
-  \item \code{"yearly_asset_matrices"}: The overall NCAI in its unaggregated
+  \item \code{"yearly_ncai_matrices"}: The overall NCAI in its unaggregated
   form, expressed as yearly matrices of value per habitat/ecosystem service.
-  \item \code{"yearly_wellbeing_matrices"}: The yearly potential wellbeing in
+  \item \code{"yearly_wellbeing_matrices"}: The yearly wellbeing potential in
    its unaggregated form, expressed as yearly matrices of value per
    habitat/ecosystem service.
-  \item \code{"yearly_flow_matrices"}: The yearly likely flow of ecosystem
+  \item \code{"yearly_flow_of_es_matrices"}: The yearly likely flow of ecosystem
    services in its unaggregated form, expressed as yearly matrices of value
    per habitat/ecosystem service.
-  \item \code{"espb"}: The Ecosystem Service Potential Base matrix, i.e. the
+  \item \code{"es_potential_base"}: The Ecosystem Service Potential Base matrix, i.e. the
   habitat extent weighted weighted by exemplary provision-per-unit scores in
   year one.
-  \item \code{"wellbeing_base"}: The Wellbeing Base, ie. year one potential
-  wellbeing matrix.
-  \item \code{"flow_base"}: The year one likely flow of services matrix.
+  \item \code{"wellbeing_potential_base"}: The Wellbeing Potential Base, ie.
+  year one potential wellbeing matrix.
+  \item \code{"flow_of_es_base"}: The year one likely flow of services matrix.
   \item \code{"everything"}: A named list containing all of the above.
 }}
 }
@@ -104,7 +107,7 @@ through the full NCAI pipeline, with options to return intermediate matrices
  or specific breakdowns.
 }
 \details{
-\strong{Mandatory Inputs:} Users must provide either an \code{esppu_divisor}
+\strong{Mandatory Inputs:} Users must provide either an \code{provision_per_unit_divisor}
 or a \code{custom_divisor_matrix} to convert potential scores into weights.
 
 \strong{Smoothing and Baseline Years:}

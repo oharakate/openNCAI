@@ -2,7 +2,19 @@
 
 openNCAI is an R package for calculating a regional natural capital assets index (NCAI), using the method designed by NatureScot to calculate <a href = "https://www.nature.scot/professional-advice/social-and-economic-benefits-nature/natural-capital/scotlands-natural-capital-asset-index">Scotland's NCAI</a>. It uses habitat extent and condition data, along with metadata and systems of weights, and produces a yearly single figure indexed around a year one value of 100.
 
-The calculation of the NCAI is based on the following core measureable or estimable quantities and concepts:
+### Installation ###
+
+Install the package from R, using:
+
+`devtools::install_github("oharakate/openNCAI", build_vignettes = TRUE)`
+
+Note that `build_vignettes = TRUE` is recommended to be able to see all documentation. 
+
+### Further Information ###
+
+![openNCAI calculation process](https://github.com/oharakate/openNCAI/raw/main/man/figures/ncai_calculation_process.png)
+
+The calculation of the NCAI is based on the following core measurable or estimable quantities and concepts:
 
 | Concept | Explanation |
 | :--- | :--- |

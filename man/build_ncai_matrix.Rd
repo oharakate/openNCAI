@@ -6,7 +6,7 @@
 \usage{
 build_ncai_matrix(
   tyf,
-  wellbeing_base,
+  wellbeing_potential_base,
   habitat_extent,
   target_year,
   year_one,
@@ -16,7 +16,7 @@ build_ncai_matrix(
 \arguments{
 \item{tyf}{A matrix of Total Yearly Flows for the target year.}
 
-\item{wellbeing_base}{A matrix of base wellbeing values.}
+\item{wellbeing_potential_base}{A matrix of base wellbeing values.}
 
 \item{habitat_extent}{A data frame of habitat extent values.}
 

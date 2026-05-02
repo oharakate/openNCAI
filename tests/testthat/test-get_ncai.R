@@ -15,12 +15,12 @@ mock_extent <- data.frame(
   check.names = FALSE
 )
 
-mock_esppu <- data.frame(
+mock_provision_per_unit <- data.frame(
   food = c(5, 1),
   climate = c(3, 4),
   row.names = hab_names # ADD THIS
 )
-colnames(mock_esppu) <- es_names
+colnames(mock_provision_per_unit) <- es_names
 
 mock_between <- list(provisioning = 0.6, regulating = 0.4)
 mock_within <- list(
@@ -57,9 +57,9 @@ mock_dir <- data.frame(
 mock_extent <- as.data.frame(mock_extent)
 rownames(mock_extent) <- hab_names
 
-mock_esppu <- as.data.frame(mock_esppu)
-rownames(mock_esppu) <- hab_names
-colnames(mock_esppu) <- es_names
+mock_provision_per_unit <- as.data.frame(mock_provision_per_unit)
+rownames(mock_provision_per_unit) <- hab_names
+colnames(mock_provision_per_unit) <- es_names
 
 # Ensure CIRMs are Data Frames with matching names
 mock_cirms <- lapply(mock_cirms, function(m) {
@@ -78,8 +78,8 @@ test_that("get_ncai core logic works with default return", {
     habitats_label_tree = h_tree,
     es_label_tree = e_tree,
     year_list = years,
-    esppu_scores = mock_esppu,
-    esppu_divisor = 5,
+    provision_per_unit_scores = mock_provision_per_unit,
+    provision_per_unit_divisor = 5,
     between_importance_scores = mock_between,
     within_importance_scores = mock_within,
     ci_relevance_matrices = mock_cirms,
@@ -102,8 +102,8 @@ test_that("get_ncai correctly handles custom year_one", {
       es_label_tree = e_tree,
       year_list = years,
       year_one = "2021",
-      esppu_scores = mock_esppu,
-      esppu_divisor = 5,
+      provision_per_unit_scores = mock_provision_per_unit,
+      provision_per_unit_divisor = 5,
       between_importance_scores = mock_between,
       within_importance_scores = mock_within,
       ci_relevance_matrices = mock_cirms,
@@ -123,8 +123,8 @@ test_that("get_ncai returns the full results list when requested", {
     habitats_label_tree = h_tree,
     es_label_tree = e_tree,
     year_list = years,
-    esppu_scores = mock_esppu,
-    esppu_divisor = 5,
+    provision_per_unit_scores = mock_provision_per_unit,
+    provision_per_unit_divisor = 5,
     between_importance_scores = mock_between,
     within_importance_scores = mock_within,
     ci_relevance_matrices = mock_cirms,
@@ -134,17 +134,17 @@ test_that("get_ncai returns the full results list when requested", {
 
   expect_type(res_all, "list")
   expect_named(res_all, c(
-    "overall_index",
+    "overall_ncai",
     "by_ecosystem_service_type",
     "by_broad_habitat",
     "wellbeing_index",
-    "flow_index",
-    "yearly_asset_matrices",
+    "flow_of_es_index",
+    "yearly_ncai_matrices",
     "yearly_wellbeing_matrices",
-    "yearly_flow_matrices",
-    "espb",
-    "wellbeing_base",
-    "flow_base"
+    "yearly_flow_of_es_matrices",
+    "es_potential_base",
+    "wellbeing_potential_base",
+    "flow_of_es_base"
   ))
 })
 

@@ -16,9 +16,9 @@ import_ns_testing_data(path, habitats_label_tree, es_label_tree, year_list)
 \value{
 A nested list containing:
 \itemize{
-  \item \code{ref_espb}: Ecosystem Service Potential Base matrix (Sheet 6).
-  \item \code{ref_wellbeing_base}: Well-being Base matrix (Sheet 7).
-  \item \code{ref_tir}: Total Indicator Relevances matrix (Sheet 74).
+  \item \code{ref_es_potential_base}: Ecosystem Service Potential Base matrix (Sheet 6).
+  \item \code{ref_wellbeing_potential_base}: Well-being Base matrix (Sheet 7).
+  \item \code{ref_total_indicator_relevances}: Total Indicator Relevances matrix (Sheet 74).
   \item \code{ref_all_year_sheets}: A list of yearly natural capital asset matrices.
   \item \code{ref_index_breakdowns}: Data frames containing the final index and its
       breakdowns by service type and habitat.

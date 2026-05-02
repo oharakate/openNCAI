@@ -6,7 +6,7 @@ format:
     toc-depth: 2
     df-print: kable 
 vignette: >
-  %\VignetteIndexEntry{OpenNCAI in Brief}
+  %\VignetteIndexEntry{open_NCAI_in_brief}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 knitr:
@@ -16,7 +16,7 @@ knitr:
 ---
 
 
-This vignette demonstrates very briefly how to use openNCAI to calculate a Natural Capital Assets Index. We use the data assets bundled with the package, namely metadata, environmental measurements, and weight sets used by NatureScot to calculate Scotland's NCAI from 2000 to 2022.
+This vignette demonstrates very briefly how to use openNCAI to calculate a Natural Capital Assets Index. We use the data assets bundled with the package, namely metadata, environmental measurements, and weight sets used by NatureScot to calculate [Scotland's NCAI](https://www.nature.scot/professional-advice/social-and-economic-benefits-nature/natural-capital/scotlands-natural-capital-asset-index) from 2000 to 2022.
 
 First we load the package:
 
@@ -47,8 +47,8 @@ scot_ncai <- get_ncai(habitat_extent = ns_habitat_extent,
                es_label_tree = ns_es_label_tree,
                year_list = ns_year_list,
                year_one = NULL, # Default is the first year of year list
-               esppu_scores = ns_esppu_scores,
-               esppu_divisor = ns_custom_divisor_matrix, 
+               provision_per_unit_scores = ns_provision_per_unit_scores,
+               custom_divisor_matrix = ns_custom_divisor_matrix, 
                between_importance_scores = ns_between_importance_scores,
                within_importance_scores = ns_within_importance_scores,
                ci_relevance_matrices = ns_ci_relevance_matrices,
@@ -84,9 +84,26 @@ Type `?openNCAI` to get help, including seeing all the `return` options availabl
 ?openNCAI
 ```
 
+### Learn more
+
+To understand more, read about the bundled data objects below, or explore a fuller demonstration in [Replicating Scotland's NCAI](replicating_scotlands_ncai.html).
+
+``` {r run-big-vignette, eval = FALSE}
+# Access the vignette within R with this command:
+vignette("replicating_scotlands_ncai", package = "openNCAI")
+```
+
+To use openNCAI with your own data, it's important to pass in data and metadata in the correct formats. The helper functions `create_ncai_template()` and `read_ncai_template` are provided to support that process. Read more about them in [Using openNCAI's Data Entry Templates](using_openNCAIs_data_entry_templates.html). 
+
+```{r run-data-entry-vignette, eval = FALSE}
+# Access the vignette:
+vignette("using_openNCAIs_data_entry_templates", package = "openNCAI")
+```
 
 
 ### Details of the bundled data objects
+
+openNCAI includes includes example data objects which show the correct format for data input, and can be used to recreate Scotland's openNCAI as published by NatureScot for the years 2000 to 2022. 
 
 #### Metadata objects
 ```{r}
@@ -97,23 +114,35 @@ d_subset <- data.frame(
   `Object Name` = c(
     "ns_habitats_label_tree", 
     "ns_es_label_tree", 
-    "ns_year_list"
+    "ns_year_list",
+    "ns_display_habitats_label_tree",
+    "ns_display_es_label_tree",
+    "ns_display_ci_names"
   ),
   `Description` = c(
-    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS level 2) grouped within their respective broad habitat categories (EUNIS level 1) found in Scotland.",
-    "Ecosystem Services Label Tree: a hierarchy of individual ecosystem services organized by their service type groups (Provisioning, Regulation & Maintenance, and Cultural).",
-    "Year List: the specific range of years over which the index is calculated."
+    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS[^1] level 2) grouped within their respective broad habitat categories (EUNIS level 1) found in Scotland.",
+    "Ecosystem Services Label Tree: a hierarchy of individual CICES-style[^2] ecosystem services organized by their SEEA[^3] service type groups (Provisioning, Regulation & Maintenance, and Cultural).",
+    "Year List: the specific range of years over which the index is calculated.",
+    "The display names version of the Habitats label tree, with original capital letters, punctuation, etc., before they were regularised for use inside the program. E.g. 'B1 COASTAL HABITATS' in this object becomes 'b1_coastal_habitats' in `ns_habitats_label_tree`. Used to demonstrate the helper functions `create_ncai_template()` and `read_ncai_template()`",
+    "The display names version of the Ecosystem Services Label Tree.",
+    "A list of the Condition Indicator labels, again before cleaning."
   ),
   `Data Format` = c(
     "A named list of character vectors where names are broad habitats and vectors contain the specific habitats within them.",
     "A named list of character vectors where names are service types and vectors contain the individual services.",
-    "A character vector of years."
+    "A character vector of years.",
+    "A named list of character vectors where names are broad habitats and vectors contain the specific habitats within them.",
+    "A named list of character vectors where names are service types and vectors contain the individual services.",
+    "A character vector of Condition Indicator labels."
   ),
   check.names = FALSE
 )
 
 knitr::kable(d_subset)
 ```
+[^1]: [European Nature Information System](https://eunis.eea.europa.eu/)
+[^2]: [Common International Classification of Ecosystem Services](https://cices.eu/)
+[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/)
 
 #### Environmental measurements objects
 ```{r}
@@ -145,7 +174,7 @@ knitr::kable(d_subset)
 #| echo: false
 d_subset <- data.frame(
   `Object Name` = c(
-    "ns_esppu_scores", 
+    "ns_provision_per_unit_scores", 
     "ns_between_importance_scores", 
     "ns_within_importance_scores", 
     "ns_ci_relevance_matrices", 
@@ -153,7 +182,7 @@ d_subset <- data.frame(
     "ns_custom_divisor_matrix"
   ),
   `Description` = c(
-    "Ecosystem Service Provision Potential per Unit Scores: scores denoting the relative potential of one area unit of a habitat to provide each of the ecosystem services.",
+    "Provision Per Unit Scores: scores denoting the relative capacity of one area unit of a habitat to provide each of the ecosystem services.",
     "Ecosystem Service Importance Scores (**between**-service-type): scores denoting the relative importance of the different ecosystem service **types** ('Provisioning', 'Regulation & Maintenance', 'Cultural') to Scotland.",
     "Ecosystem Service Importance Score (**within**-service-type): scores denoting the relative importance of individual ecosystem services within their service type group.",
     "Condition Indicator Relevance Matrices: a set of matrices marking whether an indicator is relevant to specific habitat/ecosystem service combinations (e.g., 'Woodland bird index' relevance to 'Pollination').",
@@ -174,13 +203,6 @@ d_subset <- data.frame(
 knitr::kable(d_subset)
 ```
 
-::: {.callout-note collapse="true"}
-## Click to see the R code
-This content is hidden until the user clicks it.
-```{r}
-#| label: hidden-code-example
-print("This code is hidden until the user clicks it.")
-```
-:::
+
 
 

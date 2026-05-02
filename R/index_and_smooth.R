@@ -11,8 +11,7 @@
 #' @param smoothing_weights A numeric vector of weights used for the trailing
 #'   5-year weighted smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.
 #' @param year_one Character or Numeric. The year used as the baseline
-#'   (where index = 100). Defaults to the first name in
-#'   \code{total_assets_matrix_list}.
+#'   (where index = 100). Defaults to the first name in \code{matrix_list}.
 #'
 #' @details
 #' \strong{Smoothing and Baseline Years:}

@@ -21,24 +21,19 @@ names(raw_imports)
 # list2env(scotNCAItestobjects, envir = .GlobalEnv)
 
 # Use manual method to force overwrite
-ref_espb <- raw_imports$ref_espb
-ref_wellbeing_base <- raw_imports$ref_wellbeing_base
-ref_tir <- raw_imports$ref_tir
+ref_es_potential_base <- raw_imports$ref_es_potential_base
+ref_wellbeing_potential_base <- raw_imports$ref_wellbeing_potential_base
+ref_total_indicator_relevances <- raw_imports$ref_total_indicator_relevances
 ref_all_year_sheets <- raw_imports$ref_all_year_sheets
 ref_index_breakdowns <- raw_imports$ref_index_breakdowns
 
-# Create a matrix of zeroes in the same shape as the test data matrices:
-zero_main_matrix <- ref_espb
-zero_main_matrix[] <- 0
-
 # Import to data-raw:
 usethis::use_data(
-  ref_espb,
-  ref_wellbeing_base,
-  ref_tir,
+  ref_es_potential_base,
+  ref_wellbeing_potential_base,
+  ref_total_indicator_relevances,
   ref_all_year_sheets,
   ref_index_breakdowns,
-  zero_main_matrix,
   overwrite = TRUE,
   internal = TRUE
 )

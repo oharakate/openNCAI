@@ -54,9 +54,9 @@
 #' @format A character vector of year labels (e.g., "2000", "2001").
 "ns_year_list"
 
-#' Ecosystem Service Potential per Unit Scores
+#' Provision Per Unit Scores
 #'
-#' A matrix of scores denoting the potential of each habitat to provide
+#' A matrix of scores denoting the exemplary capacity of each habitat to provide
 #' each ecosystem service.
 #'
 #' @format A data frame:
@@ -65,7 +65,7 @@
 #'   \item Columns represent ecosystem services matching the ecosystem services label tree.
 #'   \item Values are numeric scores from 0 (No potential) to 5 (Maximum potential).
 #' }
-"ns_esppu_scores"
+"ns_provision_per_unit_scores"
 
 #' Nature Scot Custom Divisor Matrix
 #'
@@ -130,9 +130,9 @@
 #' }
 "ns_ci_relevance_matrices"
 
-#' Dirty (Print) Habitats Label Tree
+#' Display name version of Habitats Label Tree
 #'
-#' Print version (no string cleaning) version of \code{ns_habitats_label_tree}
+#' Display name version (no string cleaning) version of \code{ns_habitats_label_tree}
 #' which is used internally.
 #'
 #' @format A named list of character vectors:
@@ -140,11 +140,11 @@
 #'   \item Names represent broad habitat groups (e.g., "Coastal habitats").
 #'   \item Values are character vectors of specific habitat types (e.g., "Coastal shingle").
 #' }
-"ns_dirty_habitats_label_tree"
+"ns_display_habitats_label_tree"
 
-#' Dirty (Print) Ecosystem Services Label Tree
+#' Display name version of Ecosystem Services Label Tree
 #'
-#' Print version (no string cleaning) version of \code{ns_es_label_tree}
+#' Display name version (no string cleaning) version of \code{ns_es_label_tree}
 #' which is used internally.
 #'
 #' @format A named list of character vectors:
@@ -152,14 +152,14 @@
 #'   \item Names represent ecosystem service types (e.g., "Provisioning").
 #'   \item Values are character vectors of specific ecosystem services (e.g., "Cultivated crops").
 #' }
-"ns_dirty_es_label_tree"
+"ns_display_es_label_tree"
 
-#' Dirty (Print) Condition Indicatory Names
+#' Display names of Condition Indicators
 #'
-#' Print version (no string cleaning) list of condition indicator names which
+#' Display name (no string cleaning) list of condition indicator names which
 #' is used internally.
 #'
 #' @format A character vector where items are the original number and name of
 #' NatureScot's 38 condition indicators:
 #'
-"ns_dirty_ci_names"
+"ns_display_ci_names"

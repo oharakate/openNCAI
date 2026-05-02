@@ -42,10 +42,10 @@ test_that("calc_weighted_habitat_extent handles dual output modes correctly", {
 test_that("get_yearly_potential_provision wraps worker correctly", {
   # Mock data
   hab_extent <- data.frame(`2020` = 10, row.names = "Forest", check.names = FALSE)
-  espb <- data.frame(S1 = 5, row.names = "Forest")
+  es_potential_base <- data.frame(S1 = 5, row.names = "Forest")
 
   # We test that it returns the expected structure
-  res <- get_yearly_potential_provision(hab_extent, 2020, espb)
+  res <- get_yearly_potential_provision(hab_extent, 2020, es_potential_base)
 
   expect_s3_class(res, "data.frame")
   expect_equal(res["2020", "raw_total"], 500) # 10 extent * 5 weight
@@ -64,12 +64,12 @@ test_that("get_yearly_potential_wellbeing wraps worker correctly", {
 
 test_that("potential functions handle numeric and character years interchangeably", {
   hab_extent <- data.frame(`2020` = 10, `2021` = 10, row.names = "Forest", check.names = FALSE)
-  espb <- data.frame(S1 = 5, row.names = "Forest")
+  es_potential_base <- data.frame(S1 = 5, row.names = "Forest")
 
   # Test with numeric 2020
-  res_num <- get_yearly_potential_provision(hab_extent, 2020, espb)
+  res_num <- get_yearly_potential_provision(hab_extent, 2020, es_potential_base)
   # Test with character "2020"
-  res_chr <- get_yearly_potential_provision(hab_extent, "2020", espb)
+  res_chr <- get_yearly_potential_provision(hab_extent, "2020", es_potential_base)
 
   expect_equal(res_num$raw_index, res_chr$raw_index)
 })

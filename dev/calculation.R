@@ -28,7 +28,7 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
                          habitats_label_tree = ns_habitats_label_tree,
                          es_label_tree = ns_es_label_tree,
                          year_list = ns_year_list,
-                         esppu_scores = ns_esppu_scores,
+                         provision_per_unit_scores = ns_provision_per_unit_scores,
                          custom_divisor_matrix = ns_custom_divisor_matrix,
                          between_importance_scores = ns_between_importance_scores,
                          within_importance_scores = ns_within_importance_scores,
@@ -37,14 +37,14 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
                          return = "everything")
 
 
-# Get without custom esppu division for checking something
+# Get without custom provision_per_unit division for checking something
 # ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
 #                          ci_scores = ns_ci_scores,
 #                          habitats_label_tree = ns_habitats_label_tree,
 #                          es_label_tree = ns_es_label_tree,
 #                          year_list = ns_year_list,
-#                          esppu_scores = ns_esppu_scores,
-#                          esppu_divisor = 5,
+#                          provision_per_unit_scores = ns_provision_per_unit_scores,
+#                          provision_per_unit_divisor = 5,
 #                          between_importance_scores = ns_between_importance_scores,
 #                          within_importance_scores = ns_within_importance_scores,
 #                          ci_relevance_matrices = ns_ci_relevance_matrices,
@@ -55,13 +55,13 @@ ncai_objects <- get_ncai(habitat_extent = ns_habitat_extent,
 # What did we get?
 names(ncai_objects)
 
-# Check making ESPB works:
-# Does our made_espb match the published ref_espb?
-all.equal(ncai_objects$espb, ref_espb)
+# Check making es_potential_base works:
+# Does es_potential_base we created match the published ref_es_potential_base?
+all.equal(ncai_objects$es_potential_base, ref_es_potential_base)
 
 # Check making Wellbeing Base works:
 # Is the calculated wellbeing base equal to NatureScot's wellbeing base?
-all.equal(ncai_objects$wellbeing_base, ref_wellbeing_base)
+all.equal(ncai_objects$wellbeing_potential_base, ref_wellbeing_potential_base)
 # Yes.
 
 # Total Yearly Flow is not displayed in NatureScot method, but we use it to
@@ -69,30 +69,30 @@ all.equal(ncai_objects$wellbeing_base, ref_wellbeing_base)
 # Check if our calculations match those of NatureScot across the years:
 comparison_results <- mapply(function(list1, list2) {
   all.equal(list1, list2)
-}, ncai_objects$yearly_asset_matrices[1:23],
+}, ncai_objects$yearly_ncai_matrices[1:23],
 ref_all_year_sheets[1:23],
 SIMPLIFY = FALSE)
 # They do:
 comparison_results
 
 # The overall index is found at:
-ncai_objects$overall_index
+ncai_objects$overall_ncai
 # This can be compared to the first entry (named "overall") in the imported
 # ns_index_breakdowns.
 # BUT NOTE THAT displayed raw total in NS sheet is divided by 100 so,
 # for comparison:
-test_ref_overall_index <- ref_index_breakdowns[["overall"]] |>
+test_ref_overall_ncai <- ref_index_breakdowns[["overall"]] |>
   dplyr::mutate(raw_total = raw_total * 100) |>
   # Also, and we don't know if this is a mistake or not, no raw index is shown
   # for the overall index. Instead the smoothed value is displayed in that
   # column, so let's deselect that column in both for testing:
   dplyr::select(-raw_index)
 
-test_our_overall_index <- ncai_objects$overall_index |>
+test_our_overall_ncai <- ncai_objects$overall_ncai |>
   dplyr::select(-raw_index)
-all.equal(test_our_overall_index, test_ref_overall_index)
-remove(test_our_overall_index)
-remove(test_ref_overall_index)
+all.equal(test_our_overall_ncai, test_ref_overall_ncai)
+remove(test_our_overall_ncai)
+remove(test_ref_overall_ncai)
 
 # Check if our index broken down by ecosystem service type matches the ref:
 # Are they equal?
@@ -115,13 +115,13 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #### CALCULATE BASES collapse and ignore this bit ####
 #
 # ## RECREATE THE ECOSYSTEM SERVICE POTENTIAL BASE
-# # We use openNCAI::calc_potential_weights() along with our NatureScot
+# # We use openNCAI::calc_provision_per_unit_weights() along with our NatureScot
 # # custom divisor matrix to convert the exemplary service potential scores
 # # (sheet 3 "ES Potential per SPU) to weights, by dividing by the number
 # # specified in our custom divisor matrix (normally 5, except for the cells
 # # marked in red in sheet6 "ES Potential Base").
-# made_esppu_weights <- openNCAI::calc_potential_weights(
-#   esppu = ns_esppu_scores,
+# made_provision_per_unit_weights <- openNCAI::calc_provision_per_unit_weights(
+#   provision_per_unit = ns_provision_per_unit_scores,
 #   custom_divisor_matrix = ns_custom_divisor_matrix,
 #   habitats_label_tree = ns_habitats_label_tree,
 #   es_label_tree = ns_es_label_tree
@@ -129,17 +129,17 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #
 #
 # ## We use these weights and the Scottish habitat extent data with
-# # openNCAI::calc_espb() to recreate the Ecosystem Service Potential Base (ESPB):
-# made_espb <- openNCAI::calc_espb(habitat_extent = ns_habitat_extent,
-#                                  esppu_weights = made_esppu_weights,
+# # openNCAI::calc_es_potential_base() to recreate the Ecosystem Service Potential Base (es_potential_base):
+# made_es_potential_base <- openNCAI::calc_es_potential_base(habitat_extent = ns_habitat_extent,
+#                                  provision_per_unit_weights = made_provision_per_unit_weights,
 #                                  year_list = ns_year_list,
 #                                  habitats_label_tree = ns_habitats_label_tree,
 #                                  es_label_tree = ns_es_label_tree)
-# # The ESPB can be  understood as the ecosystem services provided by Scotland's
+# # The es_potential_base can be  understood as the ecosystem services provided by Scotland's
 # # habitats in year  one of the index.
 #
-# # Does our made_espb match the published ref_espb?
-# all.equal(made_espb, ref_espb)
+# # Does our made_es_potential_base match the published ref_es_potential_base?
+# all.equal(made_es_potential_base, ref_es_potential_base)
 # # Yes
 #
 #
@@ -178,16 +178,16 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #
 #
 # # To recreate the Well-being Base (sheet 7), we use
-# # openNCAI::calc_wellbeing_base(), which multiplies the importance weights by
+# # openNCAI::calc_wellbeing_potential_base(), which multiplies the importance weights by
 # # the Ecosystem Service Potential Base. We pass in both label trees so that
 # # the returned data frame is labelled.
-# made_wellbeing_base <- openNCAI::calc_wellbeing_base(espb = made_espb,
+# made_wellbeing_potential_base <- openNCAI::calc_wellbeing_potential_base(es_potential_base = made_es_potential_base,
 #                               importance_weights = made_importance_weights,
 #                               habitats_label_tree = ns_habitats_label_tree,
 #                               es_label_tree = ns_es_label_tree)
 #
 # # Is the calculated wellbeing base equal to NatureScot's wellbeing base?
-# all.equal(made_wellbeing_base, ref_wellbeing_base)
+# all.equal(made_wellbeing_potential_base, ref_wellbeing_potential_base)
 # # Yes.
 #
 #
@@ -206,7 +206,7 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #   habitats_label_tree = ns_habitats_label_tree,
 #   ci_scores = ns_ci_scores,
 #   year_list = ns_year_list,
-#   tir_constant = ns_tir_constant)
+#   total_indicator_relevances_constant = ns_total_indicator_relevances_constant)
 #
 # # We have a named list of data frames recording yearly flow rate per habitat/
 # # service combination:
@@ -220,7 +220,7 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #
 # made_ncai_year_matrices <- build_all_ncai_matrices(
 #   tyf_list = made_tyfs_list,
-#   wellbeing_base = made_wellbeing_base,
+#   wellbeing_potential_base = made_wellbeing_potential_base,
 #   habitat_extent = ns_habitat_extent,
 #   year_one = ns_year_list[[1]],
 #   habitat_labels = ns_all_habitat_labels
@@ -241,34 +241,34 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #
 #
 # ## CALCULATE INDEXED NATURAL CAPITAL ASSETS
-# # From the yearly total assets matrices, we can calculate the main index, and
+# # From the yearly ncai matrices, we can calculate the main index, and
 # # the breakdowns by ecosystem service type and by broad habitat.
 #
-# made_overall_index <- calc_ncai(total_assets_matrix_list =
+# made_overall_ncai <- calc_ncai(matrix_list =
 #                                   made_ncai_year_matrices)
 #
 # # This can be compared to the first entry (named "overall") in the imported
 # # ns_index_breakdowns.
 # # NB displayed raw total in NS sheet is divided by 100 so, for comparison:
-# test_ref_overall_index <- ref_index_breakdowns[["overall"]] |>
+# test_ref_overall_ncai <- ref_index_breakdowns[["overall"]] |>
 #   dplyr::mutate(raw_total = raw_total * 100) |>
 #   # Also, and we don't know if this is a mistake or not, no raw index is shown
 #   # for the overall index. Instead the smoothed value is displayed in that
 #   # column, so let's deselect that column in both for testing:
 #   dplyr::select(-raw_index)
 # # Use same rownames:
-# rownames(test_ref_overall_index) <- ns_year_list
+# rownames(test_ref_overall_ncai) <- ns_year_list
 #
-# test_made_overall_index <- made_overall_index |>
+# test_made_overall_ncai <- made_overall_ncai |>
 #   dplyr::select(-raw_index)
-# all.equal(test_made_overall_index, test_ref_overall_index)
-# remove(test_made_overall_index)
-# remove(test_ref_overall_index)
+# all.equal(test_made_overall_ncai, test_ref_overall_ncai)
+# remove(test_made_overall_ncai)
+# remove(test_ref_overall_ncai)
 #
 #
 # # The index broken down by service type:
 # made_index_by_st <- calc_ncai_by_st(
-#   total_assets_matrix_list = made_ncai_year_matrices,
+#   matrix_list = made_ncai_year_matrices,
 #   es_label_tree_list = ns_es_label_tree)
 #
 # # We can compare with the index breakdowns in the NatureScot sheet:
@@ -285,7 +285,7 @@ all.equal(ncai_objects$by_broad_habitat[ns_bh_breakdowns], ref_index_by_bh)
 #
 # # For Scotland, the index broken down by broad habitat is:
 # made_index_by_bh <- calc_ncai_by_bh(
-#   total_assets_matrix_list = made_ncai_year_matrices,
+#   matrix_list = made_ncai_year_matrices,
 #   habitats_label_tree = ns_habitats_label_tree)
 #
 # # We can compare with the index breakdowns in the NatureScot sheet.
@@ -359,7 +359,7 @@ ns_bh_breakdown_list <- c(names(ns_habitats_label_tree)[c(1:6, 8)])
 
 
 # Just the overall index:
-main_index_for_plot <- ncai_objects$overall_index |>
+main_index_for_plot <- ncai_objects$overall_ncai |>
   tibble::rownames_to_column(var = "year") |>
   dplyr::mutate(
     year = as.numeric(year),
@@ -505,7 +505,7 @@ ggsave(
 prov_time_series_mats <- get_yearly_potential_provision(
   habitat_extent = ns_habitat_extent,
   year_one = 2000,
-  espb = ncai_objects$espb,
+  es_potential_base = ncai_objects$es_potential_base,
   as_matrices = TRUE)
 # View(prov_time_series_mats[[1]])
 # View(prov_time_series_mats[["2005"]])
@@ -515,7 +515,7 @@ str(prov_time_series_mats[["2005"]])
 prov_time_series <- get_yearly_potential_provision(
   habitat_extent = ns_habitat_extent,
   year_one = 2000,
-  espb = ncai_objects$espb,
+  es_potential_base = ncai_objects$es_potential_base,
   as_matrices = FALSE)
 head(prov_time_series)
 
@@ -523,14 +523,14 @@ head(prov_time_series)
 wb_time_series <- get_yearly_potential_wellbeing(
   habitat_extent = ns_habitat_extent,
   year_one = 2000,
-  wellbeing_base = ncai_objects$wellbeing_base,
+  wellbeing_potential_base = ncai_objects$wellbeing_potential_base,
   as_matrices = FALSE)
 head(wb_time_series)
 
 wb_time_series_mats <- get_yearly_potential_wellbeing(
   habitat_extent = ns_habitat_extent,
   year_one = 2000,
-  wellbeing_base = ncai_objects$wellbeing_base,
+  wellbeing_potential_base = ncai_objects$wellbeing_potential_base,
   as_matrices = TRUE)
 # View(wb_time_series_mats[[1]])
 # View(wb_time_series_mats[["2005"]])
@@ -586,7 +586,7 @@ plot_df_fuller <- data.frame(
   year = as.numeric(rownames(prov_time_series)),
   Provision = prov_time_series$raw_index,
   Wellbeing = wb_time_series$raw_index,
-  Final = ncai_objects$overall_index$raw_index
+  Final = ncai_objects$overall_ncai$raw_index
 )
 
 ggplot(plot_df_fuller, aes(x = year)) +

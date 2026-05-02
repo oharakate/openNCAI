@@ -6,22 +6,41 @@
 #' styling, and cell locking to ensure data integrity for subsequent re-import.
 #' Note that the habitats and ecosystem service label trees passed here may be
 #' used to subsequently read in the data with read_ncai_template().
+#'
 #' Optional arguments to pre-populate the template with data assume that the
 #' passed-in data matches those of the label trees, year list and condition
-#' indicator list as relevant.
+#' indicator list as relevant. Users are recommended to create an empty
+#' template first to verify the required formats before attempting to pass in
+#' data.
 #'
 #' @param template_out A string representing the file path where the .xlsx will be saved.
 #' @param habitats_label_tree A named list of character vectors representing the habitat hierarchy. Names: broad habitats, typically EUNIS level 1. Character vector items: typically EUNIS level 2 habitats.
 #' @param es_label_tree A named list of character vectors representing the ecosystem service hierarchy. Names: typically SEEA ecosystem service types. Character vector items: typically CICES-type ecosystem services.
 #' @param ci_names A character vector of condition indicator names.
 #' @param year_list A vector of years (numeric or character) to be included in the account.
-#' @param habitat_extent Optional data frame of existing habitat extent data. Row and column order MUST matched label trees/year list.
-#' @param esppu_scores Optional data frame of existing ES Potential Per Unit scores. Row and column order MUST match label trees/year list/condition indicator names.
-#' @param between_importance_scores Optional list of broad ES importance weights. Row and column order MUST matched label trees.
-#' @param within_importance_scores Optional list of weights for specific services.
+#' @param overwrite Logical. If \code{TRUE}, an existing file at \code{template_out} will
+#' be overwritten without warning. Default is \code{FALSE} to prevent accidental loss
+#' of manually entered data.
+#' @param habitat_extent Optional data frame of existing habitat extent data.
+#' Row and column order and dimensions MUST matched label trees/year list.
+#' @param provision_per_unit_scores Optional data frame of existing ES Potential
+#'  Per Unit scores. Row and column order MUST match lower levels of
+#'  \code{habitats_label_tree} and \code{es_label_tree}.
+#' @param between_importance_scores Optional list of ecosystem service type
+#' importance weights. Order MUST match names of \code{es_label_tree}.
+#' @param within_importance_scores Optional list of lists of weights for
+#' specific services. Order MUST match the order and dimensions of the lower
+#' level of \code{es_label_tree}.
 #' @param ci_scores Optional data frame of existing condition indicator scores.
-#' @param indicator_directory Optional data frame of existing indicator salience data.
-#' @param ci_relevance_matrices Optional list of existing binary relevance matrices.
+#' Rows and columns MUST match dimensions and order of \code{year_list} and
+#' \code{ci_names}.
+#' @param indicator_directory Optional data frame of existing indicator salience
+#'  data. Row order and length MUST match \code{ci_names}. Column order and
+#'  length MUST match \code{es_label_tree} names.
+#' @param ci_relevance_matrices Optional list of existing binary relevance
+#' matrices. Matrix list order and length must mach \code{ci_names}. Each
+#' matrix row and column order MUST match lower levels of
+#'  \code{habitats_label_tree} and \code{es_label_tree}.
 #'
 #' @return Generates an Excel file at the specified path and returns a message of success.
 #' @export
@@ -73,14 +92,22 @@ create_ncai_template <- function(template_out,
                                  es_label_tree,
                                  ci_names,
                                  year_list,
+                                 overwrite = FALSE,
                                  habitat_extent = NULL,
-                                 esppu_scores = NULL,
+                                 provision_per_unit_scores = NULL,
                                  between_importance_scores = NULL,
                                  within_importance_scores = NULL,
                                  ci_scores = NULL,
                                  indicator_directory = NULL,
                                  ci_relevance_matrices = NULL) {
 
+  # Check if file exists and ask re. overwriting.
+  if (file.exists(template_out) && !overwrite) {
+    stop(paste0("The file '", template_out, "' already exists. ",
+                "Set overwrite = TRUE to replace it, or choose a different name."))
+  }
+
+  # Set up styles
   hab_palette <- c("#FFDEAD", "#E0FFFF", "#EEEEE0", "#CAFF70", "#FFBBFF",
                    "#B4EEB4", "#CDCDC1", "#EE9572", "#9FB6CD", "#D8BFD8")
 
@@ -102,8 +129,8 @@ create_ncai_template <- function(template_out,
   write_extent_sheet(wb, "Habitat Extent", habitats_label_tree, year_list, hab_palette, habitat_extent)
 
   # 3. Provision Per Unit
-  esppu_data <- if (!is.null(esppu_scores)) esppu_scores else prepare_template_matrix(habitats_label_tree, es_label_tree)
-  write_input_matrix(wb, "Provision Per Unit", esppu_data, habitats_label_tree, es_label_tree,
+  provision_per_unit_data <- if (!is.null(provision_per_unit_scores)) provision_per_unit_scores else prepare_template_matrix(habitats_label_tree, es_label_tree)
+  write_input_matrix(wb, "Provision Per Unit", provision_per_unit_data, habitats_label_tree, es_label_tree,
                      style_obj, hab_palette, thick_border_style, instruction_style,
                      instruction = "Enter exemplary ecosystem service potential per service-providing unit - score out of 5")
 
@@ -129,7 +156,7 @@ create_ncai_template <- function(template_out,
                        instruction = "Enter 1 or 0 in each cell.")
   }
 
-  openxlsx::saveWorkbook(wb, template_out, overwrite = TRUE)
+  openxlsx::saveWorkbook(wb, template_out, overwrite = overwrite)
   message(paste("Workbook generated:", template_out))
 }
 #' Prepare a blank data frame based on Habitat and ES trees
@@ -437,7 +464,7 @@ write_condition_scores_sheet <- function(wb, sheet_name, ci_names, years, source
 #'   \item \code{clean_es_label_tree}: Cleaned version of ES hierarchy.
 #'   \item \code{habitat_extent}: Data frame of habitat areas over time.
 #'   \item \code{ci_scores}: Data frame of indicator scores over time.
-#'   \item \code{esppu_scores}: Data frame of ES potential per unit area.
+#'   \item \code{provision_per_unit_scores}: Data frame of ES potential per unit area.
 #'   \item \code{between_importance}: List of broad ES type weights.
 #'   \item \code{within_importance}: List of specific ES service weights.
 #'   \item \code{indicator_directory}: Data frame mapping indicators to service types.
@@ -541,14 +568,14 @@ read_ncai_template <- function(path,
   year_list <- colnames(habitat_extent)
 
   # --- 3. PROVISION PER UNIT ---
-  esppu_range <- sprintf("A2:%s%d", col_to_lab(1 + n_es), 1 + n_habs)
-  esppu_raw   <- readxl::read_excel(path, sheet = "Provision Per Unit", range = esppu_range, col_names = FALSE)
+  provision_per_unit_range <- sprintf("A2:%s%d", col_to_lab(1 + n_es), 1 + n_habs)
+  provision_per_unit_raw   <- readxl::read_excel(path, sheet = "Provision Per Unit", range = provision_per_unit_range, col_names = FALSE)
 
-  esppu_scores <- as.data.frame(as.matrix(esppu_raw[, -1]))
-  esppu_scores[] <- lapply(esppu_scores, as.numeric)
+  provision_per_unit_scores <- as.data.frame(as.matrix(provision_per_unit_raw[, -1]))
+  provision_per_unit_scores[] <- lapply(provision_per_unit_scores, as.numeric)
 
-  rownames(esppu_scores) <- all_clean_habs
-  colnames(esppu_scores) <- all_clean_es
+  rownames(provision_per_unit_scores) <- all_clean_habs
+  colnames(provision_per_unit_scores) <- all_clean_es
 
   # --- 4. IMPORTANCE WEIGHTS ---
   step1_range <- sprintf("B3:B%d", 3 + n_types - 1)
@@ -594,8 +621,8 @@ read_ncai_template <- function(path,
   rel_range <- sprintf("A2:%s%d", col_to_lab(1 + n_es), 1 + n_habs)
 
   for (i in seq_along(ci_names)) {
-    ci_dirty  <- ci_names[i]
-    sheet_tab <- trimws(substr(stringr::str_replace_all(ci_dirty, "[[:punct:]]", " "), 1, 31))
+    ci_display  <- ci_names[i]
+    sheet_tab <- trimws(substr(stringr::str_replace_all(ci_display, "[[:punct:]]", " "), 1, 31))
 
     rel_raw <- readxl::read_excel(path, sheet = sheet_tab, range = rel_range, col_names = FALSE)
     rel_df  <- as.data.frame(as.matrix(rel_raw[, -1]))
@@ -612,7 +639,7 @@ read_ncai_template <- function(path,
     year_list                 = year_list,
     habitat_extent            = habitat_extent,
     ci_scores                 = ci_scores,
-    esppu_scores              = esppu_scores,
+    provision_per_unit_scores              = provision_per_unit_scores,
     between_importance        = between_importance,
     within_importance         = within_importance,
     indicator_directory       = indicator_directory,

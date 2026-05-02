@@ -8,7 +8,7 @@
 #' @param path A string representing the file path to the .xlsx data source.
 #' @param year_list A vector of years to include in the account (e.g., 2000:2022).
 #'   Can be numeric or character.
-#' @param tir_constant A numeric constant added to the Total Indicator Relevances
+#' @param total_indicator_relevances_constant A numeric constant added to the Total Indicator Relevances
 #'   to avoid zero divisions. Default is 2.
 #'
 #' @return A named list containing 14 components:
@@ -18,15 +18,15 @@
 #'   \item \code{ns_habitats_label_tree}: Nested list of cleaned broad and detailed habitat labels.
 #'   \item \code{ns_es_label_tree}: Nested list of cleaned ecosystem service types and specific labels.
 #'   \item \code{ns_year_list}: Character vector of years included in the account.
-#'   \item \code{ns_esppu_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
-#'   \item \code{ns_custom_divisor_matrix}: Matrix of divisors for ESPPU normalization.
+#'   \item \code{ns_provision_per_unit_scores}: Data frame of Ecosystem Service Potential Per Unit scores.
+#'   \item \code{ns_custom_divisor_matrix}: Custom matrix of divisors for converting Provision Per Unit scores to weights.
 #'   \item \code{ns_between_importance_scores}: Named list of broad ES importance weights.
 #'   \item \code{ns_within_importance_scores}: Named list of weights for specific services.
 #'   \item \code{ns_ci_relevance_matrices}: List of binary Condition Indicator Relevance Matrices.
 #'   \item \code{ns_indicator_directory}: Data frame mapping condition indicators to services.
-#'   \item \code{ns_dirty_habitats_label_tree}: Nested list of original habitat names for display.
-#'   \item \code{ns_dirty_es_label_tree}: Nested list of original ecosystem service names for display.
-#'   \item \code{ns_dirty_ci_names}: Character vector of condition indicator names in "Number Name" format.
+#'   \item \code{ns_display_habitats_label_tree}: Nested list of original habitat names for display.
+#'   \item \code{ns_display_es_label_tree}: Nested list of original ecosystem service names for display.
+#'   \item \code{ns_display_ci_names}: Character vector of condition indicator names in "Number Name" format.
 #' }
 #'
 #' @importFrom janitor make_clean_names
@@ -41,7 +41,7 @@
 #'
 #' @param path A string representing the file path to the .xlsx data source.
 #' @param year_list A vector of years to include in the account (e.g., 2000:2022).
-#' @param tir_constant A numeric constant added to the Total Indicator Relevances.
+#' @param total_indicator_relevances_constant A numeric constant added to the Total Indicator Relevances.
 #'
 #' @return A named list containing structured NCAI data objects.
 #' @importFrom janitor make_clean_names
@@ -51,7 +51,7 @@
 #' @importFrom stringr str_squish str_starts
 #' @importFrom stats setNames
 #' @keywords internal
-import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
+import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevances_constant = 2) {
   year_list <- as.character(year_list)
 
   # 1. HABITAT LABELS & TREE
@@ -83,7 +83,7 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     janitor::make_clean_names(raw_habs_df$print_name[raw_habs_df$broad_cat == b])
   }) %>% stats::setNames(janitor::make_clean_names(hab_order))
 
-  dirty_habitats_label_tree <- lapply(hab_order, function(b) {
+  ns_displayhabitats_label_tree <- lapply(hab_order, function(b) {
     raw_habs_df$print_name[raw_habs_df$broad_cat == b]
   }) %>% stats::setNames(hab_order)
 
@@ -130,20 +130,20 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     raw_es_df$clean_name[raw_es_df$es_type == e]
   }) %>% stats::setNames(janitor::make_clean_names(es_order))
 
-  dirty_es_label_tree <- lapply(es_order, function(e) {
+  ns_displayes_label_tree <- lapply(es_order, function(e) {
     raw_es_df$print_name[raw_es_df$es_type == e]
   }) %>% stats::setNames(es_order)
 
   service_types <- names(es_tree)
 
-  # 3. ECOSYSTEM SERVICE POTENTIAL (esppu)
-  esppu <- readxl::read_xlsx(
+  # 3. Provision Per Unit scores
+  provision_per_unit <- readxl::read_xlsx(
     path = path, sheet = 3, range = "F4:AG34",
     col_names = FALSE, col_types = "numeric", trim_ws = TRUE, .name_repair = "minimal"
   ) %>% as.data.frame()
 
-  rownames(esppu) <- all_habitat_labels
-  colnames(esppu) <- all_service_labels
+  rownames(provision_per_unit) <- all_habitat_labels
+  colnames(provision_per_unit) <- all_service_labels
 
   # 4. CUSTOM DIVISOR MATRIX
   habitats_to_adjust <- c(
@@ -197,15 +197,15 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     dplyr::mutate(
       num = stringr::str_squish(.data$num),
       name = stringr::str_squish(.data$name),
-      dirty_name = paste(.data$num, .data$name),
+      ns_displayname = paste(.data$num, .data$name),
       # Create the clean ID
-      ci_id = janitor::make_clean_names(.data$dirty_name, case = "snake"),
+      ci_id = janitor::make_clean_names(.data$ns_displayname, case = "snake"),
       # STRIP THE LEADING 'x'
       ci_id = gsub("^x", "", .data$ci_id),
       dplyr::across(dplyr::all_of(service_types), as.numeric)
     )
 
-  dirty_ci_names <- raw_ind_data$dirty_name
+  ns_displayci_names <- raw_ind_data$ns_displayname
   ci_ids         <- raw_ind_data$ci_id # Now contains clean IDs without 'x'
   indicator_directory <- raw_ind_data %>% dplyr::select("ci_id", dplyr::all_of(service_types))
 
@@ -233,15 +233,15 @@ import_ns_data <- function(path, year_list = 2000:2022, tir_constant = 2) {
     ns_habitats_label_tree = habitat_tree,
     ns_es_label_tree = es_tree,
     ns_year_list = year_list,
-    ns_esppu_scores = esppu,
+    ns_provision_per_unit_scores = provision_per_unit,
     ns_custom_divisor_matrix = custom_divisor_matrix,
     ns_between_importance_scores = between_importance_scores,
     ns_within_importance_scores = within_importance_scores,
     ns_ci_relevance_matrices = ci_relevance_matrices,
     ns_indicator_directory = indicator_directory,
-    ns_dirty_habitats_label_tree = dirty_habitats_label_tree,
-    ns_dirty_es_label_tree = dirty_es_label_tree,
-    ns_dirty_ci_names = dirty_ci_names
+    ns_display_habitats_label_tree = ns_displayhabitats_label_tree,
+    ns_display_es_label_tree = ns_displayes_label_tree,
+    ns_display_ci_names = ns_displayci_names
   ))
 }
 

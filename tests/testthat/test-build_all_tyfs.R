@@ -20,15 +20,15 @@ test_that("get_yearly_condition calculates index relative to base year", {
 
 test_that("build_tyf returns 100 when all condition scores are 100", {
   # Setup Data
-  tir_mat <- matrix(c(0.5, 1.0, 1.0, 0.5), nrow = 2)
+  total_indicator_relevances_mat <- matrix(c(0.5, 1.0, 1.0, 0.5), nrow = 2)
   ywccm_list <- list(
     ind1 = matrix(c(50, 100, 100, 50), nrow = 2)
   )
   constant <- 2
-  total_tir <- tir_mat + constant
+  total_total_indicator_relevances <- total_indicator_relevances_mat + constant
 
   # Run Function
-  res <- openNCAI:::build_tyf(ywccm_list, total_tir, constant)
+  res <- openNCAI:::build_tyf(ywccm_list, total_total_indicator_relevances, constant)
 
   # Math: (50 + (100 * 2)) / (0.5 + 2) = 100
   expect_equal(res[1, 1], 100)
@@ -68,10 +68,10 @@ test_that("build_all_tyfs correctly iterates and names list by year", {
   years <- c(2000, 2001)
   raw_cis <- data.frame(ind1 = c(100, 110), row.names = c("2000", "2001"))
   ciwms <- list(ind1 = matrix(1, 1, 1))
-  tir <- matrix(3, 1, 1) # (1 + constant 2)
+  total_indicator_relevances <- matrix(3, 1, 1) # (1 + constant 2)
   constant <- 2
 
-  results <- openNCAI:::build_all_tyfs(raw_cis, years, ciwms, tir, constant)
+  results <- openNCAI:::build_all_tyfs(raw_cis, years, ciwms, total_indicator_relevances, constant)
 
   expect_length(results, 2)
   expect_named(results, c("2000", "2001"))

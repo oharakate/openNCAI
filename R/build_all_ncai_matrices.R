@@ -5,7 +5,7 @@
 #' methodology, combining condition, wellbeing, and extent.
 #'
 #' @param tyf_list A named list of Total Yearly Flow (TYF) matrices (one per year).
-#' @param wellbeing_base A data frame representing the base wellbeing values
+#' @param wellbeing_potential_base A data frame representing the base wellbeing values
 #'   (year one habitat extent weighted by provision per unit and demand).
 #' @param habitat_extent A data frame where rows represent habitats and
 #'   columns represent total extent per year.
@@ -19,7 +19,7 @@
 #'   displays the calculated natural capital assets by habitat and service.
 #' @keywords internal
 build_all_ncai_matrices <- function(tyf_list,
-                                    wellbeing_base,
+                                    wellbeing_potential_base,
                                     habitat_extent,
                                     year_one = NULL,
                                     year_list,
@@ -34,7 +34,7 @@ build_all_ncai_matrices <- function(tyf_list,
 
     ncai_df <- build_ncai_matrix(
       tyf = tyf_list[[yr]],
-      wellbeing_base = wellbeing_base,
+      wellbeing_potential_base = wellbeing_potential_base,
       habitat_extent = habitat_extent,
       target_year = yr,
       year_one = year_one,
@@ -64,7 +64,7 @@ build_all_ncai_matrices <- function(tyf_list,
 #' extent, multiplied by 100.
 #'
 #' @param tyf A matrix of Total Yearly Flows for the target year.
-#' @param wellbeing_base A matrix of base wellbeing values.
+#' @param wellbeing_potential_base A matrix of base wellbeing values.
 #' @param habitat_extent A data frame of habitat extent values.
 #' @param target_year The specific year to calculate.
 #' @param year_one The base year for extent indexing.
@@ -72,7 +72,7 @@ build_all_ncai_matrices <- function(tyf_list,
 #' @return A data frame of natural capital assets for the target year.
 #' @keywords internal
 build_ncai_matrix <- function(tyf,
-                              wellbeing_base,
+                              wellbeing_potential_base,
                               habitat_extent,
                               target_year,
                               year_one,
@@ -84,7 +84,7 @@ build_ncai_matrix <- function(tyf,
                                               habitat_extent = habitat_extent)
 
   # Step 1: Element-wise multiplication of condition (TYF) and wellbeing base (WB)
-  wb_tyf <- as.matrix(tyf) * as.matrix(wellbeing_base)
+  wb_tyf <- as.matrix(tyf) * as.matrix(wellbeing_potential_base)
 
   # Step 2: Apply the extent index across the rows (Habitats)
   # sweep() applies the vector (extent_index) to each row of the matrix

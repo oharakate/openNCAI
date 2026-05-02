@@ -37,8 +37,8 @@ test_that("Template round-trip works correctly", {
   expect_equal(imported$year_list, as.character(toy_years))
 
   # Check that a specific matrix has the right dimensions
-  expect_equal(nrow(imported$esppu_scores), 3) # oak, pine, saltmarsh
-  expect_equal(ncol(imported$esppu_scores), 2) # crops, recreation
+  expect_equal(nrow(imported$provision_per_unit_scores), 3) # oak, pine, saltmarsh
+  expect_equal(ncol(imported$provision_per_unit_scores), 2) # crops, recreation
 
   # Cleanup
   if (file.exists(tmp_path)) unlink(tmp_path)

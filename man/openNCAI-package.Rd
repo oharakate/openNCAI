@@ -4,7 +4,7 @@
 \name{openNCAI-package}
 \alias{openNCAI}
 \alias{openNCAI-package}
-\title{openNCAI: Calculates a Natural Capital Assets Indicator for a particular area of interest}
+\title{openNCAI: Calculates a Natural Capital Assets Index}
 \description{
 Calculates natural capital assets.
 }
@@ -14,6 +14,10 @@ Useful links:
   \item \url{https://github.com/oharakate/openNCAI}
   \item Report bugs at \url{https://github.com/oharakate/openNCAI/issues}
 }
+
+}
+\author{
+\strong{Maintainer}: Kate O'Hara \email{k.a.ohara@stir.ac.uk}
 
 }
 \keyword{internal}

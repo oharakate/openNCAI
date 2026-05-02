@@ -11,9 +11,9 @@
 #'
 #' @return A nested list containing:
 #' \itemize{
-#'   \item \code{ref_espb}: Ecosystem Service Potential Base matrix (Sheet 6).
-#'   \item \code{ref_wellbeing_base}: Well-being Base matrix (Sheet 7).
-#'   \item \code{ref_tir}: Total Indicator Relevances matrix (Sheet 74).
+#'   \item \code{ref_es_potential_base}: Ecosystem Service Potential Base matrix (Sheet 6).
+#'   \item \code{ref_wellbeing_potential_base}: Well-being Base matrix (Sheet 7).
+#'   \item \code{ref_total_indicator_relevances}: Total Indicator Relevances matrix (Sheet 74).
 #'   \item \code{ref_all_year_sheets}: A list of yearly natural capital asset matrices.
 #'   \item \code{ref_index_breakdowns}: Data frames containing the final index and its
 #'       breakdowns by service type and habitat.
@@ -24,10 +24,9 @@ import_ns_testing_data <- function(path,
                                    es_label_tree,
                                    year_list) {
 
-  # 1. Get the Ecosystem Service Potential Base (ESPB)
-  # Calculated from year one habitat extent and the Ecosystem Service Potential
-  # Per SPU (ESPPU) weightings.
-  ref_espb <- readxl::read_xlsx(path,
+  # 1. Get the Ecosystem Service Potential Base
+  # Calculated from year one habitat extent and the Provision Per Unit weightings.
+  ref_es_potential_base <- readxl::read_xlsx(path,
                                 sheet = 6,
                                 range = "F4:AG34", col_names = FALSE,
                                 col_types = "numeric",
@@ -36,16 +35,16 @@ import_ns_testing_data <- function(path,
     as.data.frame()
 
   # Set row names before labeling to satisfy the strict check in label_ncai_matrix
-  rownames(ref_espb) <- unlist(habitats_label_tree, use.names = FALSE)
-  colnames(ref_espb) <- unlist(es_label_tree, use.names = FALSE)
+  rownames(ref_es_potential_base) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_es_potential_base) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_espb <- ref_espb %>%
+  ref_es_potential_base <- ref_es_potential_base %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 2. Get the Well-being Base
   # Calculated from the Importance Scores and the Ecosystem Service Potential
   # Base.
-  ref_wellbeing_base <- readxl::read_xlsx(path,
+  ref_wellbeing_potential_base <- readxl::read_xlsx(path,
                                           sheet = 7,
                                           range = "F4:AG34",
                                           col_names = FALSE,
@@ -55,14 +54,14 @@ import_ns_testing_data <- function(path,
   ) %>%
     as.data.frame()
 
-  rownames(ref_wellbeing_base) <- unlist(habitats_label_tree, use.names = FALSE)
-  colnames(ref_wellbeing_base) <- unlist(es_label_tree, use.names = FALSE)
+  rownames(ref_wellbeing_potential_base) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_wellbeing_potential_base) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_wellbeing_base <- ref_wellbeing_base %>%
+  ref_wellbeing_potential_base <- ref_wellbeing_potential_base %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
-  # 3. Get the Total Indicator Relevances (TIR)
-  ref_tir <- readxl::read_xlsx(
+  # 3. Get the Total Indicator Relevances
+  ref_total_indicator_relevances <- readxl::read_xlsx(
     path = path,
     sheet = 74,
     range = "F4:AG34",
@@ -73,10 +72,10 @@ import_ns_testing_data <- function(path,
   ) %>%
     as.data.frame()
 
-  rownames(ref_tir) <- unlist(habitats_label_tree, use.names = FALSE)
-  colnames(ref_tir) <- unlist(es_label_tree, use.names = FALSE)
+  rownames(ref_total_indicator_relevances) <- unlist(habitats_label_tree, use.names = FALSE)
+  colnames(ref_total_indicator_relevances) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_tir <- ref_tir %>%
+  ref_total_indicator_relevances <- ref_total_indicator_relevances %>%
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 4. Get the final natural capital assets yearly matrices (year sheets)
@@ -112,9 +111,9 @@ import_ns_testing_data <- function(path,
     setNames(index_breakdown_labels)
 
   # Return a list of objects
-  return(list(ref_espb = ref_espb,
-              ref_wellbeing_base = ref_wellbeing_base,
-              ref_tir = ref_tir,
+  return(list(ref_es_potential_base = ref_es_potential_base,
+              ref_wellbeing_potential_base = ref_wellbeing_potential_base,
+              ref_total_indicator_relevances = ref_total_indicator_relevances,
               ref_all_year_sheets = ref_all_year_sheets,
               ref_index_breakdowns = ref_index_breakdowns
   ))
@@ -189,3 +188,4 @@ read_the_indices <- function(indices_range,
 
   return(index_set)
 }
+

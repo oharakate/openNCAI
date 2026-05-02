@@ -10,7 +10,7 @@ test_that("import_ns_testing_data returns expected structure and names", {
     year_list = ns_year_list # Pass from helper.R
   )
 
-  expect_named(res, c("ref_espb", "ref_wellbeing_base", "ref_tir",
+  expect_named(res, c("ref_es_potential_base", "ref_wellbeing_potential_base", "ref_total_indicator_relevances",
                       "ref_all_year_sheets", "ref_index_breakdowns"))
 })
 

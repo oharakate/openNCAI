@@ -11,7 +11,7 @@ get_yearly_flow(
   habitats_label_tree,
   ci_scores,
   year_list,
-  tir_constant = 2
+  total_indicator_relevances_constant = 2
 )
 }
 \arguments{
@@ -27,7 +27,7 @@ get_yearly_flow(
 
 \item{year_list}{A vector of years to be processed.}
 
-\item{tir_constant}{A numeric constant (default 2) to prevent zero-division
+\item{total_indicator_relevances_constant}{A numeric constant (default 2) to prevent zero-division
 and ensure indexing congruency.}
 }
 \value{
@@ -37,7 +37,7 @@ A named list of Total Yearly Flow (TYF) matrices, one for each year
 \description{
 This high-level function orchestrates the transformation of raw condition scores
 into normalized Total Yearly Flow (TYF) matrices. It builds the weighted
-relevance matrices (CIWMs), calculates the total relevance (TIR), and
+relevance matrices (CIWMs), calculates the total indicator relevances, and
 processes every year in the series.
 }
 \keyword{internal}

@@ -1,9 +1,9 @@
-#' Calculate the Ecosystem Service Potential Base (ESPB)
+#' Calculate the Ecosystem Service Potential Base
 #'
-#' Multiply the ecosystem service provision potential per unit (ESPPU) by the
+#' Multiply the Provision Per Unit (weights) by the
 #' habitat extent in the baseline year of the index.
 #'
-#' @param esppu_weights A data frame containing the ecosystem service provision
+#' @param provision_per_unit_weights A data frame containing the ecosystem service provision
 #' potential per unit weights. Row order must match the expanded habitats label
 #' tree and column order must match the expanded ES label tree.
 #' @param habitat_extent A data frame containing data representing the extent
@@ -20,7 +20,7 @@
 #' @param es_label_tree A named list of character vectors representing
 #' the hierarchy of ecosystem services.
 #'
-#' @return A labelled data frame with the same dimensions as 'esppu_weights'.
+#' @return A labelled data frame with the same dimensions as 'provision_per_unit_weights'.
 #' @keywords internal
 #'
 #' @examples
@@ -35,7 +35,7 @@
 #'   row.names = c("b1", "b2", "g1")
 #' )
 #'
-#' # Setup ESPPU Weights
+#' # Setup Provision Per Unit Weights
 #' weights <- data.frame(
 #'   crops = c(0.12, 0.1, 0.0),
 #'   timber = c(0.0, 0.0, 0.9),
@@ -44,13 +44,13 @@
 #'
 #' years <- c("2026", "2027")
 #'
-#' espb_res <- openNCAI:::calc_espb(
-#'   esppu_weights = weights,
+#' es_potential_base_res <- openNCAI:::calc_es_potential_base(
+#'   provision_per_unit_weights = weights,
 #'   habitat_extent = extent,
 #'   year_list = years,
 #'   habitats_label_tree = h_tree,
 #'   es_label_tree = es_tree)
-calc_espb <- function(esppu_weights,
+calc_es_potential_base <- function(provision_per_unit_weights,
                       habitat_extent,
                       year_list,
                       year_one = NULL,
@@ -62,8 +62,8 @@ calc_espb <- function(esppu_weights,
     stop("Number of habitat names in habitats_label_tree must match rows in habitat_extent.")
   }
 
-  if (!all(rownames(habitat_extent) == rownames(esppu_weights))) {
-    stop("Row names (habitats) of habitat_extent and esppu_weights must be identical.")
+  if (!all(rownames(habitat_extent) == rownames(provision_per_unit_weights))) {
+    stop("Row names (habitats) of habitat_extent and provision_per_unit_weights must be identical.")
   }
 
   # 2. Identify target year
@@ -76,11 +76,11 @@ calc_espb <- function(esppu_weights,
   # 3. Pull the vector for the identified baseline year
   origin_year_vec <- dplyr::pull(habitat_extent, var = target_year)
 
-  # 4. Multiply habitat extent values across the esppu weightings
-  espb <- esppu_weights * origin_year_vec
+  # 4. Multiply habitat extent values across the provision_per_unit weightings
+  es_potential_base <- provision_per_unit_weights * origin_year_vec
 
-  rownames(espb) <- rownames(esppu_weights)
+  rownames(es_potential_base) <- rownames(provision_per_unit_weights)
 
   # 5. Label and return
-  return(label_ncai_matrix(espb, habitats_label_tree, es_label_tree))
+  return(label_ncai_matrix(es_potential_base, habitats_label_tree, es_label_tree))
 }

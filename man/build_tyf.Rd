@@ -4,19 +4,24 @@
 \alias{build_tyf}
 \title{Build Total Yearly Flow (TYF) for a Single Year}
 \usage{
-build_tyf(list_of_ywccms, tir, tir_constant)
+build_tyf(
+  list_of_ywccms,
+  total_indicator_relevances,
+  total_indicator_relevances_constant
+)
 }
 \arguments{
 \item{list_of_ywccms}{A list of Yearly Weighted Condition Contribution Matrices.}
 
-\item{tir}{The Total Indicator Relevance matrix.}
+\item{total_indicator_relevances}{The Total Indicator Relevance matrix.}
 
-\item{tir_constant}{Numeric. Added to denominator for stability and numerator for indexing.}
+\item{total_indicator_relevances_constant}{Numeric. Added to denominator for stability and numerator for indexing.}
 }
 \value{
 A numeric matrix for one year.
 }
 \description{
-Aggregates a list of YWCCMs and normalizes the sum against the TIR matrix.
+Aggregates a list of YWCCMs and normalizes the sum against the Total
+Indicator Relevances matrix.
 }
 \keyword{internal}

@@ -4,12 +4,14 @@ output:
   rmarkdown::html_vignette:
     toc: yes
     toc_depth: 2
+    self_contained: yes
+    highlight: pygments
   word_document:
     toc: yes
     toc_depth: '2'
   pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{Replicating Scotland's NCAI}
+  %\VignetteIndexEntry{replicating_scotlands_ncai}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -27,7 +29,7 @@ The **openNCAI** package calculates a regional natural capital assets index (NCA
 
 Why build this package? By engineering the NCAI process in R, we make it easy to create a reproducible trace of the calculation. That means that a reader can see exactly how the statistic was produced and check its validity, and take and use the calculator for themselves. 
 
-By building the calculation as an R function, we make it easy to make custom adjustments to the framework. For example, another country might want to index their natural capital assets; by feeding in their own data and their own habitat and ecosystem classifications, they can do so. NatureScot's method uses habitat and ecosystem classifications based on established taxonomies - European Nature Information System (EUNIS) habitat types, and the Common International Classification of Ecosystem Services - so there is likely to be shared relevance for other European regions.
+By building the calculation as an R function, we facilitate custom adjustments to the framework. For example, another country might want to index their natural capital assets: by feeding in their own data and their own habitat and ecosystem classifications, they can do so. NatureScot's method uses habitat and ecosystem classifications based on established taxonomies - European Nature Information System (EUNIS) habitat types, the System of Environmental-Economic Accounting (SEEA) and the Common International Classification of Ecosystem Services (CICES) - so there is likely to be shared relevance for other European regions.
 
 Building a reusable, customisable tool also means that we can explore some of the assumptions which underpin the NCAI model, or update them. We might decide that, 20 years after the index was first designed, some natural assets are more valuable to the population than they were before. We can reprogram the index and see if the story changes. We might like to know if new satellite imagery could replace the ecological surveys which currently provide data about the extent and condition of natural habitats. We could calculate the index with both types of data and compare the results.
 
@@ -78,8 +80,8 @@ d_subset <- data.frame(
     "ns_year_list"
   ),
   `Description` = c(
-    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS level 2) grouped within their respective broad habitat categories (EUNIS level 1) found in Scotland.",
-    "Ecosystem Services Label Tree: a hierarchy of individual ecosystem services organized by their service type groups (Provisioning, Regulation & Maintenance, and Cultural).",
+    "Habitats Label Tree: a hierarchy of natural habitats (based on EUNIS[^1] level 2) grouped within their respective broad habitat categories (EUNIS level 1) found in Scotland.",
+    "Ecosystem Services Label Tree: a hierarchy of individual CICES[^2] ecosystem services (ES) organized by their SEEA[^3] service type groups (Provisioning, Regulation & Maintenance, and Cultural).",
     "Year List: the specific range of years over which the index is calculated."
   ),
   `Data Format` = c(
@@ -92,6 +94,9 @@ d_subset <- data.frame(
 
 knitr::kable(d_subset)
 ```
+[^1]: [European Nature Information System](https://eunis.eea.europa.eu/)
+[^2]: [Common International Classification of Ecosystem Services](https://cices.eu/)
+[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/)
 
 It is important that all measurement and weights objects are congruent with the metadata. E.g. time series data must include all the years mentioned in the year list, and weighting scores must be expressed across the habitats and ecosystem services listed in the label trees.
 
@@ -161,7 +166,7 @@ These data objects include scores decided by expert knowledge at the outset of t
 ```{r weights_table, echo = FALSE}
 d_subset <- data.frame(
   `Object Name` = c(
-    "ns_esppu_scores", 
+    "ns_provision_per_unit_scores", 
     "ns_between_importance_scores", 
     "ns_within_importance_scores", 
     "ns_ci_relevance_matrices", 
@@ -174,7 +179,7 @@ d_subset <- data.frame(
     "Ecosystem Service Importance Score (**within**-service-type): scores denoting the relative importance of individual ecosystem services within their service type group.",
     "Condition Indicator Relevance Matrices: a set of matrices marking whether an indicator is relevant to specific habitat/ecosystem service combinations (e.g., 'Woodland bird index' relevance to 'Pollination').",
     "Indicator Directory: a table recording the salience of each condition indicator (between 0 and 1) in representing the capacity of habitats to provide each ecosystem service type.",
-    "NatureScot's Custom Divisor Matrix: weights used to adjust potential provision scores to reflect scale and context dependence (e.g., adjusting scores by dividing by 1 instead of 5)."
+    "NatureScot's Custom Divisor Matrix: weights used in this particular case to adjust potential provision scores to reflect scale and context dependence (e.g., adjusting scores by dividing by 1 instead of 5)."
   ),
   `Data Format` = c(
     "A data frame where rows are habitats and columns are ecosystem services.",
@@ -197,55 +202,62 @@ Several of the weights objects are matrices of **habitat / ecosystem service** t
 all_habitats <- unlist(ns_habitats_label_tree, use.names = FALSE)
 all_ecosystem_services <- unlist(ns_es_label_tree, use.names = FALSE)
 
-# The ESPPU, any custom divisor matrix, and each matrix in the CIRMs list need to match:
+# The Provision Per Unit Scores, any custom divisor matrix, and each matrix in the CIRMs list need to match:
 one_ci_relevance_matrix <- ns_ci_relevance_matrices[[4]]
 
 length(all_habitats)
-nrow(ns_esppu_scores)
+nrow(ns_provision_per_unit_scores)
 nrow(ns_custom_divisor_matrix)
 nrow(one_ci_relevance_matrix)
 
-all.equal(all_habitats, rownames(ns_esppu_scores))
+all.equal(all_habitats, rownames(ns_provision_per_unit_scores))
 all.equal(all_habitats, rownames(ns_custom_divisor_matrix))
 all.equal(all_habitats, rownames(one_ci_relevance_matrix))
 
 length(all_ecosystem_services)
-ncol(ns_esppu_scores)
+ncol(ns_provision_per_unit_scores)
 ncol(ns_custom_divisor_matrix)
 ncol(one_ci_relevance_matrix)
 
-all.equal(all_ecosystem_services, colnames(ns_esppu_scores))
+all.equal(all_ecosystem_services, colnames(ns_provision_per_unit_scores))
 all.equal(all_ecosystem_services, colnames(ns_custom_divisor_matrix))
 all.equal(all_ecosystem_services, colnames(one_ci_relevance_matrix))
 ```
 
+openNCAI includes two helper functions - `create_ncai_template()` and `read_ncai_template` - to help assemble data and get it into the right format for calculation. 
 
 ## Calculating The Overall Index
 
 The index is calculated using the `get_ncai()` function. By default the final overall index is returned. 
 
-```{r calc_overall}
+```{r calc-overall}
 overall_ncai <- get_ncai(
                   habitat_extent = ns_habitat_extent,
                   ci_scores = ns_ci_scores,
                   habitats_label_tree = ns_habitats_label_tree,
                   es_label_tree = ns_es_label_tree,
                   year_list = ns_year_list,
-                  esppu_scores = ns_esppu_scores,
+                  provision_per_unit_scores = ns_provision_per_unit_scores,
                   custom_divisor_matrix = ns_custom_divisor_matrix,
                   between_importance_scores = ns_between_importance_scores,
                   within_importance_scores = ns_within_importance_scores,
                   ci_relevance_matrices = ns_ci_relevance_matrices,
                   indicator_directory = ns_indicator_directory
                   )
+```
 
-# Three versions of the index are returned, the raw total, the raw index, and the smoothed index (values are a weighted average of the last 5 years' values, giving more weight to more recent entries):
+Three versions of the index are returned, the raw total, the raw index, and the smoothed index (values are a weighted average of the last 5 years' values, giving more weight to more recent entries):
+
+```{r show-head-overall}
 head(overall_ncai)
+```
 
-# We can select just the raw indexed values to display:
+We can select just the raw indexed values to display:
+```{r selct-raw-overall}
 raw_index <- overall_ncai[, "raw_index", drop = FALSE]
 raw_index
 ```
+
 And we can graph the index:
 
 
@@ -335,7 +347,7 @@ ncai_by_ecosystem_service_type <- get_ncai(
     habitats_label_tree = ns_habitats_label_tree,
     es_label_tree = ns_es_label_tree,
     year_list = ns_year_list,
-    esppu_scores = ns_esppu_scores,
+    provision_per_unit_scores = ns_provision_per_unit_scores,
     custom_divisor_matrix = ns_custom_divisor_matrix,
     between_importance_scores = ns_between_importance_scores,
     within_importance_scores = ns_within_importance_scores,
@@ -427,7 +439,7 @@ ncai_by_broad_habitat <- get_ncai(
                           habitats_label_tree = ns_habitats_label_tree,
                           es_label_tree = ns_es_label_tree,
                           year_list = ns_year_list,
-                          esppu_scores = ns_esppu_scores,
+                          provision_per_unit_scores = ns_provision_per_unit_scores,
                           custom_divisor_matrix = ns_custom_divisor_matrix,
                           between_importance_scores = ns_between_importance_scores,
                           within_importance_scores = ns_within_importance_scores,
@@ -520,28 +532,37 @@ Using the optional `return` argument, we can access various elements of the calc
 # Define the return options and their descriptions
 ncai_options <- data.frame(
   `Value` = c(
-    "**\"overall\"**", 
+    "**\"overall_ncai\"**", 
     "**\"by_ecosystem_service_type\"**", 
     "**\"by_broad_habitat\"**", 
-    "**\"yearly_asset_matrices\"**", 
-    "**\"espb\"**", 
-    "**\"wellbeing_base\"**", 
-    "**\"yearly_flow_matrices\"**", 
+    "**\"wellbeing_index\"**",
+    "**\"flow_of_es_index\"**",
+    "**\"yearly_ncai_matrices\"**", 
+    "**\"yearly_wellbeing_matrices\"**",
+    "**\"yearly_flow_of_es_matrices\"**",
+    "**\"es_potential_base\"**", 
+    "**\"wellbeing_potential_base\"**", 
+    "**\"flow_of_es_base\"**",
     "**\"everything\"**"
   ),
   `Output Type` = c(
-    "Data Frame", "Data Frame", "Data Frame", "Data Frame", 
-    "Data Frame", "List of Data Frames", "List of Data Frames", "List of Objects"
+    "Data Frame", "Data Frame", "Data Frame", "Data Frame", "Data Frame",
+    "List of Matrices", "List of Matrices", "List of Matrices",
+    "Matrix", "Matrix", "Matrix", "Named List"
   ),
   `Description` = c(
-    "The final smoothed and raw NCAI for the whole region (default).",
-    "Index broken down by Ecosystem Service Type.",
-    "Index broken down by Broad Habitat.",
-    "Matrices of total asset value for every habitat/service combination per year, calculated by multiplying the Wellbeing Base by the Total Yearly Flow. The sum of these matrices form the basis of the final index.",
-    "Ecosystem Service Potential Base: the potential of habitats to provide ecosystem services, calculated as habitat extent multiplied by Ecosystem Service Provision Potential per Unit weights.",
-    "Wellbeing Base: the potential service provision, adjust for importance of each service to the population, calculated as the ESPB weighted by the regional Importance Weights.",
-    "Total Yearly Flow: the estimated total yearly flow of services from each habitat/service combination, based on relevance- and salience-weighted Condition Indicator scores.",
-    "A bundled list containing all of the above components."
+    "The standard overall NCAI data frame (default).",
+    "NCAI results broken down specifically by Ecosystem Service Type.",
+    "NCAI results broken down specifically by Broad Habitat category.",
+    "The indexed potential wellbeing contribution of habitats over time (habitat extent weighted by provision-per-unit and importance).",
+    "The indexed likely flow of ecosystem services over time, derived from relevance-weighted condition indicator data.",
+    "Unaggregated annual matrices of asset value for every habitat/ecosystem service combination.",
+    "Unaggregated annual matrices representing potential wellbeing values per habitat and ecosystem service.",
+    "Unaggregated annual matrices representing the likely flow of ecosystem services per habitat and ecosystem service.",
+    "Ecosystem Service Potential Base: habitat extent weighted by exemplary provision-per-unit scores in year one.",
+    "Wellbeing Potential Base: the potential wellbeing matrix for the baseline year (Year One).",
+    "The likely service flow matrix for the baseline year (Year One).",
+    "A comprehensive named list containing all of the objects listed above."
   )
 )
 
@@ -549,4 +570,81 @@ ncai_options <- data.frame(
 knitr::kable(ncai_options,
              col.names = c("Argument Value", "Output Type", "Description"),
              escape = FALSE)
+```
+
+Having access to intermediate stages of the calculation means we can, for example, look at how the changing wellbeing contribution (**extent** of habitats weighted by potential per-unit provision of services and by importance to the population) and the changing estimated flow of ecosystem services (based on **condition** of habitats) and how these relate to the overall valuation.
+
+First, we generate the full suite of objects:
+
+```{r get-everything}
+# Generate all intermediate and final objects
+ncai_all_objects <- get_ncai(
+  habitat_extent = ns_habitat_extent,
+  ci_scores = ns_ci_scores,
+  habitats_label_tree = ns_habitats_label_tree,
+  es_label_tree = ns_es_label_tree,
+  year_list = ns_year_list,
+  provision_per_unit_scores = ns_provision_per_unit_scores,
+  custom_divisor_matrix = ns_custom_divisor_matrix,
+  between_importance_scores = ns_between_importance_scores,
+  within_importance_scores = ns_within_importance_scores,
+  ci_relevance_matrices = ns_ci_relevance_matrices,
+  indicator_directory = ns_indicator_directory,
+  return = "everything"
+)
+```
+
+Now we can visualise the relationship between the extent and condition components, and the final index:
+
+<details>
+<summary>Click to see how we build the graph</summary>
+```{r build-extent-condition-plot}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+# 1. Prepare the data
+# Extract years and values into a long-format data frame
+plot_data <- data.frame(
+  Year = as.numeric(rownames(ncai_all_objects$overall_ncai)),
+  Overall = ncai_all_objects$overall_ncai$raw_index,
+  Wellbeing = ncai_all_objects$wellbeing_index$raw_index,
+  Flow = ncai_all_objects$flow_of_es_index$raw_index
+)
+
+# Calculate correlations for the annotation
+cor_wellbeing <- round(cor(plot_data$Overall, plot_data$Wellbeing, use = "complete.obs"), 3)
+cor_flow <- round(cor(plot_data$Overall, plot_data$Flow, use = "complete.obs"), 3)
+
+# Pivot to long format for ggplot
+plot_data_long <- plot_data %>%
+  tidyr::pivot_longer(cols = -Year, names_to = "Index", values_to = "Value")
+
+# 2. Create the ggplot
+driver_plot <- ggplot(plot_data_long, aes(x = Year, y = Value, color = Index, shape = Index)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
+  ylim(90, 110) +
+  scale_color_manual(values = c("Overall" = "#BCEE68",
+                                "Wellbeing" = "#9AC0CD",
+                                "Flow" = "#EEA2AD")) +
+  labs(title = "NCAI Components & Correlation",
+       subtitle = "Comparing overall index trends with area (Wellbeing) and quality (Flow) drivers",
+       x = "Year",
+       y = "Index (Base Year = 100)",
+       color = "Metric",
+       shape = "Metric") +
+  theme_minimal() +
+  annotate("label", x = Inf, y = -Inf,
+           label = paste0("Correlations:\nOverall/Wellbeing: ", cor_wellbeing,
+                          "\nOverall/Flow: ", cor_flow),
+           hjust = 1.1, vjust = -0.5, size = 3.5,
+           fill = "white", label.size = 0.5)
+
+
+```
+</details>
+```{r show-driver-plot, fig.width = 7, fig.height = 6, fig.align = "center"}
+driver_plot
 ```

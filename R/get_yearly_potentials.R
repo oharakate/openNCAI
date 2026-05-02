@@ -6,7 +6,7 @@
 #' @param habitat_extent A matrix or data frame where columns represent years
 #'   and rows represent habitats.
 #' @param year_one Character or Numeric. The baseline year for indexing.
-#' @param weight_matrix A matrix (e.g., ESPB or Wellbeing Base) to be
+#' @param weight_matrix A matrix (e.g., ES Potential Base or Wellbeing Base) to be
 #'   multiplied by the indexed extent.
 #' @param as_matrices Logical. If \code{TRUE}, returns annual matrices;
 #'   if \code{FALSE}, returns a smoothed index data frame.
@@ -47,10 +47,10 @@ calc_weighted_habitat_extent <- function(habitat_extent,
 #' Calculate Yearly Potential Provision of Ecosystem Services
 #'
 #' Calculates the potential provision time series by multiplying indexed
-#' habitat extent by the Ecosystem Service Potential Base (ESPB).
+#' habitat extent by the Ecosystem Service (ES) Potential Base.
 #'
 #' @inheritParams calc_weighted_habitat_extent
-#' @param espb A matrix or data frame of Ecosystem Service Potential Base values.
+#' @param es_potential_base A matrix or data frame of Ecosystem Service Potential Base values.
 #'
 #' @return Depending on the value of \code{as_matrices}:
 #' \itemize{
@@ -61,12 +61,12 @@ calc_weighted_habitat_extent <- function(habitat_extent,
 #' @keywords internal
 get_yearly_potential_provision <- function(habitat_extent,
                                            year_one,
-                                           espb,
+                                           es_potential_base,
                                            as_matrices = FALSE) {
 
   return(calc_weighted_habitat_extent(habitat_extent = habitat_extent,
                                       year_one = year_one,
-                                      weight_matrix = espb,
+                                      weight_matrix = es_potential_base,
                                       as_matrices = as_matrices))
 }
 
@@ -79,7 +79,7 @@ get_yearly_potential_provision <- function(habitat_extent,
 #' condition.
 #'
 #' @inheritParams calc_weighted_habitat_extent
-#' @param wellbeing_base A matrix or data frame of Wellbeing Base values.
+#' @param wellbeing_potential_base A matrix or data frame of Wellbeing Potential Base values.
 #'
 #' @return Depending on the value of \code{as_matrices}:
 #' \itemize{
@@ -91,11 +91,11 @@ get_yearly_potential_provision <- function(habitat_extent,
 #' @keywords internal
 get_yearly_potential_wellbeing <- function(habitat_extent,
                                            year_one,
-                                           wellbeing_base,
+                                           wellbeing_potential_base,
                                            as_matrices = FALSE) {
 
   return(calc_weighted_habitat_extent(habitat_extent = habitat_extent,
                                       year_one = year_one,
-                                      weight_matrix = wellbeing_base,
+                                      weight_matrix = wellbeing_potential_base,
                                       as_matrices = as_matrices))
 }

@@ -7,7 +7,7 @@
 get_yearly_potential_wellbeing(
   habitat_extent,
   year_one,
-  wellbeing_base,
+  wellbeing_potential_base,
   as_matrices = FALSE
 )
 }
@@ -17,7 +17,7 @@ and rows represent habitats.}
 
 \item{year_one}{Character or Numeric. The baseline year for indexing.}
 
-\item{wellbeing_base}{A matrix or data frame of Wellbeing Base values.}
+\item{wellbeing_potential_base}{A matrix or data frame of Wellbeing Potential Base values.}
 
 \item{as_matrices}{Logical. If \code{TRUE}, returns annual matrices;
 if \code{FALSE}, returns a smoothed index data frame.}

@@ -1,4 +1,4 @@
-test_that("calc_espb calculates potential correctly and applies labels", {
+test_that("calc_es_potential_base calculates potential correctly and applies labels", {
   # Setup Mock Data
   # h_tree total leaf nodes = 2 ("h1", "h2")
   h_tree <- list(a = c("h1"), b = c("h2"))
@@ -26,9 +26,9 @@ test_that("calc_espb calculates potential correctly and applies labels", {
 
   # Execute
   # Assuming year_one defaults to the first year in 'years' if not provided
-  res <- openNCAI:::calc_espb(
+  res <- openNCAI:::calc_es_potential_base(
     habitat_extent = extent,
-    esppu_weights = weights,
+    provision_per_unit_weights = weights,
     year_list = years,
     year_one = "2026",
     habitats_label_tree = h_tree,
@@ -50,7 +50,7 @@ test_that("calc_espb calculates potential correctly and applies labels", {
   expect_s3_class(res, "data.frame")
 })
 
-test_that("calc_espb throws errors for dimension mismatches", {
+test_that("calc_es_potential_base throws errors for dimension mismatches", {
   h_tree <- list(a = c("h1"))
   es_tree <- list(s = c("s1"))
   years <- c("2026")
@@ -61,9 +61,9 @@ test_that("calc_espb throws errors for dimension mismatches", {
 
   # Name your arguments to ensure h_tree isn't treated as a year
   expect_error(
-    openNCAI:::calc_espb(
+    openNCAI:::calc_es_potential_base(
       habitat_extent = extent_bad,
-      esppu_weights = weights_good,
+      provision_per_unit_weights = weights_good,
       year_list = years,
       year_one = "2026", # Explicitly set this
       habitats_label_tree = h_tree,
