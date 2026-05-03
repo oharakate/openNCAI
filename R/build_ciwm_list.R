@@ -6,7 +6,7 @@
 #' @param cirm_list A named list of data frames. Names are condition indicator
 #' labels. Data frames hold a matrix of binary values denoting whether the
 #' Condition Indicator is relevant to each habitat/service combination. Names
-#' must match the labels inthe \code{ci_id} column of \code{indicator_directory}.
+#' must match the labels in the \code{ci_id} column of \code{indicator_directory}.
 #' @param indicator_directory A data frame containing weights
 #' denoting the relevance of each condition indicator to each ecosystem service
 #' type. Must include a column of condition indicator labels for matching

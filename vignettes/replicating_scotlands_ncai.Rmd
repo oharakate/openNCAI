@@ -644,7 +644,7 @@ driver_plot <- ggplot(plot_data_long, aes(x = Year, y = Value, color = Index, sh
        shape = "Metric") +
   theme_minimal() +
   annotate("label", x = Inf, y = -Inf,
-           label = paste0("Correlations:\nOverall/Wellbeing: ", cor_wellbeing,
+           label = paste0("Correlations:\Overall/Wellbeing: ", cor_wellbeing,
                           "\nOverall/Flow: ", cor_flow),
            hjust = 1.1, vjust = -0.5, size = 3.5,
            fill = "white", label.size = 0.5)
