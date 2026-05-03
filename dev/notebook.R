@@ -438,7 +438,10 @@ devtools::run_examples()
 # remove.packages("openNCAI")
 
 
+# Going for a submission on 3rd May 2026
+devtools::release()
 
+1
 #### DATAPREP FUNCTIONS THAT WERE REMOVED FOR NOW ####
 
 # ### load_shape() ####
