@@ -3,10 +3,13 @@ Type: Package
 Title: Calculates a Natural Capital Assets Index
 Version: 0.1.0
 Authors@R: person(given = "Kate",
-                      family = "O'Hara",
+                      family = "O\'Hara",
                       role = c("aut", "cre"),
                       email = "k.a.ohara@stir.ac.uk")
-Description: openNCAI is an R package for calculating a regional natural capital assets index (NCAI), using the method designed by NatureScot to calculate Scotland's NCAI. It uses habitat extent and condition data, along with metadata and systems of weights, and produces a yearly single figure indexed around a year one value of 100.
+Description: Calculates a regional natural capital assets index (NCAI) following
+    the methodology designed by 'NatureScot' for 'Scotland'. Processes habitat 
+    extent and condition data alongside metadata and weighting systems to 
+    produce a yearly single figure indexed relative to a base-year value of 100.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -24,15 +27,14 @@ Imports:
     stringr,
     tidyr
 RoxygenNote: 7.3.3
+VignetteBuilder: knitr
 Suggests: 
+    ggplot2,
     knitr,
     rmarkdown,
-    ggplot2,
-    tibble,
     rprojroot,
     testthat (>= 3.0.0),
-    quarto
+    tibble
 Config/testthat/edition: 3
-VignetteBuilder: knitr, quarto
 Depends: 
     R (>= 4.1.0)

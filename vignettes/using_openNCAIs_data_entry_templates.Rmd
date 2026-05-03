@@ -7,7 +7,7 @@ output:
     self_contained: yes
     highlight: pygments
 vignette: >
-  %\VignetteIndexEntry{using_openNCAIs_data_entry_templates}
+  %\VignetteIndexEntry{Using openNCAI's Data Entry Templates}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

@@ -1,18 +1,10 @@
 ---
 title: "openNCAI in Brief"
-format: 
-  html:
-    toc: true
-    toc-depth: 2
-    df-print: kable 
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{open_NCAI_in_brief}
-  %\VignetteEngine{quarto::html}
+  %\VignetteIndexEntry{openNCAI in Brief}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-knitr:
-  opts_chunk:
-    collapse: true
-    comment: '#>'
 ---
 
 
@@ -59,22 +51,25 @@ scot_ncai <- get_ncai(habitat_extent = ns_habitat_extent,
 
 
 Let's see what is returned:
-```{r}
+```{r }
 #| label: see-output1
 scot_ncai
 ```
 
 Three versions of the index are returned: the raw assets total, the raw index (indexed around 100 at year one), and the smoothed index (uses a rolling average which is weighted towards more recent years). We can plot one:
-```{r}
+```{r fig.width=7, fig.height=5, out.width="100%"}
 #| label: plot-raw
-scot_ncai$years <-  as.numeric(rownames(scot_ncai)) # Use row names for x axis
+scot_ncai$years <- as.numeric(rownames(scot_ncai)) 
 plot(
   x = scot_ncai$years, 
   y = scot_ncai$raw_index, 
-  type = "l",               
+  type = "l",                
   main = "Scotland's Natural Capital Assets Index",
   xlab = "Year",
-  ylab = "Index (Base = 100)"
+  ylab = "Index (Base = 100)",
+  las = 1,          # Makes axis labels horizontal (easier to read)
+  lwd = 2,          # Makes the line slightly thicker
+  col = "steelblue" # Adds a bit of professional color
 )
 ```
 
@@ -100,6 +95,11 @@ To use openNCAI with your own data, it's important to pass in data and metadata 
 vignette("using_openNCAIs_data_entry_templates", package = "openNCAI")
 ```
 
+To understand more about the calculation process which openNCAI reproduces, look at this diagram:
+
+```{r, echo=FALSE, fig.cap="NCAI Calculation Process Diagram", out.width="100%"}
+knitr::include_graphics("../man/figures/ncai_calculation_process.png")
+```
 
 ### Details of the bundled data objects
 

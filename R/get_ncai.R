@@ -74,8 +74,29 @@
 #'
 #' @return An object of the type specified by the \code{return} argument.
 #'   Typically a data frame or a named list of NCAI components.
+#'
 #' @export
-
+#'
+#' @examples
+#' # Calculate the NCAI using the bundled NatureScot sample data
+#' ncai_objects <- get_ncai(
+#'   habitat_extent = ns_habitat_extent,
+#'   ci_scores = ns_ci_scores,
+#'   habitats_label_tree = ns_habitats_label_tree,
+#'   es_label_tree = ns_es_label_tree,
+#'   year_list = ns_year_list,
+#'   provision_per_unit_scores = ns_provision_per_unit_scores,
+#'   custom_divisor_matrix = ns_custom_divisor_matrix,
+#'   between_importance_scores = ns_between_importance_scores,
+#'   within_importance_scores = ns_within_importance_scores,
+#'   ci_relevance_matrices = ns_ci_relevance_matrices,
+#'   indicator_directory = ns_indicator_directory,
+#'   return = "everything"
+#' )
+#'
+#' # View the final indexed results
+#' names(ncai_objects)
+#' head(ncai_objects$overall_ncai)
 get_ncai <-  function(habitat_extent,
                       ci_scores,
                       habitats_label_tree,

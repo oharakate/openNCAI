@@ -119,3 +119,24 @@ exactly 100. This is because the smoothing reflects the trend of the
 preceding 4 years. The \code{raw_index} will always remain anchored at 100
 for the \code{year_one}.
 }
+\examples{
+# Calculate the NCAI using the bundled NatureScot sample data
+ncai_objects <- get_ncai(
+  habitat_extent = ns_habitat_extent,
+  ci_scores = ns_ci_scores,
+  habitats_label_tree = ns_habitats_label_tree,
+  es_label_tree = ns_es_label_tree,
+  year_list = ns_year_list,
+  provision_per_unit_scores = ns_provision_per_unit_scores,
+  custom_divisor_matrix = ns_custom_divisor_matrix,
+  between_importance_scores = ns_between_importance_scores,
+  within_importance_scores = ns_within_importance_scores,
+  ci_relevance_matrices = ns_ci_relevance_matrices,
+  indicator_directory = ns_indicator_directory,
+  return = "everything"
+)
+
+# View the final indexed results
+names(ncai_objects)
+head(ncai_objects$overall_ncai)
+}

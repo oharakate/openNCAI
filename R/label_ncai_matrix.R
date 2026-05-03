@@ -16,41 +16,6 @@
 #'
 #' @return A labelled data frame.
 #' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' # 1. Define the habitat tree (Total of 3 sub-habitats)
-#' h_tree <- list(
-#'    coastal = c("b1", "b2"),
-#'    woodland = c("g1")
-#' )
-#'
-#' # 2. Define the ecosystem service tree (Total of 2 services)
-#' es_tree <- list(
-#'    provisioning = c("crops", "timber")
-#' )
-#'
-#' # 3. Create a raw matrix of values (3 rows x 2 columns)
-#' raw_values <- matrix(
-#'    c(1, 0.5, 0, 0, 0.2, 0.9),
-#'    nrow = 3,
-#'    ncol = 2
-#' )
-#'
-#' rownames(raw_values) <- c("b1", "b2", "g1")
-#' colnames(raw_values) <- c("crops", "timber")
-#'
-#' # 4. Apply the labels
-#' labeled_df <- label_ncai_matrix(matrix = raw_values,
-#'                                 habitats_label_tree = h_tree,
-#'                                 es_label_tree = es_tree)
-#'
-#'
-#' # View the result
-#' print(labeled_df)
-#' # Row names will be: "b1", "b2", "g1"
-#' # Column names will be: "crops", "timber"
-#' }
 label_ncai_matrix <- function(matrix, habitats_label_tree, es_label_tree) {
   # check.names = FALSE prevents R from prepending 'X' to numeric IDs
   out <- as.data.frame(matrix, check.names = FALSE)

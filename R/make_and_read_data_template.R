@@ -24,8 +24,8 @@
 #' @param habitat_extent Optional data frame of existing habitat extent data.
 #' Row and column order and dimensions MUST matched label trees/year list.
 #' @param provision_per_unit_scores Optional data frame of existing ES Potential
-#'  Per Unit scores. Row and column order MUST match lower levels of
-#'  \code{habitats_label_tree} and \code{es_label_tree}.
+#' Unit scores. Row and column order MUST match lower levels of
+#' \code{habitats_label_tree} and \code{es_label_tree}.
 #' @param between_importance_scores Optional list of ecosystem service type
 #' importance weights. Order MUST match names of \code{es_label_tree}.
 #' @param within_importance_scores Optional list of lists of weights for
@@ -43,6 +43,7 @@
 #'  \code{habitats_label_tree} and \code{es_label_tree}.
 #'
 #' @return Generates an Excel file at the specified path and returns a message of success.
+#'
 #' @export
 #'
 #' @importFrom openxlsx createWorkbook addWorksheet writeData addStyle createStyle mergeCells setRowHeights setColWidths freezePane protectWorksheet saveWorkbook
@@ -470,6 +471,7 @@ write_condition_scores_sheet <- function(wb, sheet_name, ci_names, years, source
 #'   \item \code{indicator_directory}: Data frame mapping indicators to service types.
 #'   \item \code{ci_relevance_matrices}: List of binary matrices for every indicator.
 #' }
+#'
 #' @export
 #'
 #' @importFrom readxl read_excel

@@ -39,7 +39,7 @@ of manually entered data.}
 Row and column order and dimensions MUST matched label trees/year list.}
 
 \item{provision_per_unit_scores}{Optional data frame of existing ES Potential
-Per Unit scores. Row and column order MUST match lower levels of
+Unit scores. Row and column order MUST match lower levels of
 \code{habitats_label_tree} and \code{es_label_tree}.}
 
 \item{between_importance_scores}{Optional list of ecosystem service type

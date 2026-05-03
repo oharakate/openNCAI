@@ -4,18 +4,20 @@ output:
   rmarkdown::html_vignette:
     toc: yes
     toc_depth: 2
-    self_contained: yes
-    highlight: pygments
-  word_document:
-    toc: yes
-    toc_depth: '2'
-  pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{replicating_scotlands_ncai}
+  %\VignetteIndexEntry{Replicating Scotland's NCAI}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
+<style>
+  h3 {
+    margin-top: 35px;
+  }
+  h2 {
+    margin-top: 35px;
+  }
+</style>
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -224,7 +226,7 @@ all.equal(all_ecosystem_services, colnames(ns_custom_divisor_matrix))
 all.equal(all_ecosystem_services, colnames(one_ci_relevance_matrix))
 ```
 
-openNCAI includes two helper functions - `create_ncai_template()` and `read_ncai_template` - to help assemble data and get it into the right format for calculation. 
+openNCAI includes two helper functions - `create_ncai_template()` and `read_ncai_template` - to help assemble data and get it into the right format for calculation. Read more about them in [Using openNCAI's Data Entry Templates](using_openNCAIs_data_entry_templates.html).
 
 ## Calculating The Overall Index
 
@@ -557,8 +559,8 @@ ncai_options <- data.frame(
     "The indexed potential wellbeing contribution of habitats over time (habitat extent weighted by provision-per-unit and importance).",
     "The indexed likely flow of ecosystem services over time, derived from relevance-weighted condition indicator data.",
     "Unaggregated annual matrices of asset value for every habitat/ecosystem service combination.",
-    "Unaggregated annual matrices representing potential wellbeing values per habitat and ecosystem service.",
-    "Unaggregated annual matrices representing the likely flow of ecosystem services per habitat and ecosystem service.",
+    "Unaggregated annual matrices representing potential wellbeing values per habitat and ecosystem service. Calculated as yearly Habitat Extent * Wellbeing Base",
+    "Unaggregated annual matrices representing the likely flow of ecosystem services per habitat and ecosystem service, for each year.",
     "Ecosystem Service Potential Base: habitat extent weighted by exemplary provision-per-unit scores in year one.",
     "Wellbeing Potential Base: the potential wellbeing matrix for the baseline year (Year One).",
     "The likely service flow matrix for the baseline year (Year One).",
@@ -571,8 +573,13 @@ knitr::kable(ncai_options,
              col.names = c("Argument Value", "Output Type", "Description"),
              escape = FALSE)
 ```
+This diagram illustrates the calculation process:
 
-Having access to intermediate stages of the calculation means we can, for example, look at how the changing wellbeing contribution (**extent** of habitats weighted by potential per-unit provision of services and by importance to the population) and the changing estimated flow of ecosystem services (based on **condition** of habitats) and how these relate to the overall valuation.
+```{r, echo=FALSE, fig.cap="NCAI Calculation Process Diagram", out.width="100%"}
+knitr::include_graphics("../man/figures/ncai_calculation_process.png")
+```
+
+Having access to intermediate stages of the calculation means we can, for example, look at how the changing potential wellbeing contribution (**extent** of habitats weighted by potential per-unit provision of services and by importance to the population) and the changing estimated flow of ecosystem services (based on **condition** of habitats) and how these relate to the overall valuation.
 
 First, we generate the full suite of objects:
 
