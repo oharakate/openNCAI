@@ -11,3 +11,4 @@
 ^vignettes/openNCAI_in_brief_files$
 ^\.positai$
 ^\.claude$
+^CRAN-SUBMISSION$

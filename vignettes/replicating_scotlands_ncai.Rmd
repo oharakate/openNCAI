@@ -4,6 +4,7 @@ output:
   rmarkdown::html_vignette:
     toc: yes
     toc_depth: 2
+    highlight: tango
 vignette: >
   %\VignetteIndexEntry{Replicating Scotland's NCAI}
   %\VignetteEngine{knitr::rmarkdown}

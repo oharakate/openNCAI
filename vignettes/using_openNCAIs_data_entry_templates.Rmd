@@ -5,7 +5,7 @@ output:
     toc: yes
     toc_depth: 2
     self_contained: yes
-    highlight: pygments
+    highlight: tango
 vignette: >
   %\VignetteIndexEntry{Using openNCAI's Data Entry Templates}
   %\VignetteEngine{knitr::rmarkdown}

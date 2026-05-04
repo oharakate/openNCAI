@@ -1,6 +1,7 @@
 ---
 title: "openNCAI in Brief"
-output: rmarkdown::html_vignette
+output: rmarkdown::html_vignette:
+  highlight: tango
 vignette: >
   %\VignetteIndexEntry{openNCAI in Brief}
   %\VignetteEngine{knitr::rmarkdown}
