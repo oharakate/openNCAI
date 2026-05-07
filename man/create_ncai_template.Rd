@@ -81,7 +81,7 @@ template first to verify the required formats before attempting to pass in
 data.
 }
 \examples{
-\dontrun{
+\donttest{
 # 1. Define the habitat hierarchy
 habitat_label_tree <- list(
   'B. Coastal Habitats' = c(
@@ -109,14 +109,18 @@ ecosystem_service_label_tree <- list(
 condition_indicator_list <- c("National Water Quality Index", "AgriSCOR")
 list_of_years <- 2020:2025
 
-# 4. Generate the template
-# The resulting Excel file will have locked headers and editable data areas.
+# 4. Generate the template in a temporary location
+# tempfile() ensures a valid path that won't clutter your working directory.
+tmp_path <- tempfile(fileext = ".xlsx")
+
 create_ncai_template(
-  template_out = "NCAI_Entry_Template.xlsx",
+  template_out = tmp_path,
   habitats_label_tree = habitat_label_tree,
   es_label_tree = ecosystem_service_label_tree,
   ci_names = condition_indicator_list,
   year_list = list_of_years
 )
+
+message("Template successfully created at: ", tmp_path)
 }
 }

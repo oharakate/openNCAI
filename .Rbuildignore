@@ -12,3 +12,5 @@
 ^\.positai$
 ^\.claude$
 ^CRAN-SUBMISSION$
+^doc$
+^Meta$

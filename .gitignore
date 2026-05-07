@@ -9,3 +9,5 @@ inst/doc
 **/.quarto/
 docs
 .positai
+/doc/
+/Meta/

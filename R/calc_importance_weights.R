@@ -27,26 +27,6 @@
 #' all services within it are assigned a weight of 0.
 #'
 #' @keywords internal
-#'
-#' @examples
-#' # 1. Define the Hierarchy
-#' es_tree <- list(
-#'   provisioning = c("crops", "timber"),
-#'   regulating = c("carbon", "flood")
-#' )
-#'
-#' # 2. Define Scores as named lists
-#' # Note: The order of list elements does not matter as long as names match
-#' b_scores <- list(regulating = 1, provisioning = 3)
-#'
-#' w_scores <- list(
-#'   provisioning = list(timber = 5, crops = 10),
-#'   regulating = list(carbon = 1, flood = 0)
-#' )
-#'
-#' # 3. Run the calculation
-#' importance_df <- openNCAI:::calc_importance_weights(b_scores, w_scores, es_tree)
-#' print(importance_df)
 calc_importance_weights <- function(between_scores,
                                     within_scores,
                                     es_label_tree) {

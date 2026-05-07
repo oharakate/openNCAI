@@ -5,23 +5,25 @@ path <- testthat::test_path("..", "..", "data-raw", "ncai_corrected.xlsx")
 
 # --- TESTS ---
 
-test_that("import_ns_data returns the correct 11-component list structure", {
+test_that("import_ns_data returns the correct 14-component list structure", {
   # Skip this during R CMD check if the file is not reachable
   skip_if_not(file.exists(path), message = "Spreadsheet not found (expected during R CMD check)")
 
   years <- 2000:2022
-  result <- openNCAI:::import_ns_data(path = path, year_list = years)
+  result <- import_ns_data(path = path, year_list = years)
 
   # 1. Check overall structure
   expect_type(result, "list")
-  expect_length(result, 11)
+  expect_length(result, 14)
 
   # 2. Verify all named components exist
   expected_names <- c(
     "ns_habitat_extent", "ns_ci_scores", "ns_habitats_label_tree",
-    "ns_es_label_tree", "ns_year_list", "ns_provision_per_uniot_scores", "ns_custom_divisor_matrix",
+    "ns_es_label_tree", "ns_year_list", "ns_provision_per_unit_scores", "ns_custom_divisor_matrix",
     "ns_between_importance_scores", "ns_within_importance_scores",
-    "ns_ci_relevance_matrices", "ns_indicator_directory"
+    "ns_ci_relevance_matrices", "ns_indicator_directory", "ns_display_habitats_label_tree",
+    "ns_display_es_label_tree",
+    "ns_display_ci_names"
   )
   expect_setequal(names(result), expected_names)
 })
@@ -29,7 +31,7 @@ test_that("import_ns_data returns the correct 11-component list structure", {
 test_that("Label Trees and Matrices are perfectly aligned", {
   skip_if_not(file.exists(path), message = "Spreadsheet not found")
 
-  result <- openNCAI:::import_ns_data(path = path)
+  result <- import_ns_data(path = path)
 
   # Flatten labels for testing
   all_habitats <- unlist(result$ns_habitats_label_tree, use.names = FALSE)
@@ -41,10 +43,10 @@ test_that("Label Trees and Matrices are perfectly aligned", {
   expect_equal(colnames(result$ns_habitat_extent), result$ns_year_list)
 
   # 2. Check Provision Per Unit Alignment
-  expect_equal(nrow(result$ns_provision_per_uniot_scores), length(all_habitats))
-  expect_equal(ncol(result$ns_provision_per_uniot_scores), length(all_services))
-  expect_equal(rownames(result$ns_provision_per_uniot_scores), all_habitats)
-  expect_equal(colnames(result$ns_provision_per_uniot_scores), all_services)
+  expect_equal(nrow(result$ns_provision_per_unit_scores), length(all_habitats))
+  expect_equal(ncol(result$ns_provision_per_unit_scores), length(all_services))
+  expect_equal(rownames(result$ns_provision_per_unit_scores), all_habitats)
+  expect_equal(colnames(result$ns_provision_per_unit_scores), all_services)
 
   # 3. Check Custom Divisor Alignment
   expect_equal(nrow(result$ns_custom_divisor_matrix), length(all_habitats))
@@ -54,7 +56,7 @@ test_that("Label Trees and Matrices are perfectly aligned", {
 test_that("Condition Indicator data is consistent", {
   skip_if_not(file.exists(path), message = "Spreadsheet not found")
 
-  result <- openNCAI:::import_ns_data(path = path)
+  result <- import_ns_data(path = path)
   ci_ids <- result$ns_indicator_directory$ci_id
 
   # 1. Check CI Score Matrix dimensions
@@ -75,7 +77,7 @@ test_that("Condition Indicator data is consistent", {
 test_that("Importance scores map correctly to ES Types", {
   skip_if_not(file.exists(path), message = "Spreadsheet not found")
 
-  result <- openNCAI:::import_ns_data(path = path)
+  result <- import_ns_data(path = path)
   service_types <- names(result$ns_es_label_tree)
 
   # Between scores

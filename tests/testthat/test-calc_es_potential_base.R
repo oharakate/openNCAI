@@ -26,7 +26,7 @@ test_that("calc_es_potential_base calculates potential correctly and applies lab
 
   # Execute
   # Assuming year_one defaults to the first year in 'years' if not provided
-  res <- openNCAI:::calc_es_potential_base(
+  res <- calc_es_potential_base(
     habitat_extent = extent,
     provision_per_unit_weights = weights,
     year_list = years,
@@ -61,7 +61,7 @@ test_that("calc_es_potential_base throws errors for dimension mismatches", {
 
   # Name your arguments to ensure h_tree isn't treated as a year
   expect_error(
-    openNCAI:::calc_es_potential_base(
+    calc_es_potential_base(
       habitat_extent = extent_bad,
       provision_per_unit_weights = weights_good,
       year_list = years,

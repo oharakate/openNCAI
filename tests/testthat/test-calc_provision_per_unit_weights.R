@@ -7,7 +7,7 @@ test_that("calc_provision_per_unit_weights handles missing divisors", {
 
   # Explicitly passing NULL should trigger our custom error message
   expect_error(
-    openNCAI:::calc_provision_per_unit_weights(
+    calc_provision_per_unit_weights(
       df,
       divisor = NULL,
       custom_divisor_matrix = NULL,
@@ -27,7 +27,7 @@ test_that("calc_provision_per_unit_weights works with a single divisor", {
   rownames(df) <- c("h1", "h2")
   colnames(df) <- c("es1", "es2")
 
-  res <- openNCAI:::calc_provision_per_unit_weights(df,
+  res <- calc_provision_per_unit_weights(df,
                                            divisor = 10,
                                            habitats_label_tree = h_tree,
                                            es_label_tree = es_tree)
@@ -47,7 +47,7 @@ test_that("calc_provision_per_unit_weights works with custom matrix", {
   rownames(df) <- rownames(custom) <- c("h1", "h2")
   colnames(df) <- colnames(custom) <- c("es1")
 
-  res <- openNCAI:::calc_provision_per_unit_weights(df,
+  res <- calc_provision_per_unit_weights(df,
                                            custom_divisor_matrix = custom,
                                            habitats_label_tree =  h_tree,
                                            es_label_tree = es_tree)
@@ -65,7 +65,7 @@ test_that("calc_provision_per_unit_weights catches dimension mismatches", {
   colnames(df) <- "es1"
 
   expect_error(
-    openNCAI:::calc_provision_per_unit_weights(
+    calc_provision_per_unit_weights(
       df,
       custom_divisor_matrix = wrong_dim,
       habitats_label_tree = h_tree,

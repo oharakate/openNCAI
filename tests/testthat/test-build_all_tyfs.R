@@ -28,7 +28,7 @@ test_that("build_tyf returns 100 when all condition scores are 100", {
   total_total_indicator_relevances <- total_indicator_relevances_mat + constant
 
   # Run Function
-  res <- openNCAI:::build_tyf(ywccm_list, total_total_indicator_relevances, constant)
+  res <- build_tyf(ywccm_list, total_total_indicator_relevances, constant)
 
   # Math: (50 + (100 * 2)) / (0.5 + 2) = 100
   expect_equal(res[1, 1], 100)
@@ -48,7 +48,7 @@ test_that("build_all_ywccms multiplies scalars across list of matrices", {
   ciwms <- list(ind1 = mat1)
 
   # Condition index for ind1 in 2001 is 110
-  results <- openNCAI:::build_all_ywccms(raw_cis, "2001", years, ciwms)
+  results <- build_all_ywccms(raw_cis, "2001", years, ciwms)
 
   expect_equal(results$ind1[1,1], 110)
   expect_equal(results$ind1[2,2], 110)
@@ -61,7 +61,7 @@ test_that("build_all_ywccms handles character and numeric year inputs", {
   years <- c(2000, 2001)
   ciwms <- list(ind1 = matrix(1, 1, 1))
 
-  expect_no_error(openNCAI:::build_all_ywccms(raw_cis, 2000, years, ciwms))
+  expect_no_error(build_all_ywccms(raw_cis, 2000, years, ciwms))
 })
 
 test_that("build_all_tyfs correctly iterates and names list by year", {
@@ -71,7 +71,7 @@ test_that("build_all_tyfs correctly iterates and names list by year", {
   total_indicator_relevances <- matrix(3, 1, 1) # (1 + constant 2)
   constant <- 2
 
-  results <- openNCAI:::build_all_tyfs(raw_cis, years, ciwms, total_indicator_relevances, constant)
+  results <- build_all_tyfs(raw_cis, years, ciwms, total_indicator_relevances, constant)
 
   expect_length(results, 2)
   expect_named(results, c("2000", "2001"))

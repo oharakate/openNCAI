@@ -43,32 +43,4 @@ A labelled data frame with the same dimensions as 'provision_per_unit_weights'.
 Multiply the Provision Per Unit (weights) by the
 habitat extent in the baseline year of the index.
 }
-\examples{
-h_tree <- list(coastal = c("b1", "b2"), woodland = c("g1"))
-es_tree <- list(provisioning = c("crops", "timber"))
-
-# Setup Habitat Extent
-extent <- data.frame(
-  `2026` = c(100, 150, 200),
-  `2027` = c(110, 140, 210),
-  check.names = FALSE,
-  row.names = c("b1", "b2", "g1")
-)
-
-# Setup Provision Per Unit Weights
-weights <- data.frame(
-  crops = c(0.12, 0.1, 0.0),
-  timber = c(0.0, 0.0, 0.9),
-  row.names = c("b1", "b2", "g1")
-)
-
-years <- c("2026", "2027")
-
-es_potential_base_res <- openNCAI:::calc_es_potential_base(
-  provision_per_unit_weights = weights,
-  habitat_extent = extent,
-  year_list = years,
-  habitats_label_tree = h_tree,
-  es_label_tree = es_tree)
-}
 \keyword{internal}

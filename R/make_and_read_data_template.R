@@ -50,7 +50,7 @@
 #' @importFrom stringr str_replace_all
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # 1. Define the habitat hierarchy
 #' habitat_label_tree <- list(
 #'   'B. Coastal Habitats' = c(
@@ -78,15 +78,19 @@
 #' condition_indicator_list <- c("National Water Quality Index", "AgriSCOR")
 #' list_of_years <- 2020:2025
 #'
-#' # 4. Generate the template
-#' # The resulting Excel file will have locked headers and editable data areas.
+#' # 4. Generate the template in a temporary location
+#' # tempfile() ensures a valid path that won't clutter your working directory.
+#' tmp_path <- tempfile(fileext = ".xlsx")
+#'
 #' create_ncai_template(
-#'   template_out = "NCAI_Entry_Template.xlsx",
+#'   template_out = tmp_path,
 #'   habitats_label_tree = habitat_label_tree,
 #'   es_label_tree = ecosystem_service_label_tree,
 #'   ci_names = condition_indicator_list,
 #'   year_list = list_of_years
 #' )
+#'
+#' message("Template successfully created at: ", tmp_path)
 #' }
 create_ncai_template <- function(template_out,
                                  habitats_label_tree,
@@ -480,46 +484,44 @@ write_condition_scores_sheet <- function(wb, sheet_name, ci_names, years, source
 #' @importFrom stats setNames
 #'
 #' @examples
-#' \dontrun{
-#' # 1. Use the same trees used during create_ncai_template()
+#' \donttest{
+#' # 1. Define the trees (same as used in create_ncai_template)
 #' habitat_label_tree <- list(
-#'   'B. Coastal Habitats' = c(
-#'     "Coastal vegetated shingle",
-#'     "Coastal dunes and sandy shores"
-#'   ),
-#'   'E. Grasslands' = c(
-#'     "Dry Grasslands",
-#'     "Mesic Grasslands"
-#'   )
+#'   'B. Coastal Habitats' = c("Coastal vegetated shingle", "Coastal dunes"),
+#'   'E. Grasslands' = c("Dry Grasslands", "Mesic Grasslands")
 #' )
 #'
 #' ecosystem_service_label_tree <- list(
-#'   'PROVISIONING' = c(
-#'     "1.1 Cultivated Crops",
-#'     "1.2 Reared Animals And Their Outputs"
-#'   ),
-#'   'CULTURAL' = c(
-#'     "3.5. Existence & bequest"
-#'   )
+#'   'PROVISIONING' = c("1.1 Cultivated Crops"),
+#'   'CULTURAL' = c("3.5. Existence & bequest")
 #' )
 #'
-#' condition_indicator_list <- c("National Water Quality Index", "AgriSCOR")
+#' condition_indicator_list <- c("National Water Quality Index")
 #'
-#' # 2. Read the populated template
-#' # Ensure the path points to a file filled out by a user
+#' # 2. Create a temporary template to read back in
+#' # This ensures the example is self-contained and runnable.
+#' tmp_path <- tempfile(fileext = ".xlsx")
+#'
+#' create_ncai_template(
+#'   template_out = tmp_path,
+#'   habitats_label_tree = habitat_label_tree,
+#'   es_label_tree = ecosystem_service_label_tree,
+#'   ci_names = condition_indicator_list,
+#'   year_list = 2024:2025
+#' )
+#'
+#' # 3. Read the template
+#' # Even though it's empty, the function will process the headers and structure.
 #' ncai_data <- read_ncai_template(
-#'   path = "NCAI_Entry_Template_FILLED.xlsx",
+#'   path = tmp_path,
 #'   habitats_label_tree = habitat_label_tree,
 #'   es_label_tree = ecosystem_service_label_tree,
 #'   ci_names = condition_indicator_list
 #' )
 #'
-#' # 3. Access the cleaned data structures
-#' # The habitat extent data frame
+#' # 4. Access the cleaned data structures
+#' # Show the first few rows of the imported habitat extent matrix
 #' head(ncai_data$habitat_extent)
-#'
-#' # The list of binary relevance matrices for each indicator
-#' names(ncai_data$ci_relevance_matrices)
 #' }
 read_ncai_template <- function(path,
                                habitats_label_tree,

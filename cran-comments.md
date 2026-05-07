@@ -1,3 +1,43 @@
+## Resubmission - 07-05-2026 ##
+
+Thank you for the reviewer's comments. This is a resubmission addressing the 
+following points:
+
+1. Package/Software names in quotes
+  
+  Removed quotes from non-software terms (e.g. Scotland, NatureScot).
+
+
+2. Description field spacing
+  
+  Stripped line breaks from description field. Checked for extraneous spaces. 
+
+
+3. References format
+  
+  Updated the methodology reference in the DESCRIPTION file to the requested 
+  format: authors (year) <URL>.
+
+
+4. Use of the ::: operator
+
+  Removed examples from the documentation of unexported helper functions.
+
+  Removed all instances of ::: from the test suite. The package now uses only 
+  :: or internal namespace calls.
+
+5. \dontrun vs \donttest
+
+  Replaced \dontrun{} with \donttest{} for examples that involve writing/reading 
+  Excel files or have an execution time potentially exceeding 5 seconds. 
+
+
+
+-----------
+
+
+## Original submission - 04-05-2026
+
 Resubmission Notes
 This is a resubmission. The previous submission failed during the automated incoming checks because of syntax errors in the vignettes:
 

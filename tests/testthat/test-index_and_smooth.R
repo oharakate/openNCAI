@@ -10,7 +10,7 @@ test_that("index_and_smooth calculates totals, indexing, and smoothing correctly
   )
 
   # 2. Run Function
-  res <- openNCAI:::index_and_smooth(m_list)
+  res <- index_and_smooth(m_list)
 
   # 3. Robust Verifications
   # Helper to extract value by row name safely

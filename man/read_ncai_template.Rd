@@ -38,45 +38,43 @@ should match the labels used in the spreadsheet; typically the same label trees
 should be used to generate and read the template.
 }
 \examples{
-\dontrun{
-# 1. Use the same trees used during create_ncai_template()
+\donttest{
+# 1. Define the trees (same as used in create_ncai_template)
 habitat_label_tree <- list(
-  'B. Coastal Habitats' = c(
-    "Coastal vegetated shingle",
-    "Coastal dunes and sandy shores"
-  ),
-  'E. Grasslands' = c(
-    "Dry Grasslands",
-    "Mesic Grasslands"
-  )
+  'B. Coastal Habitats' = c("Coastal vegetated shingle", "Coastal dunes"),
+  'E. Grasslands' = c("Dry Grasslands", "Mesic Grasslands")
 )
 
 ecosystem_service_label_tree <- list(
-  'PROVISIONING' = c(
-    "1.1 Cultivated Crops",
-    "1.2 Reared Animals And Their Outputs"
-  ),
-  'CULTURAL' = c(
-    "3.5. Existence & bequest"
-  )
+  'PROVISIONING' = c("1.1 Cultivated Crops"),
+  'CULTURAL' = c("3.5. Existence & bequest")
 )
 
-condition_indicator_list <- c("National Water Quality Index", "AgriSCOR")
+condition_indicator_list <- c("National Water Quality Index")
 
-# 2. Read the populated template
-# Ensure the path points to a file filled out by a user
+# 2. Create a temporary template to read back in
+# This ensures the example is self-contained and runnable.
+tmp_path <- tempfile(fileext = ".xlsx")
+
+create_ncai_template(
+  template_out = tmp_path,
+  habitats_label_tree = habitat_label_tree,
+  es_label_tree = ecosystem_service_label_tree,
+  ci_names = condition_indicator_list,
+  year_list = 2024:2025
+)
+
+# 3. Read the template
+# Even though it's empty, the function will process the headers and structure.
 ncai_data <- read_ncai_template(
-  path = "NCAI_Entry_Template_FILLED.xlsx",
+  path = tmp_path,
   habitats_label_tree = habitat_label_tree,
   es_label_tree = ecosystem_service_label_tree,
   ci_names = condition_indicator_list
 )
 
-# 3. Access the cleaned data structures
-# The habitat extent data frame
+# 4. Access the cleaned data structures
+# Show the first few rows of the imported habitat extent matrix
 head(ncai_data$habitat_extent)
-
-# The list of binary relevance matrices for each indicator
-names(ncai_data$ci_relevance_matrices)
 }
 }

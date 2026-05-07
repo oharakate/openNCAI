@@ -8,7 +8,7 @@ test_that("calc_total_indicator_relevances sums matrices correctly and applies c
   constant <- 2
 
   # 2. Run function
-  result <- openNCAI:::calc_total_indicator_relevances(all_ciwms, total_indicator_relevances_constant = constant)
+  result <- calc_total_indicator_relevances(all_ciwms, total_indicator_relevances_constant = constant)
 
   # 3. Verification
   # Expected: (mat1 + mat2) + constant
@@ -22,7 +22,7 @@ test_that("calc_total_indicator_relevances sums matrices correctly and applies c
 
 test_that("calc_total_indicator_relevances works with a single matrix in the list", {
   mat1 <- matrix(1, nrow = 2, ncol = 2)
-  result <- openNCAI:::calc_total_indicator_relevances(list(mat1), total_indicator_relevances_constant = 2)
+  result <- calc_total_indicator_relevances(list(mat1), total_indicator_relevances_constant = 2)
 
   # Expected: 1 + 2 = 3
   expect_true(all(result == 3))
@@ -33,5 +33,5 @@ test_that("calc_total_indicator_relevances fails if matrix dimensions mismatch",
   mat2 <- matrix(1, nrow = 3, ncol = 3) # Different size
 
   # Reduce("+", ...) will throw a base R error here
-  expect_error(openNCAI:::calc_total_indicator_relevances(list(mat1, mat2), total_indicator_relevances_constant = 2))
+  expect_error(calc_total_indicator_relevances(list(mat1, mat2), total_indicator_relevances_constant = 2))
 })

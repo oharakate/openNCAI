@@ -39,37 +39,6 @@
 #' dimensions as \code{provision_per_unit}.
 #'
 #' @keywords internal
-#'
-#' @examples
-#' # Setup dummy scores
-#' # FIX: Column names must match the values in es_tree!
-#' scores <- data.frame(
-#'   crops = c(10, 5),          # Changed from service1
-#'   drinking_water = c(2, 8),  # Changed from service2
-#'   row.names = c("b1", "b2")
-#' )
-#'
-#' hab_tree <- list(coastal = c("b1", "b2"))
-#' es_tree <- list(provisioning = c("crops", "drinking_water"))
-#'
-#' # 1. Using a universal divisor with labels
-#' openNCAI:::calc_provision_per_unit_weights(
-#'   scores,
-#'   divisor = 10,
-#'   habitats_label_tree = hab_tree,
-#'   es_label_tree = es_tree
-#' )
-#'
-#' # 2. Using a custom matrix with labels
-#' custom_div <- data.frame(service1 = c(10, 10), service2 = c(5, 5))
-#' openNCAI:::calc_provision_per_unit_weights(scores,
-#'   custom_divisor_matrix = custom_div,
-#'   habitats_label_tree = hab_tree,
-#'   es_label_tree = es_tree
-#' )
-#'
-#' # 3. Running without labels (returns simple data frame)
-#' openNCAI:::calc_provision_per_unit_weights(scores, divisor = 10)
 calc_provision_per_unit_weights <- function(
     provision_per_unit_scores,
     divisor = 5,

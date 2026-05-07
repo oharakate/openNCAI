@@ -500,3 +500,6 @@ devtools::release()
 # check()
 # # Commit and push here.
 #
+
+
+# devtools::submit_cran()
