@@ -1,3 +1,25 @@
+## Resubmission - 08-05-2026 ##
+
+This is a resubmission following failed incoming checks of submission on 
+07-05-2026, addressing the following points:
+
+1. Possibly mispelled words in description
+
+  Words are names and domain-specific terms. Added the words to 
+  WORDLIST.
+  
+2. Possibly invalid URL
+
+  Linked website appears to be down and is still down at time of resubmission.
+  Replaced the url with another relevant and confirmed url.
+  
+3. Incorrectly formatted DOI in description. 
+
+  Corrected to format <doi:prefix/suffix>
+  
+
+---------------
+
 ## Resubmission - 07-05-2026 ##
 
 Thank you for the reviewer's comments. This is a resubmission addressing the 

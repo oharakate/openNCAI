@@ -144,7 +144,7 @@ knitr::kable(d_subset)
 ```
 [^1]: [European Nature Information System](https://eunis.eea.europa.eu/)
 [^2]: [Common International Classification of Ecosystem Services](https://cices.eu/)
-[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^3]: [System of Environmental-Economic Accounting](https://www.fao.org/land-water/land/land-governance/land-resources-planning-toolbox/category/details/en/c/1111241/)
 
 #### Environmental measurements objects
 ```{r}

@@ -6,7 +6,7 @@
 \alias{openNCAI-package}
 \title{openNCAI: Calculates a Natural Capital Assets Index}
 \description{
-Calculates a regional natural capital assets index (NCAI) following the methodology designed by NatureScot for Scotland as described in Albon, Balana, Brooker & Eastwood (2014) \url{https://www.nature.scot/sites/default/files/2025-06/naturescot-commissioned-report-751.pdf} and McKenna et al. (2019) \url{https://doi.org/10.1016/J.ECOLIND.2019.105645}. Processes habitat extent and condition data alongside metadata and weighting systems to produce a yearly single figure indexed relative to a base-year value of 100.
+Calculates a regional natural capital assets index (NCAI) following the methodology designed by NatureScot for Scotland as described in Albon, Balana, Brooker & Eastwood (2014) \url{https://www.nature.scot/sites/default/files/2025-06/naturescot-commissioned-report-751.pdf} and McKenna et al. (2019) \doi{10.1016/J.ECOLIND.2019.105645}. Processes habitat extent and condition data alongside metadata and weighting systems to produce a yearly single figure indexed relative to a base-year value of 100.
 }
 \seealso{
 Useful links:

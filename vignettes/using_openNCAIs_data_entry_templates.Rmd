@@ -82,7 +82,7 @@ my_num_year_list <- 2000:2022
 ```
 
 [^1]: [European Nature Information System](https://eunis.eea.europa.eu/)
-[^2]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^2]: [System of Environmental-Economic Accounting](https://www.fao.org/land-water/land/land-governance/land-resources-planning-toolbox/category/details/en/c/1111241/)
 [^3]: [Common International Classification of Ecosystem Services](https://cices.eu/)
 
 ## Step 2: Creating the data input spreadsheet
