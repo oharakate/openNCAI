@@ -26,7 +26,7 @@ The calculation of the NCAI is based on the following core measurable or estimab
 | **Provision per unit** | The notional capacity of a natural habitat to provide an ecosystem service. E.g., one hectare of market garden has the potential to provide more food than one hectare of cultivated garden in a public park. |
 | **Importance** | The relative demand for and importance of any ecosystem service to our community and economy. E.g. having drinking water is likely to be more essential to survival and well-being than rearing animals to pull carts and ploughs. |
 | **Flow** | The actual rate of delivery of ecosystem services from a natural habitat, estimated based on the current *condition* of a natural habitat. E.g. while a cornfield offers good **provision per unit** in contributing to the service of providing food from plants, the **flow** of that service could be reduced if poor weather meant the crop did not grow well. In calculating NCAI, data from a variety of sources are used as indicators of the condition of habitats and the subsequent likely flow of ecosystem services. |
-| **Natural capital assets valuation** | A representative figure (non-monetary) to track the capacity of the available natural habitats to provide ecosystem services. |
+| **Natural capital assets** | A representative figure (non-monetary) to track the capacity of the available natural habitats to provide ecosystem services. |
 
 openNCAI uses the method design by NatureScot to calculate Scotland's NCAI (McKenna et al, 2019, Albon et al 2014). It generates an estimated assets valuation by weighting the extent of natural habitats by their provision per unit of services, demand for different services, and the likely flow of services based on the condition of the habitats. 
 
