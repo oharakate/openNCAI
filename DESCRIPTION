@@ -16,7 +16,6 @@ BugReports: https://github.com/oharakate/openNCAI/issues
 Imports: 
     dplyr,
     janitor,
-    magrittr,
     openxlsx,
     readxl,
     rlang,

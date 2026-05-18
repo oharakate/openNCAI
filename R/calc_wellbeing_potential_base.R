@@ -25,7 +25,6 @@
 #'
 #' @return A data frame representing the Wellbeing Base.
 #'
-#' @importFrom magrittr %>%
 #' @importFrom dplyr across everything
 #'
 #' @keywords internal
@@ -52,8 +51,8 @@ calc_wellbeing_potential_base <- function(es_potential_base,
 
   # Express ES Potential Base as proportion of
   # habitat total contribution
-  wellbeing_potential_base <- wellbeing_potential_base %>%
-    dplyr::mutate(across(everything(), ~ . / sum(., na.rm = TRUE))) %>%
+  wellbeing_potential_base <- wellbeing_potential_base |>
+    dplyr::mutate(across(everything(), ~ . / sum(., na.rm = TRUE))) |>
     # Handle cases where column sum was 0 to avoid NaN
     dplyr::mutate(across(everything(), ~ ifelse(is.nan(.), 0, .)))
 
