@@ -15,7 +15,7 @@ This is a resubmission following failed incoming checks of submission on
   
 3. Incorrectly formatted DOI in description. 
 
-  Corrected to format <doi:prefix/suffix>
+  Corrected to use format <doi:prefix/suffix>
   
 
 ---------------
