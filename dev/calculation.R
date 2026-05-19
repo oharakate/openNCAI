@@ -5,7 +5,8 @@
 
 #### SETUP ####
 
-library(openNCAI)
+# library(openNCAI)
+devtools::load_all()
 library(ggplot2)
 library(ggthemes)
 

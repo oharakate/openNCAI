@@ -6,9 +6,6 @@
 #   Check Package:             'Ctrl + Shift + E'
 #   Test Package:              'Ctrl + Shift + T'
 
-# We will probably change the name of this package at some point.
-# This website might help with that:
-# https://www.njtierney.com/post/2017/10/27/change-pkg-name/
 
 # I previously worked through this:
 # https://r-pkgs.org/whole-game.html
@@ -56,8 +53,8 @@ use_package("openxlsx")
 
 # Use Git
 # usethis::use_git_config(
-#   user.name = "oharakate",
-#   user.email = "sadkate@gmail.com"
+#   user.name = "GITHUBUSERNAME",
+#   user.email = "EMAIL@EMAIL.com"
 # )
 # use_git()
 
