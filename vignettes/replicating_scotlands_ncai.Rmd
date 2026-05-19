@@ -198,7 +198,6 @@ d_subset <- data.frame(
 knitr::kable(d_subset)
 ```
 
-
 Several of the weights objects are matrices of **habitat / ecosystem service** type. These are provided as data frames with rows matching the unlisted habitats label tree and columns matching the unlisted ecosystem service label tree:
 
 ```{r view-weights}
@@ -227,7 +226,11 @@ all.equal(all_ecosystem_services, colnames(ns_custom_divisor_matrix))
 all.equal(all_ecosystem_services, colnames(one_ci_relevance_matrix))
 ```
 
-openNCAI includes two helper functions - `create_ncai_template()` and `read_ncai_template` - to help assemble data and get it into the right format for calculation. Read more about them in [Using openNCAI's Data Entry Templates](using_openNCAIs_data_entry_templates.html).
+### Data expectations ###
+openNCAI expects complete data in the cross-matched formats described above. 
+Note that the bundled data is the data used by NatureScot at the point of calculation and includes some inter/extrapolation to complete missing years of the time series on some environmental measurements.
+
+To help assemble data and get it into the right format for calculation, openNCAI includes two helper functions: `create_ncai_template()` and `read_ncai_template`. Read more about them in [Using openNCAI's Data Entry Templates](using_openNCAIs_data_entry_templates.html).
 
 ## Calculating The Overall Index
 
