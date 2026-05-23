@@ -5,6 +5,7 @@ openNCAI is an R package for calculating a regional natural capital assets index
 ### Installation ###
 
 Install the released version from CRAN using:
+
 `install.packages("openNCAI")`
 
 Or the development version from GitHub using:
