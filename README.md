@@ -45,4 +45,4 @@ The following diagram outlines the calculation process:
 
 McKenna, T. et al. (2019) “Scotland’s natural capital asset index: Tracking nature’s contribution to national wellbeing,” Ecological Indicators, 107, p. 105645. Available at: https://doi.org/10.1016/J.ECOLIND.2019.105645.
 
-Albon et al. (2014) “SNH Commissioned Report 751: A systematic evaluation of Scotland’s Natural Capital Asset Index.”
+Albon et al. (2014) “SNH Commissioned Report 751: A systematic evaluation of Scotland’s Natural Capital Asset Index.” Available at https://www.nature.scot/sites/default/files/2025-06/naturescot-commissioned-report-751.pdf .
