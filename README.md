@@ -11,6 +11,7 @@ Install the released version from CRAN using:
 Or the development version from GitHub using:
 
 `install.packages("devtools")`
+
 `devtools::install_github("oharakate/openNCAI", build_vignettes = TRUE)`
 
 Note that `build_vignettes = TRUE` is recommended in order to access all documentation. 
