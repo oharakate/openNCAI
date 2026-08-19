@@ -14,3 +14,5 @@
 ^CRAN-SUBMISSION$
 ^doc$
 ^Meta$
+^notebook\.R$
+^CLAUDE\.md$
