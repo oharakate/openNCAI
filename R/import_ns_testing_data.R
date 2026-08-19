@@ -31,14 +31,14 @@ import_ns_testing_data <- function(path,
                                 range = "F4:AG34", col_names = FALSE,
                                 col_types = "numeric",
                                 trim_ws = TRUE,
-                                .name_repair = "minimal") %>%
+                                .name_repair = "minimal") |>
     as.data.frame()
 
   # Set row names before labeling to satisfy the strict check in label_ncai_matrix
   rownames(ref_es_potential_base) <- unlist(habitats_label_tree, use.names = FALSE)
   colnames(ref_es_potential_base) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_es_potential_base <- ref_es_potential_base %>%
+  ref_es_potential_base <- ref_es_potential_base |>
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 2. Get the Well-being Base
@@ -51,13 +51,13 @@ import_ns_testing_data <- function(path,
                                           col_types = "numeric",
                                           trim_ws = TRUE,
                                           .name_repair = "minimal"
-  ) %>%
+  ) |>
     as.data.frame()
 
   rownames(ref_wellbeing_potential_base) <- unlist(habitats_label_tree, use.names = FALSE)
   colnames(ref_wellbeing_potential_base) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_wellbeing_potential_base <- ref_wellbeing_potential_base %>%
+  ref_wellbeing_potential_base <- ref_wellbeing_potential_base |>
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 3. Get the Total Indicator Relevances
@@ -69,13 +69,13 @@ import_ns_testing_data <- function(path,
     col_types = "numeric",
     trim_ws = TRUE,
     .name_repair = "minimal"
-  ) %>%
+  ) |>
     as.data.frame()
 
   rownames(ref_total_indicator_relevances) <- unlist(habitats_label_tree, use.names = FALSE)
   colnames(ref_total_indicator_relevances) <- unlist(es_label_tree, use.names = FALSE)
 
-  ref_total_indicator_relevances <- ref_total_indicator_relevances %>%
+  ref_total_indicator_relevances <- ref_total_indicator_relevances |>
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # 4. Get the final natural capital assets yearly matrices (year sheets)
@@ -107,7 +107,7 @@ import_ns_testing_data <- function(path,
       sheet = 73,
       year_list = year_list
     )
-  }) %>%
+  }) |>
     setNames(index_breakdown_labels)
 
   # Return a list of objects
@@ -138,14 +138,14 @@ read_ns_year_sheet <- function(sheet, path, es_label_tree, habitats_label_tree) 
     col_types = "numeric",
     trim_ws = TRUE,
     .name_repair = "minimal" #quietens reporting on name repair
-  ) %>%
+  ) |>
     as.data.frame()
 
   # Apply names before labeling
   rownames(year_sheet) <- unlist(habitats_label_tree, use.names = FALSE)
   colnames(year_sheet) <- unlist(es_label_tree, use.names = FALSE)
 
-  year_sheet <- year_sheet %>%
+  year_sheet <- year_sheet |>
     label_ncai_matrix(habitats_label_tree, es_label_tree)
 
   # NAs to 0 as before
@@ -181,8 +181,8 @@ read_the_indices <- function(indices_range,
     col_types = "numeric",
     trim_ws = TRUE,
     .name_repair = "minimal"
-  ) %>%
-    as.data.frame() %>%
+  ) |>
+    as.data.frame() |>
     setNames(c("raw_total", "raw_index", "smoothed_index"))
   row.names(index_set) <- as.character(year_list)
 

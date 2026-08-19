@@ -58,9 +58,9 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
   raw_habs_df <- readxl::read_excel(
     path, sheet = "ES Potential per SPU", range = "C4:E34",
     col_names = c("broad_cat", "code", "name"), col_types = "text"
-  ) %>%
-    tidyr::fill("broad_cat", .direction = "down") %>%
-    dplyr::filter(!is.na(.data$name)) %>%
+  ) |>
+    tidyr::fill("broad_cat", .direction = "down") |>
+    dplyr::filter(!is.na(.data$name)) |>
     dplyr::mutate(print_name = stringr::str_squish(.data$name))
 
   # Manual fix for broad categories
@@ -81,11 +81,11 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
 
   habitat_tree <- lapply(hab_order, function(b) {
     janitor::make_clean_names(raw_habs_df$print_name[raw_habs_df$broad_cat == b])
-  }) %>% stats::setNames(janitor::make_clean_names(hab_order))
+  }) |> stats::setNames(janitor::make_clean_names(hab_order))
 
   ns_displayhabitats_label_tree <- lapply(hab_order, function(b) {
     raw_habs_df$print_name[raw_habs_df$broad_cat == b]
-  }) %>% stats::setNames(hab_order)
+  }) |> stats::setNames(hab_order)
 
 
   # 2. ES LABELS & TREE
@@ -94,16 +94,16 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
     col_names = FALSE, col_types = "text"
   )
 
-  raw_es_df <- as.data.frame(t(raw_es_header)) %>%
-    dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) %>%
-    tidyr::fill("es_type", .direction = "down") %>%
+  raw_es_df <- as.data.frame(t(raw_es_header)) |>
+    dplyr::rename("es_type" = 1, "code" = 2, "name" = 3) |>
+    tidyr::fill("es_type", .direction = "down") |>
     dplyr::mutate(
       es_type = stringr::str_squish(.data$es_type),
       print_name = stringr::str_squish(paste(ifelse(is.na(.data$code), "", .data$code), .data$name))
     )
 
   # FLAT LABELS: Create clean names and strip the leading 'x'
-  all_service_labels <- raw_es_df %>%
+  all_service_labels <- raw_es_df |>
     dplyr::mutate(
       # Create the concatenated string: "1.1.1 Cultivated crops"
       full_str = paste(.data$code, .data$name),
@@ -117,7 +117,7 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
       clean = ifelse(.data$clean == "2_10_maintenance_of_water_s_chemical_condition",
                      "2_10_maintenance_of_waters_chemical_condition",
                      .data$clean)
-    ) %>%
+    ) |>
     dplyr::pull(.data$clean)
 
   # TREE STRUCTURE: Build using the updated flat labels
@@ -128,11 +128,11 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
 
   es_tree <- lapply(es_order, function(e) {
     raw_es_df$clean_name[raw_es_df$es_type == e]
-  }) %>% stats::setNames(janitor::make_clean_names(es_order))
+  }) |> stats::setNames(janitor::make_clean_names(es_order))
 
   ns_displayes_label_tree <- lapply(es_order, function(e) {
     raw_es_df$print_name[raw_es_df$es_type == e]
-  }) %>% stats::setNames(es_order)
+  }) |> stats::setNames(es_order)
 
   service_types <- names(es_tree)
 
@@ -140,7 +140,7 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
   provision_per_unit <- readxl::read_xlsx(
     path = path, sheet = 3, range = "F4:AG34",
     col_names = FALSE, col_types = "numeric", trim_ws = TRUE, .name_repair = "minimal"
-  ) %>% as.data.frame()
+  ) |> as.data.frame()
 
   rownames(provision_per_unit) <- all_habitat_labels
   colnames(provision_per_unit) <- all_service_labels
@@ -178,7 +178,7 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
   # 5. IMPORTANCE WEIGHTS
   between_importance_scores <- readxl::read_xlsx(
     path = path, sheet = 4, range = "D6:D8", col_names = "score", col_types = "numeric"
-  ) %>% dplyr::pull(.data$score) %>% as.list() %>% stats::setNames(service_types)
+  ) |> dplyr::pull(.data$score) |> as.list() |> stats::setNames(service_types)
 
   within_importance_scores <- get_ns_importance_scores(
     path = path, sheet = 4,
@@ -190,10 +190,10 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
   raw_ind_data <- readxl::read_excel(
     path = path, sheet = "Indicator Directory", range = "A3:R106",
     col_names = FALSE, col_types = "text"
-  ) %>% as.data.frame() %>%
-    dplyr::select(1, 4, 14, 15, 16, 18) %>%
-    stats::setNames(c("num", "name", service_types, "used")) %>%
-    dplyr::filter(.data$used == "Yes") %>%
+  ) |> as.data.frame() |>
+    dplyr::select(1, 4, 14, 15, 16, 18) |>
+    stats::setNames(c("num", "name", service_types, "used")) |>
+    dplyr::filter(.data$used == "Yes") |>
     dplyr::mutate(
       num = stringr::str_squish(.data$num),
       name = stringr::str_squish(.data$name),
@@ -207,7 +207,7 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
 
   ns_displayci_names <- raw_ind_data$ns_displayname
   ci_ids         <- raw_ind_data$ci_id # Now contains clean IDs without 'x'
-  indicator_directory <- raw_ind_data %>% dplyr::select("ci_id", dplyr::all_of(service_types))
+  indicator_directory <- raw_ind_data |> dplyr::select("ci_id", dplyr::all_of(service_types))
 
 
   # 7. MATRICES AND MEASUREMENTS
@@ -218,7 +218,7 @@ import_ns_data <- function(path, year_list = 2000:2022, total_indicator_relevanc
 
   habitat_extent <- readxl::read_xlsx(
     path = path, sheet = 5, range = "E4:AA34", col_names = FALSE, col_types = "numeric"
-  ) %>% as.data.frame()
+  ) |> as.data.frame()
   names(habitat_extent) <- year_list
   rownames(habitat_extent) <- all_habitat_labels
 
@@ -259,7 +259,7 @@ get_ns_importance_scores <- function(path, sheet, importance_ranges, es_tree) {
     scores_vec <- readxl::read_xlsx(path = path, sheet = sheet, range = rng,
                                     col_names = "score", col_types = "numeric", trim_ws = TRUE,
                                     .name_repair = "minimal",
-                                    progress = FALSE) %>%
+                                    progress = FALSE) |>
       dplyr::pull(.data$score)
     names(scores_vec) <- es_tree[[service_type]]
     return(as.list(scores_vec))
@@ -282,8 +282,8 @@ get_ns_cirm_list <- function(path, sheet_list, matrix_range, ci_ids,
   list_of_dfs <- lapply(sheet_list, function(current_sheet) {
     data <- readxl::read_xlsx(path = path, sheet = current_sheet, range = matrix_range,
                               col_names = FALSE, col_types = "numeric", trim_ws = TRUE,
-                              .name_repair = "minimal") %>%
-      as.data.frame() %>%
+                              .name_repair = "minimal") |>
+      as.data.frame() |>
       stats::setNames(all_service_labels)
 
     # Debug if label mismatch
@@ -336,7 +336,7 @@ make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
   }
 
   htst <- expand.grid(habitat = all_habitat_labels, service_type = all_es_labels,
-                      stringsAsFactors = FALSE) %>%
+                      stringsAsFactors = FALSE) |>
     dplyr::mutate(divisor = usual_divisor)
 
   for (i in seq_along(habitats_to_adjust)) {
@@ -351,11 +351,11 @@ make_custom_divisor_matrix <- function(all_habitat_labels, all_es_labels,
     htst$divisor[matches] <- custom_divisor
   }
 
-  htst_wide <- htst %>%
+  htst_wide <- htst |>
     tidyr::pivot_wider(
       names_from = "service_type",
       values_from = "divisor"
-    ) %>%
+    ) |>
     as.data.frame()
 
   # Clean up and restore row order based on original habitat list
