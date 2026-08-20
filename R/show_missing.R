@@ -50,6 +50,7 @@ show_missing <- function(x, label_col = NULL) {
 
   empty_mat <- as.matrix(as.data.frame(lapply(df, .is_empty_value)))
   labels <- if (!is.null(label_col)) as.character(df[[label_col]]) else rownames(df)
+  labels <- .truncate_label(labels, width = 20)
   pct <- rowSums(empty_mat) / ncol(df) * 100
 
   plot_df <- data.frame(label = labels, pct = pct)
@@ -59,7 +60,7 @@ show_missing <- function(x, label_col = NULL) {
   ggplot2::ggplot(plot_df) +
     ggplot2::geom_col(ggplot2::aes(y = .data$label, x = .data$pct, fill = .data$pct)) +
     ggplot2::scale_fill_viridis_c(guide = "none") +
-    ggplot2::theme_classic(base_size = 18) +
+    ggplot2::theme_classic(base_size = 11) +
     ggplot2::xlab("% of values which are missing.") +
     ggplot2::ylab(NULL)
 }

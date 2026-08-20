@@ -16,6 +16,18 @@
   }
 }
 
+#' Truncate a label to a maximum display width, marking truncation with an
+#' ASCII ellipsis (a Unicode "…" isn't representable in some graphics
+#' devices' encoding, which throws a warning per truncated label)
+#'
+#' @param x A character vector of labels.
+#' @param width Maximum total displayed width, "..." included.
+#' @return A character vector, each element no longer than `width`.
+#' @noRd
+.truncate_label <- function(x, width = 20) {
+  ifelse(nchar(x) > width, paste0(substr(x, 1, width - 3), "..."), x)
+}
+
 #' Format a proportion as a percentage string, stepping up precision so a
 #' nonzero proportion never displays as "0.0"
 #'
@@ -107,7 +119,11 @@
       total <- total + length(el)
       missing <- missing + sum(empt)
       if (any(empt)) {
-        detail <- c(detail, sprintf("%s[%d]: value missing", el_path, which(empt)))
+        if (length(el) == 1) {
+          detail <- c(detail, sprintf("%s: value missing", el_path))
+        } else {
+          detail <- c(detail, sprintf("%s[%d]: value missing", el_path, which(empt)))
+        }
       }
     }
   }

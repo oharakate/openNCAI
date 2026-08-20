@@ -46,8 +46,16 @@ check_missing <- function(inputs, label_cols = NULL) {
     smry <- .summarise_missing(x, label_col = label_col)
 
     if (!is.null(smry$sub)) {
-      # A named list of data frames (e.g. ci_relevance_matrices): its own
-      # header line, then each element indented on its own sub-line.
+      # A named list of data frames (e.g. ci_relevance_matrices). If every
+      # element is complete, collapse to one line rather than one line per
+      # element (which is otherwise all "Complete." noise); only expand to
+      # per-element sub-lines when something is actually missing.
+      if (smry$missing == 0) {
+        header <- sprintf("%-*s", pad_width, nm)
+        lines <- c(lines, sprintf("%s ✓ Complete. (%d elements)", header, length(smry$sub)))
+        next
+      }
+
       lines <- c(lines, paste0(nm, ":"))
       sub_names <- names(smry$sub)
       sub_pad <- floor(stats::median(nchar(sub_names)))
@@ -83,11 +91,15 @@ check_missing <- function(inputs, label_cols = NULL) {
 
   if (length(failing) > 0) {
     stop(
-      "openNCAI requires complete data for all inputs. The following ",
-      "objects have missing values: ", paste(failing, collapse = ", "), ". ",
-      "Run show_missing() on each flagged object for details, or see ",
-      "create_ncai_template()/read_ncai_template() for help producing ",
-      "complete input data."
+      "openNCAI requires complete data for all inputs.\n\n",
+      "Objects with missing values:\n",
+      paste0("  - ", failing, collapse = "\n"), "\n\n",
+      "See above for details and run show_missing() on a flagged object\n",
+      "for more info.\n",
+      "You may find openNCAI's template helpers \n",
+      "create_ncai_template() and read_ncai_template() helpful for \n",
+      "producing complete input data.",
+      call. = FALSE
     )
   }
 

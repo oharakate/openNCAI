@@ -17,7 +17,7 @@ test_that("check_missing reports and stops on a data frame with missing values",
   df <- data.frame(x = c(1, NA, 3), y = c(4, 5, NA))
   rownames(df) <- c("row1", "row2", "row3")
 
-  expect_error(check_missing(list(my_df = df)), "objects have missing values: my_df")
+  expect_error(check_missing(list(my_df = df)), "- my_df")
   expect_message(
     tryCatch(check_missing(list(my_df = df)), error = function(e) invisible(NULL)),
     "row2.*missing|row3.*missing"
