@@ -1,16 +1,95 @@
-check_missing <- function(df){
-  countna <- apply(X = df, FUN = function(x){sum(is.na(x))}, MARGIN = 1)
-  if(sum(countna) == 0){print("Complete data supplied.")}
-  if(sum(countna) != 0){
-    ntoreport <- ifelse(nrow(df)<3, nrow(df), 3)
-    print(paste0("openNCAI expects no missing data. The supplied data has missingness. For example, the ", ntoreport, " indicators with the highest proportion of missing data are:"))
-    dfna <- data.frame(rownames(df), countna/ncol(df))
-    colnames(dfna) <- c("ci", "napct")
-    napctorder <- order(dfna$napct, decreasing = TRUE)
-    dfna <- data.frame(dfna$ci[napctorder], dfna$napct[napctorder])
-    dfna <- dfna[1:ntoreport,]
-    for(i in 1:ntoreport){
-      print(paste0("Condition Indicator ", dfna$ci[i], " which has ", round(dfna$napct[i]*100), "% its of values missing."))
+#' Check pipeline inputs for missing data
+#'
+#' @description
+#' Checks one or more openNCAI pipeline objects for missing data and
+#' reports a summary via \code{message()}. Data frames are checked cell
+#' by cell. Named lists (label trees and weight trees, up to two levels
+#' of nesting, e.g. \code{habitats_label_tree} or
+#' \code{within_importance_scores}) are checked element by element, and
+#' blank or \code{NA} \emph{names} are treated as missing alongside blank
+#' or \code{NA} \emph{values}, since openNCAI matches on these labels
+#' downstream. Bare vectors (e.g. \code{year_list}) are checked element
+#' by element. \code{ci_relevance_matrices}-shaped input (a named list of
+#' data frames) is checked per element, with its own header line.
+#'
+#' \code{check_missing()} is run automatically at the start of
+#' \code{\link{get_ncai}}; if any input has missing data, it stops the
+#' pipeline before any calculation runs. It can also be called directly
+#' on any named list of objects.
+#'
+#' @param inputs A named list of objects to check.
+#' @param label_cols Optional named character vector mapping names in
+#'   \code{inputs} to the column that should be used as the row label in
+#'   the report, for data frames whose row names aren't meaningful (e.g.
+#'   \code{c(indicator_directory = "ci_id")}).
+#'
+#' @return Invisibly, \code{TRUE} if no missing data was found. Stops
+#'   with an error if any input has missing data.
+#' @export
+#'
+#' @examples
+#' check_missing(list(habitat_extent = ns_habitat_extent))
+check_missing <- function(inputs, label_cols = NULL) {
+  if (!is.list(inputs) || is.data.frame(inputs) || is.null(names(inputs)) || any(names(inputs) == "")) {
+    stop("`inputs` must be a fully named list.")
+  }
+
+  object_names <- names(inputs)
+  pad_width <- max(nchar(object_names))
+
+  lines <- character(0)
+  failing <- character(0)
+
+  for (nm in object_names) {
+    x <- inputs[[nm]]
+    label_col <- if (!is.null(label_cols) && nm %in% names(label_cols)) label_cols[[nm]] else NULL
+    smry <- .summarise_missing(x, label_col = label_col)
+
+    if (!is.null(smry$sub)) {
+      # A named list of data frames (e.g. ci_relevance_matrices): its own
+      # header line, then each element indented on its own sub-line.
+      lines <- c(lines, paste0(nm, ":"))
+      sub_names <- names(smry$sub)
+      sub_pad <- floor(stats::median(nchar(sub_names)))
+      for (snm in sub_names) {
+        ssmry <- smry$sub[[snm]]
+        if (ssmry$missing == 0) {
+          value <- "✓ Complete."
+        } else {
+          value <- paste0(.format_pct(ssmry$pct), "% missing")
+          failing <- c(failing, paste0(nm, "$", snm))
+        }
+        entry <- if (nchar(snm) <= sub_pad) {
+          sprintf("  %-*s %s", sub_pad, snm, value)
+        } else {
+          sprintf("  %s: %s", snm, value)
+        }
+        lines <- c(lines, entry)
+      }
+      next
+    }
+
+    header <- sprintf("%-*s", pad_width, nm)
+    if (smry$missing == 0) {
+      lines <- c(lines, paste0(header, " ✓ Complete."))
+    } else {
+      lines <- c(lines, paste0(header, " ", .format_pct(smry$pct), "% missing"))
+      for (d in smry$detail) lines <- c(lines, paste0("  ", d))
+      failing <- c(failing, nm)
     }
   }
+
+  message(paste(c("openNCAI missingness check:", lines), collapse = "\n"))
+
+  if (length(failing) > 0) {
+    stop(
+      "openNCAI requires complete data for all inputs. The following ",
+      "objects have missing values: ", paste(failing, collapse = ", "), ". ",
+      "Run show_missing() on each flagged object for details, or see ",
+      "create_ncai_template()/read_ncai_template() for help producing ",
+      "complete input data."
+    )
+  }
+
+  invisible(TRUE)
 }

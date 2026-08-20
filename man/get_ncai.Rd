@@ -107,6 +107,11 @@ through the full NCAI pipeline, with options to return intermediate matrices
  or specific breakdowns.
 }
 \details{
+\strong{Missing Data:} \code{\link{check_missing}} is run on the core
+pipeline inputs before any calculation. If any input has missing data,
+\code{get_ncai()} stops with a report naming the affected objects; run
+\code{\link{show_missing}} on a flagged object for detail.
+
 \strong{Mandatory Inputs:} Users must provide either an \code{provision_per_unit_divisor}
 or a \code{custom_divisor_matrix} to convert potential scores into weights.
 

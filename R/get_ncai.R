@@ -60,6 +60,11 @@
 #' }
 #'
 #' @details
+#' \strong{Missing Data:} \code{\link{check_missing}} is run on the core
+#' pipeline inputs before any calculation. If any input has missing data,
+#' \code{get_ncai()} stops with a report naming the affected objects; run
+#' \code{\link{show_missing}} on a flagged object for detail.
+#'
 #' \strong{Mandatory Inputs:} Users must provide either an \code{provision_per_unit_divisor}
 #' or a \code{custom_divisor_matrix} to convert potential scores into weights.
 #'
@@ -138,6 +143,17 @@ get_ncai <-  function(habitat_extent,
 
   # Assign return type:
   return_type <- match.arg(return)
+
+  # Check inputs for missing data before running any pipeline calculations.
+  check_missing(
+    mget(
+      c("habitat_extent", "ci_scores", "habitats_label_tree", "es_label_tree",
+        "year_list", "provision_per_unit_scores", "between_importance_scores",
+        "within_importance_scores", "ci_relevance_matrices", "indicator_directory"),
+      envir = environment()
+    ),
+    label_cols = c(indicator_directory = "ci_id")
+  )
 
   # Create derived objects:
   if (is.null(year_one)) {
