@@ -52,7 +52,7 @@ check_missing <- function(inputs, label_cols = NULL) {
       # per-element sub-lines when something is actually missing.
       if (smry$missing == 0) {
         header <- sprintf("%-*s", pad_width, nm)
-        lines <- c(lines, sprintf("%s ✓ Complete. (%d elements)", header, length(smry$sub)))
+        lines <- c(lines, sprintf("%s \u2713 Complete. (%d elements)", header, length(smry$sub)))
         next
       }
 
@@ -62,7 +62,7 @@ check_missing <- function(inputs, label_cols = NULL) {
       for (snm in sub_names) {
         ssmry <- smry$sub[[snm]]
         if (ssmry$missing == 0) {
-          value <- "✓ Complete."
+          value <- "\u2713 Complete."
         } else {
           value <- paste0(.format_pct(ssmry$pct), "% missing")
           failing <- c(failing, paste0(nm, "$", snm))
@@ -79,7 +79,7 @@ check_missing <- function(inputs, label_cols = NULL) {
 
     header <- sprintf("%-*s", pad_width, nm)
     if (smry$missing == 0) {
-      lines <- c(lines, paste0(header, " ✓ Complete."))
+      lines <- c(lines, paste0(header, " \u2713 Complete."))
     } else {
       lines <- c(lines, paste0(header, " ", .format_pct(smry$pct), "% missing"))
       for (d in smry$detail) lines <- c(lines, paste0("  ", d))

@@ -40,7 +40,7 @@ show_missing <- function(x, label_col = NULL) {
 .show_missing_df <- function(df, label_col = NULL) {
   smry <- .summarise_df(df, label_col = label_col, top_n = nrow(df))
   if (smry$missing == 0) {
-    message("✓ Complete data supplied.")
+    message("\u2713 Complete data supplied.")
     return(invisible(NULL))
   }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -69,7 +69,7 @@ show_missing <- function(x, label_col = NULL) {
 .show_missing_tree <- function(x) {
   smry <- .summarise_tree(x)
   if (smry$missing == 0) {
-    message("✓ Complete data supplied.")
+    message("\u2713 Complete data supplied.")
     return(invisible(NULL))
   }
   message(paste(
@@ -84,7 +84,7 @@ show_missing <- function(x, label_col = NULL) {
 .show_missing_vector <- function(x) {
   smry <- .summarise_vector(x)
   if (smry$missing == 0) {
-    message("✓ Complete data supplied.")
+    message("\u2713 Complete data supplied.")
     return(invisible(NULL))
   }
   message(paste(
