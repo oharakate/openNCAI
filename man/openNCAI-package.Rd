@@ -19,5 +19,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Kate O'Hara \email{k.a.ohara@stir.ac.uk}
 
+Authors:
+\itemize{
+  \item Chris Littleboy \email{chris.littleboy@stir.ac.uk}
+}
+
 }
 \keyword{internal}
