@@ -58,7 +58,7 @@ data. Row order and length MUST match \code{ci_names}. Column order and
 length MUST match \code{es_label_tree} names.}
 
 \item{ci_relevance_matrices}{Optional list of existing binary relevance
-matrices. Matrix list order and length must mach \code{ci_names}. Each
+matrices. Matrix list order and length must match \code{ci_names}. Each
 matrix row and column order MUST match lower levels of
  \code{habitats_label_tree} and \code{es_label_tree}.}
 }

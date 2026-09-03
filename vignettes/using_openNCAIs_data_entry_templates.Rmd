@@ -33,7 +33,7 @@ We start by defining the metadata for the region we wish to study, specifically:
 
  * The natural habitats found in the region which we wish to monitor,
  * The ecosystem services produced by those habitats,
- * The habitat condition indicators which we will use to estimate the likely flow of ecosystemservices from habitats,
+ * The habitat condition indicators which we will use to estimate the likely flow of ecosystem services from habitats,
  * The list of years over which we will calculate the index.
  
 It is sensible to take time to get these right at the start as they define the scope of the whole calculation. 
@@ -82,7 +82,7 @@ my_num_year_list <- 2000:2022
 ```
 
 [^1]: [European Nature Information System](https://biodiversity.europa.eu/resources/search-habitat/eunis-habitat-types-hierarchical-view-2021-2022?searchTerm=)
-[^2]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^2]: [System of Environmental-Economic Accounting](https://seea.un.org/en)
 [^3]: [Common International Classification of Ecosystem Services](https://cices.eu/)
 
 ## Step 2: Creating the data input spreadsheet

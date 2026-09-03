@@ -69,7 +69,7 @@ openNCAI requires three types of data:
 
 3. **Weighting scores** - decided by experts at the beginning of the process; these denote the relative importance of different ecosystem services, the potential of different habitats to provide each each, and the salience of the available habitat condition indicators to represent flow of services from habitats.
 
-Let's find out more about the contents and shape of the included data objects which fulfill these roles...
+Let's find out more about the contents and shape of the included data objects which fulfil these roles...
 
 ### Metadata
 
@@ -99,7 +99,7 @@ knitr::kable(d_subset)
 ```
 [^1]: [European Nature Information System](https://biodiversity.europa.eu/resources/search-habitat/eunis-habitat-types-hierarchical-view-2021-2022?searchTerm=)
 [^2]: [Common International Classification of Ecosystem Services](https://cices.eu/)
-[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/en)
 
 It is important that all measurement and weights objects are congruent with the metadata. E.g. time series data must include all the years mentioned in the year list, and weighting scores must be expressed across the habitats and ecosystem services listed in the label trees.
 
@@ -422,7 +422,7 @@ st_plot <- ggplot(by_st_for_plot, aes(x = year, y = raw_index, color = display_n
   # Classic theme (solid axis lines, no grid)
   theme_classic() +
 
-  # Minimal centering for the title
+  # Minimal centring for the title
   theme(
     plot.title = element_text(face = "bold", hjust = 0.5)
   )
@@ -517,7 +517,7 @@ bh_plot <- ggplot(by_bh_for_plot, aes(x = year, y = raw_index, color = display_n
   # The requested classic theme
   theme_classic() +
 
-  # Minimal centering for the title
+  # Minimal centring for the title
   theme(
     plot.title = element_text(face = "bold", hjust = 0.5)
   )

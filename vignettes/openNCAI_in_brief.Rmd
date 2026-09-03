@@ -144,7 +144,7 @@ knitr::kable(d_subset)
 ```
 [^1]: [European Nature Information System](https://biodiversity.europa.eu/resources/search-habitat/eunis-habitat-types-hierarchical-view-2021-2022?searchTerm=)
 [^2]: [Common International Classification of Ecosystem Services](https://cices.eu/)
-[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/)
+[^3]: [System of Environmental-Economic Accounting](https://seea.un.org/en)
 
 #### Environmental measurements objects
 ```{r}

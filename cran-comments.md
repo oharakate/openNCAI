@@ -27,15 +27,28 @@ network time-check step and reflects a local inability to reach the
 time-verification service, not an issue with the package itself. No action
 required.
 
-"Found the following (possibly) invalid URLs: https://seea.un.org/ ...
-Status: 403 Forbidden" (win-builder R-oldrelease only): the URL is live and
-reachable by ordinary HTTP clients (verified directly). The target site
-blocks requests whose User-Agent header contains the substring "curl",
-which appears to be sent as the default User-Agent by the older R release's
-HTTP backend when no custom User-Agent is set; the same check passes on
-R-release and R-devel, which send a different default User-Agent. This is
-a false positive from the target site's bot-mitigation rules interacting
-with an older R version's HTTP client identification, not a broken link.
+"Found the following (possibly) invalid URLs: https://seea.un.org/en ...
+Status: 403 Forbidden" (seen intermittently, not on every platform/run): the
+URL is live and reachable by ordinary HTTP clients (verified directly). The
+target site blocks requests whose User-Agent header contains the substring
+"curl", which some R HTTP backends send as a default User-Agent when no
+custom User-Agent is set; other platforms/R versions send a different
+default User-Agent and pass. This is a false positive from the target
+site's bot-mitigation rules interacting with the checking machine's HTTP
+client identification, not a broken link.
+
+"Found the following (possibly) invalid URLs:
+https://www.nature.scot/professional-advice/social-and-economic-benefits-nature/natural-capital/scotlands-natural-capital-asset-index
+Status: 403 Forbidden": this page is live and renders normally in an
+ordinary web browser. The nature.scot domain serves a Cloudflare
+JavaScript challenge ("Just a moment...") for this page to any HTTP client
+that cannot execute JavaScript, which includes all automated URL checkers;
+verified this returns 403 regardless of User-Agent (browser-identical,
+plain curl, and R-style User-Agents all blocked identically). This is a
+false positive from the target site's bot-mitigation, not a broken link;
+note the other nature.scot URL referenced in DESCRIPTION (a static PDF) is
+not affected, as the challenge appears to apply only to the site's HTML
+page routes.
 
 ---------------
 
