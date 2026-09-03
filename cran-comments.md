@@ -1,3 +1,44 @@
+## Resubmission - 02-09-2026 ##
+
+This is a resubmission for version 0.2.0, a minor update to the previously
+accepted version 0.1.0.
+
+Changes in this version:
+
+* Added `check_missing()` and `show_missing()`, exported functions for
+  checking and reporting missing data in pipeline inputs. `get_ncai()` now
+  runs `check_missing()` on its core inputs before calculation.
+* Added Chris Littleboy as a package author (`Authors@R`).
+* Updated two dead reference URLs in the vignettes (one site had been
+  retired, one was already a mismatched link) to their correct, live
+  replacements.
+
+Test platforms
+Local macOS (R 4.5.3)
+win-builder (R-release, R-devel, R-oldrelease)
+R-hub v2 (Linux, Windows, macOS; R-devel)
+
+R CMD check results
+0 errors | 0 warnings | 1 note
+
+Spurious Notes
+"unable to verify current time": This NOTE is produced by R CMD check's
+network time-check step and reflects a local inability to reach the
+time-verification service, not an issue with the package itself. No action
+required.
+
+"Found the following (possibly) invalid URLs: https://seea.un.org/ ...
+Status: 403 Forbidden" (win-builder R-oldrelease only): the URL is live and
+reachable by ordinary HTTP clients (verified directly). The target site
+blocks requests whose User-Agent header contains the substring "curl",
+which appears to be sent as the default User-Agent by the older R release's
+HTTP backend when no custom User-Agent is set; the same check passes on
+R-release and R-devel, which send a different default User-Agent. This is
+a false positive from the target site's bot-mitigation rules interacting
+with an older R version's HTTP client identification, not a broken link.
+
+---------------
+
 ## Resubmission - 08-05-2026 ##
 
 This is a resubmission following failed incoming checks of submission on 
