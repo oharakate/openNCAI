@@ -27,8 +27,8 @@
 #'   within ecosystem service types.
 #' @param ci_relevance_matrices Condition Indicator Relevance Matrices list.
 #' @param indicator_directory Directory mapping indicators to services/habitats.
-#' @param total_indicator_relevances_constant Numeric. The constant used in the Total Indicator
-#'   Relevance calculation. Defaults to 2.
+#' @param total_indicator_relevances_constant Numeric, must be >= 0. The
+#'   constant used in the Total Indicator Relevance calculation. Defaults to 2.
 #' @param smoothing_weights Numeric vector of weights for 5-year trailing
 #'   smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.
 #' @param return Character. Specifies the object to return. Options include:
@@ -143,6 +143,10 @@ get_ncai <-  function(habitat_extent,
 
   # Assign return type:
   return_type <- match.arg(return)
+
+  if (total_indicator_relevances_constant < 0) {
+    stop("total_indicator_relevances_constant must be >= 0.")
+  }
 
   # Check inputs for missing data before running any pipeline calculations.
   check_missing(

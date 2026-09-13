@@ -35,6 +35,36 @@ test_that("build_tyf returns 100 when all condition scores are 100", {
   expect_equal(res[2, 2], 100)
 })
 
+test_that("build_tyf sets zero-relevance cells to 100 even when constant is 0", {
+  # Cell [1,1] has zero raw relevance (no indicator relevant there), so its
+  # weighted condition contribution is also zero, by construction. Cell
+  # [2,2] has real, non-zero relevance and a real signal, and should be
+  # left untouched by the zero-relevance handling.
+  raw_relevance <- matrix(c(0, 1, 1, 0.5), nrow = 2)
+  constant <- 0
+  total_indicator_relevances <- raw_relevance + constant
+  ywccm_list <- list(ind1 = matrix(c(0, 100, 100, 25), nrow = 2))
+
+  res <- build_tyf(ywccm_list, total_indicator_relevances, constant)
+
+  expect_equal(res[1, 1], 100)
+  # Math: (25 + (100 * 0)) / (0.5 + 0) = 50
+  expect_equal(res[2, 2], 50)
+})
+
+test_that("build_tyf's zero-relevance handling matches existing behaviour for constant > 0", {
+  raw_relevance <- matrix(0, nrow = 1, ncol = 1)
+  constant <- 2
+  total_indicator_relevances <- raw_relevance + constant
+  ywccm_list <- list(ind1 = matrix(0, nrow = 1, ncol = 1))
+
+  res <- build_tyf(ywccm_list, total_indicator_relevances, constant)
+
+  # Math: (0 + (100 * 2)) / (0 + 2) = 100, same result the division alone
+  # already produced before the explicit zero-relevance handling was added.
+  expect_equal(res[1, 1], 100)
+})
+
 # --- Orchestrator Function Tests ---
 
 test_that("build_all_ywccms multiplies scalars across list of matrices", {

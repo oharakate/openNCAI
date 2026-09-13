@@ -13,8 +13,9 @@
 #' @param all_ciwms_list A list of Condition Indicator Weighting Matrices
 #' (CIWMs). Each element in the list must be a data frame
 #' where rows correspond to habitats and columns to ecosystem services.
-#' @param total_indicator_relevances_constant A numeric value added to the aggregated total prevent
-#' zero-division errors in later calculations.
+#' @param total_indicator_relevances_constant A numeric value, must be >= 0,
+#' added to the aggregated total to prevent zero-division errors in later
+#' calculations.
 #'
 #' @return A data frame of numeric values representing the summed relevance
 #' scores plus the constant, with the same dimensions as the input matrices.

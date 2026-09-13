@@ -11,8 +11,8 @@
 #' @param habitats_label_tree A named list of habitat labels.
 #' @param ci_scores A data frame or matrix of raw condition scores (years as rows).
 #' @param year_list A vector of years to be processed.
-#' @param total_indicator_relevances_constant A numeric constant (default 2) to prevent zero-division
-#'   and ensure indexing congruency.
+#' @param total_indicator_relevances_constant A numeric constant (default 2),
+#'   must be >= 0, to prevent zero-division and ensure indexing congruency.
 #'
 #' @return A named list of Total Yearly Flow (TYF) matrices, one for each year
 #'   in \code{year_list}.

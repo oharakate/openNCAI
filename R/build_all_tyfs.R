@@ -8,7 +8,8 @@
 #' @param year_list A vector of all years in the account (e.g., 2000:2022).
 #' @param ciwms_list A named list of Condition Indicator Weighting Matrices (CIWMs).
 #' @param total_indicator_relevances The Total Indicator Relevance matrix (output from \code{calc_total_indicator_relevances}).
-#' @param total_indicator_relevances_constant A numeric value (usually 2) used for normalization.
+#' @param total_indicator_relevances_constant A numeric value (usually 2), must
+#'   be >= 0, used for normalization.
 #'
 #' @return A named list of matrices, one for each year in \code{year_list}.
 #'   Each matrix represents the aggregated flow of ecosystem services for that year.
@@ -84,7 +85,8 @@ build_all_ywccms <- function(raw_cis, year, year_list, ciwms_list) {
 #'
 #' @param list_of_ywccms A list of Yearly Weighted Condition Contribution Matrices.
 #' @param total_indicator_relevances The Total Indicator Relevance matrix.
-#' @param total_indicator_relevances_constant Numeric. Added to denominator for stability and numerator for indexing.
+#' @param total_indicator_relevances_constant Numeric, must be >= 0. Added to
+#'   denominator for stability and numerator for indexing.
 #'
 #' @return A numeric matrix for one year.
 #' @keywords internal
@@ -94,7 +96,22 @@ build_tyf <- function(list_of_ywccms, total_indicator_relevances, total_indicato
   sum_ywccms <- Reduce("+", list_of_ywccms)
 
   # Normalize: (Sum + Constant * 100) / (Sum of Weights + Constant)
+  # Note that the constant is required to avoid zero division, but also acts
+  # contributes a shrinkage function, with larger constants doing more to dampen
+  # 'shocks' to the flow contribution caused by habitat/service combinations
+  # where the habitat extent is very great but the total input of relevant
+  # condition indicator information is low.
   tyf <- (sum_ywccms + (100 * total_indicator_relevances_constant)) / total_indicator_relevances
+
+  # Habitat/service cells with no relevant condition indicator at all (raw
+  # relevance exactly zero, recovered by removing the constant already
+  # added to total_indicator_relevances) always represent "no evidence of
+  # change", so are set explicitly to the neutral value of 100. This is
+  # guaranteed here rather than left to the division above, which lands on
+  # 100 for any constant > 0 but is undefined (0/0) if the constant is
+  # exactly 0.
+  raw_relevance <- total_indicator_relevances - total_indicator_relevances_constant
+  tyf[as.matrix(raw_relevance) == 0] <- 100
 
   return(tyf)
 }

@@ -27,8 +27,8 @@ get_yearly_flow(
 
 \item{year_list}{A vector of years to be processed.}
 
-\item{total_indicator_relevances_constant}{A numeric constant (default 2) to prevent zero-division
-and ensure indexing congruency.}
+\item{total_indicator_relevances_constant}{A numeric constant (default 2),
+must be >= 0, to prevent zero-division and ensure indexing congruency.}
 }
 \value{
 A named list of Total Yearly Flow (TYF) matrices, one for each year

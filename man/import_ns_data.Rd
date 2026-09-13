@@ -15,7 +15,8 @@ import_ns_data(
 
 \item{year_list}{A vector of years to include in the account (e.g., 2000:2022).}
 
-\item{total_indicator_relevances_constant}{A numeric constant added to the Total Indicator Relevances.}
+\item{total_indicator_relevances_constant}{A numeric constant, must be >= 0,
+added to the Total Indicator Relevances.}
 }
 \value{
 A named list containing 14 components:

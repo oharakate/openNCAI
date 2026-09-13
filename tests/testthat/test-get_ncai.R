@@ -114,6 +114,28 @@ test_that("get_ncai correctly handles custom year_one", {
   expect_equal(res["2021", "raw_index"], 100)
 })
 
+test_that("get_ncai rejects a negative total_indicator_relevances_constant", {
+  years <- c("2020", "2021", "2022")
+
+  expect_error(
+    openNCAI::get_ncai(
+      habitat_extent = mock_extent,
+      ci_scores = mock_ci_scores,
+      habitats_label_tree = h_tree,
+      es_label_tree = e_tree,
+      year_list = years,
+      provision_per_unit_scores = mock_provision_per_unit,
+      provision_per_unit_divisor = 5,
+      between_importance_scores = mock_between,
+      within_importance_scores = mock_within,
+      ci_relevance_matrices = mock_cirms,
+      indicator_directory = mock_dir,
+      total_indicator_relevances_constant = -1
+    ),
+    "must be >= 0"
+  )
+})
+
 test_that("get_ncai returns the full results list when requested", {
   years <- c("2020", "2021", "2022")
 

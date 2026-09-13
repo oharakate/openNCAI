@@ -8,8 +8,8 @@
 #' @param path A string representing the file path to the .xlsx data source.
 #' @param year_list A vector of years to include in the account (e.g., 2000:2022).
 #'   Can be numeric or character.
-#' @param total_indicator_relevances_constant A numeric constant added to the Total Indicator Relevances
-#'   to avoid zero divisions. Default is 2.
+#' @param total_indicator_relevances_constant A numeric constant, must be >= 0,
+#'   added to the Total Indicator Relevances to avoid zero divisions. Default is 2.
 #'
 #' @return A named list containing 14 components:
 #' \itemize{
@@ -41,7 +41,8 @@
 #'
 #' @param path A string representing the file path to the .xlsx data source.
 #' @param year_list A vector of years to include in the account (e.g., 2000:2022).
-#' @param total_indicator_relevances_constant A numeric constant added to the Total Indicator Relevances.
+#' @param total_indicator_relevances_constant A numeric constant, must be >= 0,
+#'   added to the Total Indicator Relevances.
 #'
 #' @return A named list containing structured NCAI data objects.
 #' @importFrom janitor make_clean_names

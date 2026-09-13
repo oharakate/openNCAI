@@ -15,7 +15,8 @@ build_tyf(
 
 \item{total_indicator_relevances}{The Total Indicator Relevance matrix.}
 
-\item{total_indicator_relevances_constant}{Numeric. Added to denominator for stability and numerator for indexing.}
+\item{total_indicator_relevances_constant}{Numeric, must be >= 0. Added to
+denominator for stability and numerator for indexing.}
 }
 \value{
 A numeric matrix for one year.

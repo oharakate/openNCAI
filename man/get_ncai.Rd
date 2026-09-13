@@ -62,8 +62,8 @@ within ecosystem service types.}
 
 \item{indicator_directory}{Directory mapping indicators to services/habitats.}
 
-\item{total_indicator_relevances_constant}{Numeric. The constant used in the Total Indicator
-Relevance calculation. Defaults to 2.}
+\item{total_indicator_relevances_constant}{Numeric, must be >= 0. The
+constant used in the Total Indicator Relevance calculation. Defaults to 2.}
 
 \item{smoothing_weights}{Numeric vector of weights for 5-year trailing
 smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}

@@ -21,7 +21,8 @@ build_all_tyfs(
 
 \item{total_indicator_relevances}{The Total Indicator Relevance matrix (output from \code{calc_total_indicator_relevances}).}
 
-\item{total_indicator_relevances_constant}{A numeric value (usually 2) used for normalization.}
+\item{total_indicator_relevances_constant}{A numeric value (usually 2), must
+be >= 0, used for normalization.}
 }
 \value{
 A named list of matrices, one for each year in \code{year_list}.
