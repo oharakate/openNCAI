@@ -7,7 +7,7 @@
 calc_ncai_by_bh(
   total_assets_matrix_list,
   habitats_label_tree,
-  year_one = NULL,
+  year_one = names(total_assets_matrix_list)[[1]],
   ...
 )
 }

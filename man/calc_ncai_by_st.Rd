@@ -4,7 +4,12 @@
 \alias{calc_ncai_by_st}
 \title{Calculate NCAI Broken Down by Ecosystem Service Type}
 \usage{
-calc_ncai_by_st(total_assets_matrix_list, es_label_tree, year_one = NULL, ...)
+calc_ncai_by_st(
+  total_assets_matrix_list,
+  es_label_tree,
+  year_one = names(total_assets_matrix_list)[[1]],
+  ...
+)
 }
 \arguments{
 \item{total_assets_matrix_list}{A named list of annual asset data frames.}

@@ -393,7 +393,7 @@ get_ncai <-  function(habitat_extent,
 #' @keywords internal
 calc_ncai_by_st <- function(total_assets_matrix_list,
                             es_label_tree,
-                            year_one = NULL,
+                            year_one = names(total_assets_matrix_list)[[1]],
                             ...) {
 
   lapply(es_label_tree, function(subset_labels) {
@@ -402,7 +402,7 @@ calc_ncai_by_st <- function(total_assets_matrix_list,
       m[, subset_labels, drop = FALSE]
     })
 
-    index_and_smooth(filtered_matrix_list, ...)
+    index_and_smooth(filtered_matrix_list, year_one = year_one, ...)
   })
 }
 
@@ -421,7 +421,7 @@ calc_ncai_by_st <- function(total_assets_matrix_list,
 #' @keywords internal
 calc_ncai_by_bh <- function(total_assets_matrix_list,
                             habitats_label_tree,
-                            year_one = NULL,
+                            year_one = names(total_assets_matrix_list)[[1]],
                             ...) {
 
   lapply(habitats_label_tree, function(subset_labels) {
@@ -430,6 +430,6 @@ calc_ncai_by_bh <- function(total_assets_matrix_list,
       m[subset_labels, , drop = FALSE]
     })
 
-    index_and_smooth(filtered_matrix_list, ...)
+    index_and_smooth(filtered_matrix_list, year_one = year_one, ...)
   })
 }

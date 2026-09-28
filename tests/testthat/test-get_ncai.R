@@ -213,3 +213,25 @@ test_that("calc_ncai_by_bh correctly filters rows before indexing", {
   expect_equal(as.numeric(val_g), 20)
 })
 
+
+test_that("calc_ncai_by_st indexes on a custom year_one", {
+  m1 <- matrix(c(10, 20), nrow = 1, dimnames = list("hab1", c("serv1", "serv2")))
+  m_list <- list("2000" = m1, "2001" = m1 * 2)
+
+  tree <- list(group_a = "serv1", group_b = "serv2")
+  res <- suppressMessages(calc_ncai_by_st(m_list, tree, year_one = "2001"))
+
+  expect_equal(res$group_a["2001", "raw_index"], 100)
+  expect_equal(res$group_a["2000", "raw_index"], 50)
+})
+
+test_that("calc_ncai_by_bh indexes on a custom year_one", {
+  m1 <- matrix(c(10, 20), nrow = 2, dimnames = list(c("hab1", "hab2"), "serv1"))
+  m_list <- list("2000" = m1, "2001" = m1 * 2)
+
+  tree <- list(woodland = "hab1", grassland = "hab2")
+  res <- suppressMessages(calc_ncai_by_bh(m_list, tree, year_one = "2001"))
+
+  expect_equal(res$woodland["2001", "raw_index"], 100)
+  expect_equal(res$woodland["2000", "raw_index"], 50)
+})
