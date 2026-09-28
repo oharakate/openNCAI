@@ -19,10 +19,11 @@ columns = ecosystem service type. The names of the list must be the years.}
 5-year weighted smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.}
 
 \item{year_one}{Character or Numeric. The year used as the baseline
-(where index = 100). Defaults to the first name in \code{matrix_list}.}
+(where index = 100). Defaults to the first name in \code{matrix_list}.
+The total in this year must be non-zero.}
 }
 \value{
-A data frame containing:
+A data frame with one row per year (years as row names) containing:
 \itemize{
   \item \code{raw_total}: The absolute sum of assets for each year.
   \item \code{raw_index}: The index value relative to the baseline year.
@@ -45,4 +46,16 @@ exactly 100. This is because the smoothing reflects the trend of the
 preceding 4 years. The \code{raw_index} will always remain anchored at 100
 for the \code{year_one}.
 }
-\keyword{internal}
+\examples{
+yearly_matrices <- list(
+  "2000" = matrix(c(10, 20, 30, 40), nrow = 2),
+  "2001" = matrix(c(12, 20, 33, 41), nrow = 2),
+  "2002" = matrix(c(15, 19, 35, 44), nrow = 2)
+)
+index_and_smooth(yearly_matrices)
+}
+\seealso{
+\code{\link{calc_ncai_subset}}, which checks habitat and
+  service labels before subsetting the yearly NCAI matrices and indexing
+  them with this function.
+}

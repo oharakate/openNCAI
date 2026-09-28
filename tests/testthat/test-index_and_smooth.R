@@ -31,3 +31,25 @@ test_that("index_and_smooth calculates totals, indexing, and smoothing correctly
   expect_equal(get_val(res, "2004", "smoothed_index"), 340/3)
 })
 
+
+test_that("index_and_smooth accepts a numeric year_one", {
+  m_list <- list("2000" = matrix(10), "2001" = matrix(20))
+
+  res <- suppressMessages(index_and_smooth(m_list, year_one = 2001))
+
+  expect_equal(res["2001", "raw_index"], 100)
+  expect_equal(res["2000", "raw_index"], 50)
+})
+
+test_that("index_and_smooth errors when year_one is not in matrix_list", {
+  m_list <- list("2000" = matrix(10), "2001" = matrix(20))
+
+  expect_error(index_and_smooth(m_list, year_one = "1999"),
+               class = "openNCAI_unknown_year")
+})
+
+test_that("index_and_smooth errors when the year_one total is zero", {
+  m_list <- list("2000" = matrix(0), "2001" = matrix(20))
+
+  expect_error(index_and_smooth(m_list), class = "openNCAI_zero_base")
+})

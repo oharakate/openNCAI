@@ -12,6 +12,7 @@
 #'   5-year weighted smoothing. Defaults to \code{c(0.2, 0.4, 0.6, 0.8, 1.0)}.
 #' @param year_one Character or Numeric. The year used as the baseline
 #'   (where index = 100). Defaults to the first name in \code{matrix_list}.
+#'   The total in this year must be non-zero.
 #'
 #' @details
 #' \strong{Smoothing and Baseline Years:}
@@ -25,7 +26,11 @@
 #'
 #'
 #'
-#' @return A data frame containing:
+#' @seealso \code{\link{calc_ncai_subset}}, which checks habitat and
+#'   service labels before subsetting the yearly NCAI matrices and indexing
+#'   them with this function.
+#'
+#' @return A data frame with one row per year (years as row names) containing:
 #' \itemize{
 #'   \item \code{raw_total}: The absolute sum of assets for each year.
 #'   \item \code{raw_index}: The index value relative to the baseline year.
@@ -35,16 +40,41 @@
 #' @importFrom slider slide_dbl
 #' @importFrom dplyr mutate
 #' @importFrom utils tail
-#' @keywords internal
+#' @export
+#'
+#' @examples
+#' yearly_matrices <- list(
+#'   "2000" = matrix(c(10, 20, 30, 40), nrow = 2),
+#'   "2001" = matrix(c(12, 20, 33, 41), nrow = 2),
+#'   "2002" = matrix(c(15, 19, 35, 44), nrow = 2)
+#' )
+#' index_and_smooth(yearly_matrices)
 index_and_smooth <- function(matrix_list,
                              smoothing_weights = c(0.2, 0.4, 0.6, 0.8, 1.0),
                              year_one = names(matrix_list)[[1]]) {
+
+  year_one <- as.character(year_one)
+  if (length(year_one) != 1 || !year_one %in% names(matrix_list)) {
+    stop(errorCondition(
+      paste0("year_one must be one of the names of matrix_list, got: ",
+             paste(year_one, collapse = ", ")),
+      class = "openNCAI_unknown_year"
+    ))
+  }
 
   # Get the raw totals.
   yearly_sums <- vapply(matrix_list, sum, numeric(1), na.rm = TRUE)
 
   # Indexing on year one to give a 'raw' index.
   year_one_val <- as.numeric(yearly_sums[year_one])
+  if (year_one_val == 0) {
+    stop(errorCondition(
+      paste0("The total in year_one (", year_one, ") is zero, so no index ",
+             "can be calculated. Check the subset has a non-zero value in ",
+             "that year."),
+      class = "openNCAI_zero_base"
+    ))
+  }
 
   # Define the internal weighted smoothing logic
   weighted_smooth <- function(window_vec) {
